@@ -1,4 +1,8 @@
 *.html
 *.json
 *.csv
+*.txt
 __pycache__/*
+data/*
+Output/*
+archive/*
