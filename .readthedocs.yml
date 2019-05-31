@@ -1,1 +1,2 @@
-requirements_file: docs/requirements-docs.txt
+conda:
+  environment: environment.yml
