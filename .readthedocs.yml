@@ -1,3 +1,8 @@
 version: 2
+python:
+  version: 3.7.2
+  install:
+    requirements: docs/requirements-docs.txt
+    method: pip
 conda:
   environment: environment.yml
