@@ -1,7 +1,7 @@
 *.html
 *.json
 *.csv
-*.txt
+src/error_file.txt
 __pycache__/*
 data/*
 Output/*
