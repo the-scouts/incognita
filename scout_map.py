@@ -29,16 +29,18 @@ class ScoutMap():
 
         :param sections_csv: A path to a .csv file that contains Scout Census data
         """
-        # Removes sections that have postcodes unrecognised by the postcode
-        # directory
+
         self.sections_data = SectionData(sections_csv)
         self.boundary_report = {}
         self.district_mapping = {}
+
+        # Load the settings file
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
 
         self.OUTPUT = self.settings["Output folder"]
 
+        # Facilitates logging
         self.logger = logging.getLogger(__name__)
         # define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()
@@ -160,13 +162,39 @@ class ScoutMap():
         self.logger.info(f"Resulting in {len(self.boundary_list.index)} {name} boundaries")
 
     def ons_from_scout_area(self, ons_code, column, value_list):
+        """Produces list of ONS Geographical codes that exist within a subset
+        of the Scout Census data.
+
+        :param ons_code: A field of the ONS Postcode Directory
+        :param column: A field of the Scout Census data
+        :param value_list: Values to accept
+
+        :type ons_code: str
+        :type column: str
+        :type value_list: list
+
+        :returns: List of ONS Geographical codes of type ons_code.
+        :rtype: list
+        """
         records = self.sections_data.sections_pd.loc[self.sections_data.sections_pd[column].isin(value_list)]
         ons_codes = records[ons_code].unique().tolist()
-        if "error" in ons_codes:
-            ons_codes.remove("error")
+        if self.sections_data.DEFAULT_VALUE in ons_codes:
+            ons_codes.remove(self.sections_data.DEFAULT_VALUE)
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
+        """Produces list of districts that exist within boundary defined by
+        ons_codes
+
+        :param ons_code: A field of the ONS Postcode Directory
+        :param ons_codes: Values to filter the records on
+
+        :type ons_code: str
+        :type ons_codes: list
+
+        :returns: List of District IDs
+        :rtype: list
+        """
         oslaua_records = self.sections_data.sections_pd.loc[self.sections_data.sections_pd[ons_code].isin(ons_codes)]
         district_ids = oslaua_records[self.sections_data.CENSUS_DISTRICT_ID].unique()
         district_ids = [str(district_id) for district_id in district_ids]
@@ -175,6 +203,15 @@ class ScoutMap():
         return district_ids
 
     def ons_to_district_mapping(self, ons_code):
+        """Create json file, containing which districts are within an each ONS
+        area, and how many ONS areas those districts are in.
+
+        :param ons_code: A field in the ONS Postcode directory
+        :type ons_code: str
+
+        :returns: Nothing
+        :rtype: None
+        """
         self.logger.debug("Creating mapping from ons boundary to district")
         oslauas = self.boundary_list[self.boundary_data["code_col_name"]]
         #oslauas = self.sections_data.sections_pd[ons_code].unique()
@@ -193,30 +230,42 @@ class ScoutMap():
             json.dump(mapping, f)
 
     def load_ons_to_district_mapping(self, file_name, ons_code):
+        """Reads a district mapping file (e.g. as created by ons_to_district_mapping)
+
+        :param file_name: Location of the json file
+        :param ons_code: The ONS field that the file contains
+
+        :type file_name: str
+        :type ons_code: str
+
+        :returns: Nothing
+        :rtype: None
+        """
         with open(file_name, 'r') as f:
             self.district_mapping[ons_code] = json.load(f)
 
-    def district_to_oslaua_mapping(self):
-        district_ids = self.sections_data.sections_pd[self.sections_data.CENSUS_DISTRICT_ID].unique()
-        mapping = {}
-        for district_id in district_ids:
-            mapping[district_id] = self.oslaua_from_scout_district(district_id)
-        return mapping
-
     def count_records(self):
+        """Counts the number of Scout Census records being considered
+
+        :returns: Number of Scout Census records
+        :rtype: int
+        """
         return self.sections_data.sections_pd.shape[0]
 
-    def filter_by_imd(self, comparison, value):
-        ops = {'>': operator.gt,
-               '<': operator.lt,
-               '>=': operator.ge,
-               '<=': operator.le,
-               '=': operator.eq}
-
-        self.sections_data.sections_pd["imd"] = pd.to_numeric(self.sections_data.sections_pd["imd"], errors='coerce')
-        self.sections_data.sections_pd = self.sections_data.sections_pd.loc[ops[comparison](self.sections_data.sections_pd["imd"],value)]
-
     def create_boundary_report(self, options=["Groups","Section numbers","6 to 17 numbers","awards"], historical=False):
+        """Produces .csv file summarising by boundary provided.
+
+        Requires self.boundary_data to be set, preferably by :meth:geo_scout.set_boundary
+
+        :param options: List of data to be included in report
+        :param historical: Check to ensure that multiple years of data are intentional
+
+        :type options: list
+        :type historical: bool
+
+        :returns: Nothing
+        :rtype: None
+        """
         if isinstance(options, str):
             options = [options]
 
@@ -255,8 +304,6 @@ class ScoutMap():
                 if name in self.ons_data.BOUNDARIES.keys():
                     self.ons_to_district_mapping(name)
                     awards_mapping = self.district_mapping.get(name)
-
-
 
         output_data = pd.DataFrame(columns=output_columns)
         self.logger.debug(f"Report contains the following data:\n{output_columns}")
@@ -351,6 +398,11 @@ class ScoutMap():
         return output_data
 
     def load_boundary_report(self, boundary_report_csv_path):
+        """Load a boundary report created with the :meth:geo_scout.create_boundary_report
+
+        :returns: Nothing
+        :rtype: None
+        """
         self.boundary_report[self.boundary_data["name"]] = pd.read_csv(self.settings["Output folder"] + boundary_report_csv_path)
 
     def create_uptake_report(self):
