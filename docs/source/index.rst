@@ -18,9 +18,6 @@ Welcome to geo_scout's documentation!
   :members:
   :undoc-members:
 
-
-
-
 Indices and tables
 ==================
 
