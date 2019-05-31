@@ -38,7 +38,6 @@ dependencies:
   - glib=2.58.3
   - hdf4=4.2.13
   - hdf5=1.10.4
-  - icc_rt=2019.0.0
   - icu=58.2
   - idna=2.8
   - imagesize=1.1.0
