@@ -10,7 +10,7 @@ Welcome to geo_scout's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. autoclass:: scout_map.ScoutMap
+.. autoclass:: geo_scout.scout_map.ScoutMap
  :members:
  :undoc-members:
 
