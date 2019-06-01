@@ -39,7 +39,6 @@ dependencies:
   - glib=2.58.3
   - hdf4=4.2.13
   - hdf5=1.10.4
-  - icc_rt=2019.0.0
   - icu=58.1
   - idna=2.8
   - imagesize=1.1.0
@@ -120,7 +119,6 @@ dependencies:
   - tornado=6.0.2
   - urllib3=1.24.3
   - vincent=0.4.4
-  - vs2015_runtime=14.15.26706
   - wheel=0.33.4
   - xerces-c=3.2.2
   - xz=5.2.4
