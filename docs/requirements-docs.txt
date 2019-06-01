@@ -1,2 +1,3 @@
 geopandas
 folium
+geo_scout
