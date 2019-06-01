@@ -22,7 +22,9 @@ sys.path.insert(0, os.path.abspath('../../..'))
 sys.path.insert(0, os.path.abspath('../../../..'))
 sys.path.insert(0, os.path.abspath('../src'))
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, '/home/docs/checkouts/readthedocs.org/user_builds/geo-scout/envs/latest/lib/python3.7/site-packages/')
+sys.path.insert(0, '/home/docs/checkouts/readthedocs.org/user_builds/geo-scout/envs/latest/lib/python3.7/site-packages')
+sys.path.insert(0, '/home/docs/checkouts/readthedocs.org/user_builds/geo-scout/envs/latest/lib/python3.7/site-packages/geo_scout')
+sys.path.insert(0, '/home/docs/checkouts/readthedocs.org/user_builds/geo-scout/envs/latest/src/geo-scout')
 
 # -- Project information -----------------------------------------------------
 
