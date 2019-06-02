@@ -10,11 +10,7 @@ Welcome to geo_scout's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: geo_scout.scout_map
-  :members:
-  :undoc-members:
-
-.. automodule:: geo_scout.script_handler
+.. automodule:: geo_scout.src.script_handler
   :members:
   :undoc-members:
 
