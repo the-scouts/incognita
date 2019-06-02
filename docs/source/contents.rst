@@ -11,8 +11,8 @@ Welcome to geo_scout's documentation!
    :caption: Contents:
 
 .. automodule:: scout_map
- :members:
- :undoc-members:
+  :members:
+  :undoc-members:
 
 .. automodule:: geo_scout.scout_map
   :members:
