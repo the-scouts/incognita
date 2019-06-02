@@ -1,12 +1,12 @@
 {
   "settings":
   {
-    "Scout Census location": "..\\data\\Scout Census Data\\Census 2019 Prototype Extract (6) (2) with May 2018 fields.csv",
+    "Scout Census location": "..\\..\\data\\Scout Census Data\\Census 2019 Prototype Extract (6) (2) with May 2018 fields.csv",
     "ONS PD location": "C:\\Users\\tyems\\Documents\\Scouting\\Operations\\Census\\National Statistical Data\\ONS_PD_MAY_2018\\Data\\ONSPD_MAY_2018_UK.csv",
     "ONS Names and codes folder": "C:\\Users\\tyems\\Documents\\Scouting\\Operations\\Census\\National Statistical Data\\ONS_PD_MAY_2018\\Documents\\",
-    "National Statistical folder": "..\\data\\National Statistical data\\",
-    "Output folder": "..\\Output\\",
-    "Boundaries folder": "..\\data\\Boundary shape files\\",
+    "National Statistical folder": "..\\..\\data\\National Statistical data\\",
+    "Output folder": "..\\..\\Output\\",
+    "Boundaries folder": "..\\..\\data\\Boundary shape files\\",
     "Scout Mappings":
     {
       "District":

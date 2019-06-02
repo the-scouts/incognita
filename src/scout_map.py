@@ -1,10 +1,10 @@
 import pandas as pd
 import operator
-from geo_scout.cholopleth import CholoplethMapPlotter
+from geo_scout.src.cholopleth import CholoplethMapPlotter
 import logging
-from geo_scout.section_data import SectionData
-from geo_scout.postcode_to_constituency import PostcodeToArea
-from geo_scout.ONS_data import ONSData
+from geo_scout.src.section_data import SectionData
+from geo_scout.src.postcode_to_constituency import PostcodeToArea
+from geo_scout.src.ONS_data import ONSData
 import numpy as np
 from folium import IFrame
 from folium import Popup

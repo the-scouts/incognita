@@ -1,5 +1,5 @@
-from geo_scout.scout_map import ScoutMap
-from geo_scout.ONS_data_May_18 import ONSDataMay18
+from geo_scout.src.scout_map import ScoutMap
+from geo_scout.src.ONS_data_May_18 import ONSDataMay18
 import time
 import logging
 import json
