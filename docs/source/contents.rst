@@ -10,14 +10,6 @@ Welcome to Mapping Scout Data's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: geo_scout.src.scout_map
-  :members:
-  :undoc-members:
-
-.. automodule:: src.scout_map
-    :members:
-    :undoc-members:
-
 .. automodule:: scout_map
     :members:
     :undoc-members:

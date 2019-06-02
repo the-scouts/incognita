@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.abspath('../../../..'))
 project = 'Mapping Scout Data'
 copyright = '2019, Tom Yems'
 author = 'Tom Yems'
+master_doc = 'contents'
 
 # The full version, including alpha/beta/rc tags
 release = '2.0'
