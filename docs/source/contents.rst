@@ -14,6 +14,14 @@ Welcome to Mapping Scout Data's documentation!
   :members:
   :undoc-members:
 
+.. automodule:: src.scout_map
+    :members:
+    :undoc-members:
+
+.. automodule:: scout_map
+    :members:
+    :undoc-members:
+
 
 Indices and tables
 ==================
