@@ -20,11 +20,10 @@ class ONSData:
         self.COUNTRY_CODES["S92000005"] = "Scotland"
         self.COUNTRY_CODES["N92000002"] = "Northern Ireland"
 
-
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
 
-        self.data = pd.read_csv(csv_data, index_col=index_column,usecols=self.fields, dtype=data_types,  encoding='utf-8')
+        self.data = pd.read_csv(csv_data, index_col=index_column, usecols=self.fields, dtype=data_types,  encoding='utf-8')
 
         for field in data_types:
             if data_types[field] == 'category':

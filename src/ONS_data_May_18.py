@@ -35,8 +35,8 @@ class ONSDataMay18(ONSData):
         self.COUNTRY_CODES["W92000004"] = "Wales"
         self.COUNTRY_CODES["S92000003"] = "Scotland"
         self.COUNTRY_CODES["N92000002"] = "Northern Ireland"
-        #self.COUNTRY_CODES["L93000001"] = "Channel Islands"
-        #self.COUNTRY_CODES["M83000003"] = "Isle of Man"
+        # self.COUNTRY_CODES["L93000001"] = "Channel Islands"
+        # self.COUNTRY_CODES["M83000003"] = "Isle of Man"
 
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
         PCON_SHAPEFILE = [self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp"]
@@ -56,19 +56,19 @@ class ONSDataMay18(ONSData):
         LSOA_SHAPE = {"shapefiles": LSOA_SHAPEFILE, "key": 'lsoa11cd', "name": 'lsoa11nm'}
 
         LAD = {"name": "oslaua", "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD", "boundary": LAD_SHAPE, "age_profile": "lad_by_age.csv", "age_profile_code_col": "Code"}
-        PCON = {"name": "pcon","codes": 'Westminster Parliamentary Constituency names and codes UK as at 12_14.csv', "boundary": PCON_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        OSWARD = {"name": "osward","codes": 'Ward names and codes UK as at 05_18.csv', "code_col_name":"WD18CD", "boundary": OSWARD_SHAPE, "age_profile": None, "age_profile_code_col": None}
+        PCON = {"name": "pcon", "codes": 'Westminster Parliamentary Constituency names and codes UK as at 12_14.csv', "boundary": PCON_SHAPE, "age_profile": None, "age_profile_code_col": None}
+        OSWARD = {"name": "osward", "codes": 'Ward names and codes UK as at 05_18.csv', "code_col_name":"WD18CD", "boundary": OSWARD_SHAPE, "age_profile": None, "age_profile_code_col": None}
         CTY = {"name": "oslaua", "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD", "boundary": CTY_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        MSOA = {"name": "msoa","codes": 'MSOA (2011) names and codes UK as at 12_12.csv', "boundary": MSOA_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        IZ = {"name": "iz","codes": None, "boundary": IZ_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        LSOA = {"name": "lsoa11","codes": 'LSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": "LSOA11CD", "boundary": LSOA_SHAPE, "age_profile": None, "age_profile_code_col": None}
+        MSOA = {"name": "msoa", "codes": 'MSOA (2011) names and codes UK as at 12_12.csv', "boundary": MSOA_SHAPE, "age_profile": None, "age_profile_code_col": None}
+        IZ = {"name": "iz", "codes": None, "boundary": IZ_SHAPE, "age_profile": None, "age_profile_code_col": None}
+        LSOA = {"name": "lsoa11", "codes": 'LSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": "LSOA11CD", "boundary": LSOA_SHAPE, "age_profile": None, "age_profile_code_col": None}
 
         self.BOUNDARIES = {
-        "lad" : LAD,
-        "pcon": PCON,
-        "osward": OSWARD,
-        "msoa": MSOA,
-        "iz": IZ,
-        "lsoa": LSOA,
-        "cty": CTY
+            "lad": LAD,
+            "pcon": PCON,
+            "osward": OSWARD,
+            "msoa": MSOA,
+            "iz": IZ,
+            "lsoa": LSOA,
+            "cty": CTY
         }

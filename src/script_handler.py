@@ -5,9 +5,10 @@ import time
 import logging
 import json
 
+
 class ScriptHandler:
     def __init__(self, ons=True):
-        logging.basicConfig(filename='mapping.log',level=logging.DEBUG, filemode="w")
+        logging.basicConfig(filename='mapping.log', level=logging.DEBUG, filemode="w")
         self.logger = logging.getLogger(__name__)
         self.start_time = time.time()
         console = logging.StreamHandler()
