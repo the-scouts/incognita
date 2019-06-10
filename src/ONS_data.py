@@ -15,10 +15,6 @@ class ONSData:
         self.IMD_MAX["Northern Ireland"] = None
 
         self.COUNTRY_CODES = {}
-        self.COUNTRY_CODES["E92000001"] = "England"
-        self.COUNTRY_CODES["W92000004"] = "Wales"
-        self.COUNTRY_CODES["S92000005"] = "Scotland"
-        self.COUNTRY_CODES["N92000002"] = "Northern Ireland"
 
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
