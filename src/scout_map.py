@@ -1,5 +1,4 @@
 import pandas as pd
-import operator
 from geo_scout.src.cholopleth import CholoplethMapPlotter
 import logging
 from geo_scout.src.section_data import SectionData
@@ -14,6 +13,7 @@ import json
 import geopandas as gpd
 import shapely
 
+
 class ScoutMap():
     """Provides access to manipulate and process data"""
 
@@ -24,13 +24,13 @@ class ScoutMap():
 
     SECTIONS = {"Beavers": BEAVERS, "Cubs": CUBS, "Scouts": SCOUTS, "Explorers": EXPLORERS}
 
-    def __init__(self, sections_csv):
+    def __init__(self, sections_csv_path):
         """Loads Scout Census Data
 
-        :param sections_csv: A path to a .csv file that contains Scout Census data
+        :param sections_csv_path: A path to a .csv file that contains Scout Census data
         """
 
-        self.sections_data = SectionData(sections_csv)
+        self.sections_data = SectionData(sections_csv_path)
         self.boundary_report = {}
         self.district_mapping = {}
 
