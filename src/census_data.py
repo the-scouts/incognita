@@ -20,7 +20,21 @@ class CensusData:
         'CENSUS_SCOUTS_WAITING': "WaitList_s",
         'CENSUS_EXPLORERS_WAITING': "WaitList_e",
         'CENSUS_VALID_POSTCODE': "postcode_is_valid",
-        'CENSUS_YEAR_HEADING': "Year"}
+        'CENSUS_YEAR_HEADING': "Year"
+    }
+
+    # Column headings
+    CENSUS_TYPE_HEADING = "type"
+    CENSUS_GROUP_ID = 'G_ID'
+    CENSUS_DISTRICT_ID = 'D_ID'
+    CENSUS_GROUP_NAME = "G_name"
+    CENSUS_DISTRICT_NAME = "D_name"
+    CENSUS_BEAVERS_WAITING = "WaitList_b"
+    CENSUS_CUBS_WAITING = "WaitList_c"
+    CENSUS_SCOUTS_WAITING = "WaitList_s"
+    CENSUS_EXPLORERS_WAITING = "WaitList_e"
+    CENSUS_VALID_POSTCODE = "postcode_is_valid"
+    CENSUS_YEAR_HEADING = "Year"
 
     def __init__(self, file_path_csv):
         data_values_32 = {key: "Int32" for key in ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "eastings", "northings"]}
@@ -31,21 +45,7 @@ class CensusData:
         self.sections_postcode_data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
         self.DEFAULT_VALUE = "error"
 
-        # Column headings
-        self.CLEAN_POSTCODE = "clean_postcode"
-        #self.ONSPD_POSTCODE_FIELD = 'pcd'
-        self.CENSUS_TYPE_HEADING = "type"
-        self.CENSUS_POSTCODE_HEADING = "postcode"
-        self.CENSUS_GROUP_ID = 'G_ID'
-        self.CENSUS_DISTRICT_ID = 'D_ID'
-        self.CENSUS_GROUP_NAME = "G_name"
-        self.CENSUS_DISTRICT_NAME = "D_name"
-        self.CENSUS_BEAVERS_WAITING = "WaitList_b"
-        self.CENSUS_CUBS_WAITING = "WaitList_c"
-        self.CENSUS_SCOUTS_WAITING = "WaitList_s"
-        self.CENSUS_EXPLORERS_WAITING = "WaitList_e"
-        self.CENSUS_VALID_POSTCODE = "postcode_is_valid"
-        self.CENSUS_YEAR_HEADING = "Year"
+        
 
         # The values in self.CENSUS_TYPE_HEADING that denote a section.
         self.SECTIONS = collections.OrderedDict()
@@ -81,4 +81,4 @@ class CensusData:
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return (self.CLEAN_POSTCODE in list(self.sections_postcode_data.columns.values))
+        return (self.constants['CLEAN_POSTCODE'] in list(self.sections_postcode_data.columns.values))
