@@ -27,7 +27,7 @@ class PostcodeToArea:
         #          of the ONS Postcode Directory
         self.ons_data = ons_data
         self.input = section_data
-        self.output_csv = output_csv
+        self.output_file_path = output_csv
         self.fields = fields
 
         self.input.sections_postcode_data[self.input.CLEAN_POSTCODE] = self.input.DEFAULT_VALUE
@@ -103,48 +103,22 @@ class PostcodeToArea:
 
         return valid, postcode
 
-    def create_output(self):
-        # Will contain list of invalid postcodes
-        postcode_errors = ""
-        # Attempts to calculate a measure of progress
-        increment = len(self.input.sections_postcode_data.index) / 100
-        old_percent = 0
-        self.logger.info("The following numbers represent % completion of Sections:")
-        # Iterate through each Section (ignoring entities like Groups/Districts)
-        for (row_index, row) in self.input.sections_postcode_data.iterrows():
-            # Prints every one percent of sections complete
-            new_percent = row_index // increment
-            if new_percent > old_percent:
-                self.logger.info(new_percent)
-                old_percent = new_percent
+    def merge_and_output(self):
+        self.logger.info("Cleaning postcodes")
+        self.input.sections_postcode_data['postcode_is_valid'], self.input.sections_postcode_data[self.constants['CENSUS_POSTCODE_HEADING']] = PostcodeToArea.postcode_cleaner(self.input.sections_postcode_data[self.constants['CENSUS_POSTCODE_HEADING']])
+        self.input.sections_postcode_data[self.input.CLEAN_POSTCODE] = self.input.sections_postcode_data[self.constants['CENSUS_POSTCODE_HEADING']]
+        self.logger.info("Merging")
+        self.input.sections_postcode_data = pd.merge(self.input.sections_postcode_data, self.ons_data.data, how='left', left_on=self.constants['CENSUS_POSTCODE_HEADING'], right_index=True, sort=False)
 
-            # Clean the postcode into a format the ONS Postcode Directory
-            # recognises
-            valid, postcode = self.postcode_cleaner(str(row[self.input.CENSUS_POSTCODE_HEADING]))
-            self.input.sections_postcode_data.at[row_index, self.input.CLEAN_POSTCODE] = postcode
-            old_postcode = ""
-
-            if valid:
-                # Saves looking the postcode up if we've just looked it up for
-                # the last Section
-                if postcode == old_postcode:
-                    self._write_row(row_index, sub_data)
-                else:
-                    self.logger.debug(postcode)
-                    # Finds the row in the ONS PD the postcode relates to
-                    sub_data = self._row_from_field(self.input.ONSPD_POSTCODE_FIELD, postcode)
-
-                    if not sub_data.empty:
-                        self._write_row(row_index,sub_data)
-                        old_data = sub_data
-                        old_postcode = postcode
-            else:
-                if postcode != "NAN":
-                    postcode_errors += postcode + "\n"
+        for field in ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'ctry', 'rgn']:
+            self.input.sections_postcode_data.loc[self.input.sections_postcode_data['postcode_is_valid'] == 0, field] = self.constants['DEFAULT_VALUE']
+        for field in ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd', "postcode_is_valid"]:
+            self.input.sections_postcode_data.loc[self.input.sections_postcode_data['postcode_is_valid'] == 0, field] = 0
 
         # Find records that haven't had postcode data attached
         invalid_postcodes = self.input.sections_postcode_data.loc[self.input.sections_postcode_data["postcode_is_valid"] == 0]
         invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[self.input.CENSUS_TYPE_HEADING].isin(self.input.section_types())]
+        self.logger.debug(invalid_section_postcodes)
         self.logger.info("Updating sections with invalid postcodes, in groups with valid")
         for (row_index, row) in invalid_section_postcodes.iterrows():
             self.logger.debug(row_index)
@@ -154,10 +128,7 @@ class PostcodeToArea:
             if not valid_postcode.empty:
                 self._write_row(row_index, valid_postcode[self.ons_data.fields])
 
+        # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
+        self.input.sections_postcode_data.loc[self.input.sections_postcode_data['postcode_is_valid'] == 0, self.constants['CENSUS_POSTCODE_HEADING']].dropna().to_csv('error_file.txt', index=False, header=False)
         # Write the new data to a csv file
-        self.input.sections_postcode_data.to_csv(self.output_csv)
-
-        # The errors file contains all the postcodes that failed to be looked up
-        # in the ONS Postcode Directory
-        with open(self.ERROR_FILE,"w",encoding='latin-1') as error_file:
-            error_file.write(postcode_errors)
+        self.input.sections_postcode_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig') #utf-8-sig inserts a bom (literally only to force excel to use UTF-8)

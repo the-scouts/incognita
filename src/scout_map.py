@@ -2,7 +2,7 @@ import pandas as pd
 from src.cholopleth import CholoplethMapPlotter
 import logging
 from src.section_data import CensusData
-from src.postcode_to_constituency import PostcodeToArea
+from src.postcode_to_area import PostcodeToArea
 from src.ONS_data import ONSData
 import numpy as np
 from folium import IFrame
@@ -61,7 +61,7 @@ class ScoutMap():
                                       self.sections_data,
                                       self.sections_data.sections_file_path[:-4] + f" with {self.ons_data.PUBLICATION_DATE} fields.csv",
                                       self.ons_data.fields)
-        self.mapping.create_output()
+        self.mapping.merge_and_output()
 
     def has_ons_data(self):
         """Finds whether ONS data has been added
