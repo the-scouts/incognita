@@ -103,10 +103,6 @@ class PostcodeToArea:
 
         return valid, postcode
 
-    @staticmethod
-    def add_cleaned_postcode_column(df, col="Postcode"):
-        df['clean_Postcode'] = df.apply(lambda row: PostcodeToArea.postcode_cleaner(str(row[col]))[1], axis=1)
-
     def create_output(self):
         # Will contain list of invalid postcodes
         postcode_errors = ""
