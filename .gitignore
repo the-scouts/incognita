@@ -2,6 +2,7 @@
 *.json
 *.csv
 src/error_file.txt
+src/*.log
 */__pycache__/*
 __pycache__/*
 data/*

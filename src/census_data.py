@@ -3,6 +3,25 @@ import collections
 
 
 class CensusData:
+    constants = {
+        'DEFAULT_VALUE': "error",
+
+        # Column headings
+        'CLEAN_POSTCODE': "clean_postcode",
+        'ONSPD_POSTCODE_FIELD': 'pcd',
+        'CENSUS_TYPE_HEADING': "type",
+        'CENSUS_POSTCODE_HEADING': "postcode",
+        'CENSUS_GROUP_ID': 'G_ID',
+        'CENSUS_DISTRICT_ID': 'D_ID',
+        'CENSUS_GROUP_NAME': "G_name",
+        'CENSUS_DISTRICT_NAME': "D_name",
+        'CENSUS_BEAVERS_WAITING': "WaitList_b",
+        'CENSUS_CUBS_WAITING': "WaitList_c",
+        'CENSUS_SCOUTS_WAITING': "WaitList_s",
+        'CENSUS_EXPLORERS_WAITING': "WaitList_e",
+        'CENSUS_VALID_POSTCODE': "postcode_is_valid",
+        'CENSUS_YEAR_HEADING': "Year"}
+
     def __init__(self, file_path_csv):
         data_values_32 = {key: "Int32" for key in ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "eastings", "northings"]}
         data_values_cat = {key: "category" for key in ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "Young_Leader_Unit"]}
@@ -10,12 +29,11 @@ class CensusData:
         data_values_sections = {**data_values_32, **data_values_cat, **data_values_16}
         self.sections_file_path = file_path_csv
         self.sections_postcode_data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
-
         self.DEFAULT_VALUE = "error"
 
         # Column headings
         self.CLEAN_POSTCODE = "clean_postcode"
-        self.ONSPD_POSTCODE_FIELD = 'pcd'
+        #self.ONSPD_POSTCODE_FIELD = 'pcd'
         self.CENSUS_TYPE_HEADING = "type"
         self.CENSUS_POSTCODE_HEADING = "postcode"
         self.CENSUS_GROUP_ID = 'G_ID'

@@ -1,9 +1,27 @@
-import pandas as pd
-from geo_scout.src.ONS_data import ONSData
+from src.ONS_data import ONSData
+
 
 class ONSDataMay18(ONSData):
+    fields = ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'oseast1m', 'osnrth1m', 'lat', 'long', 'imd', 'ctry', 'rgn', 'pcd']
+    index_column = 'pcd'
+    data_types = {
+        'oscty': 'category',
+        'oslaua': 'category',
+        'osward': 'category',
+        'oseast1m': 'Int32',
+        'osnrth1m': 'Int32',
+        'ctry': 'category',
+        'rgn': 'category',
+        'pcon': 'category',
+        'lsoa11': 'category',
+        'msoa11': 'category',
+        'lat': 'float32',
+        'long': 'float32',
+        'imd': 'Int32',  # should be uint16 but not atm because the NaN thing
+    }  # capitalise Int as of Optional Integer NA Support pandas 24 # Int capitalised as this ignores NaNs
+
     def __init__(self, csv_data):
-        ONSData.__init__(self, csv_data)
+        ONSData.__init__(self, csv_data, ONSDataMay18.index_column, ONSDataMay18.fields, ONSDataMay18.data_types)
         self.PUBLICATION_DATE = "May 2018"
 
         self.IMD_MAX = {}
@@ -54,5 +72,3 @@ class ONSDataMay18(ONSData):
         "lsoa": LSOA,
         "cty": CTY
         }
-
-        self.fields = ['lsoa11','msoa11','oslaua','osward','pcon','oscty','oseast1m','osnrth1m','lat','long','imd','ctry','rgn']

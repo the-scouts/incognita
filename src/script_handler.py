@@ -1,5 +1,5 @@
-from geo_scout.src.scout_map import ScoutMap
-from geo_scout.src.ONS_data_May_18 import ONSDataMay18
+from src.scout_map import ScoutMap
+from src.ONS_data_May_18 import ONSDataMay18
 import time
 import logging
 import json
@@ -22,7 +22,7 @@ class ScriptHandler:
             self.logger.info("Loading ONS data")
             ons_data = ONSDataMay18(self.settings["ONS PD location"])
             if not self.map.has_ons_data():
-                raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {map.sections_data.CLEAN_POSTCODE} column")
+                raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {self.map.sections_data.CLEAN_POSTCODE} column")
             else:
                 self.map.ons_data = ons_data
             self.logger.info(f"Finished loading ONS data from {ons_data.PUBLICATION_DATE} in {time.time() - self.start_time}")

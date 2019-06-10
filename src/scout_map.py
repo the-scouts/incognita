@@ -1,17 +1,17 @@
 import pandas as pd
-from src.cholopleth import CholoplethMapPlotter
+#from src.cholopleth import CholoplethMapPlotter
 import logging
-from src.section_data import CensusData
+from src.census_data import CensusData
 from src.postcode_to_area import PostcodeToArea
-from src.ONS_data import ONSData
+#from src.ONS_data import ONSData
 import numpy as np
 from folium import IFrame
 from folium import Popup
 import branca
 from itertools import cycle
 import json
-import geopandas as gpd
-import shapely
+#import geopandas as gpd
+#import shapely
 
 
 class ScoutMap():
@@ -178,8 +178,8 @@ class ScoutMap():
         """
         records = self.sections_data.sections_postcode_data.loc[self.sections_data.sections_postcode_data[column].isin(value_list)]
         ons_codes = records[ons_code].unique().tolist()
-        if self.sections_data.DEFAULT_VALUE in ons_codes:
-            ons_codes.remove(self.sections_data.DEFAULT_VALUE)
+        if CensusData.constants['DEFAULT_VALUE'] in ons_codes:
+            ons_codes.remove(CensusData.constants['DEFAULT_VALUE'])
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
@@ -751,7 +751,7 @@ class ScoutMap():
             if country:
                 group_data["IMD Country"] = country
             else:
-                group_data["IMD Country"] = self.sections_data.DEFAULT_VALUE
+                group_data["IMD Country"] = CensusData.constants['DEFAULT_VALUE']
             # add IMD rank and score and decile
             #group_data["IMD Score"] = min_imd_records["imd_score"].unique()[0]
             group_data["IMD Decile"] = min_imd_records["imd_decile"].unique()[0]
@@ -1049,14 +1049,14 @@ class ScoutMap():
                 if country:
                     section_data["IMD Country"] = country
                 else:
-                    section_data["IMD Country"] = self.sections_data.DEFAULT_VALUE
+                    section_data["IMD Country"] = CensusData.constants['DEFAULT_VALUE']
                 section_data["IMD Decile"] = most_recent.at["imd_decile"]
                 section_data["IMD Rank"] = most_recent.at["imd"]
             else:
-                section_data["Postcode"] = self.sections_data.DEFAULT_VALUE
-                section_data["IMD Country"] = self.sections_data.DEFAULT_VALUE
-                section_data["IMD Decile"] = self.sections_data.DEFAULT_VALUE
-                section_data["IMD Rank"] = self.sections_data.DEFAULT_VALUE
+                section_data["Postcode"] = CensusData.constants['DEFAULT_VALUE']
+                section_data["IMD Country"] = CensusData.constants['DEFAULT_VALUE']
+                section_data["IMD Decile"] = CensusData.constants['DEFAULT_VALUE']
+                section_data["IMD Rank"] = CensusData.constants['DEFAULT_VALUE']
 
             section_data_df  = pd.DataFrame([section_data], columns=output_columns)
             output_data = pd.concat([output_data, section_data_df], axis =0)
