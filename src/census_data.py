@@ -45,14 +45,12 @@ class CensusData:
         self.sections_postcode_data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
         self.DEFAULT_VALUE = "error"
 
-        
-
         # The values in self.CENSUS_TYPE_HEADING that denote a section.
         self.SECTIONS = collections.OrderedDict()
-        self.SECTIONS["Beavers"] = {"name": 'Colony', "male": "Beavers_m", "female": "Beavers_f", "waitlist": self.CENSUS_BEAVERS_WAITING, "unit_label": "Beavers_Units", "level":"Group", "top_award": "Chief_Scout_Bronze_Awards", "top_award_eligible": "Eligible4Bronze"}
-        self.SECTIONS["Cubs"] = {"name": 'Pack', "male": "Cubs_m", "female": "Cubs_f", "waitlist": self.CENSUS_CUBS_WAITING, "unit_label": "Cubs_Units", "level":"Group"}
-        self.SECTIONS["Scouts"] = {"name": 'Troop', "male": "Scouts_m", "female": "Scouts_f", "waitlist": self.CENSUS_SCOUTS_WAITING, "unit_label": "Scouts_Units", "level":"Group"}
-        self.SECTIONS["Explorers"] = {"name": 'Unit', "male": "Explorers_m", "female": "Explorers_f", "waitlist": self.CENSUS_EXPLORERS_WAITING, "unit_label": "Explorers_Units", "level":"District"}
+        self.SECTIONS["Beavers"] = {"name": 'Colony', "male": "Beavers_m", "female": "Beavers_f", "waitlist": self.CENSUS_BEAVERS_WAITING, "unit_label": "Beavers_Units", "level": "Group", "top_award": "Chief_Scout_Bronze_Awards", "top_award_eligible": "Eligible4Bronze"}
+        self.SECTIONS["Cubs"] = {"name": 'Pack', "male": "Cubs_m", "female": "Cubs_f", "waitlist": self.CENSUS_CUBS_WAITING, "unit_label": "Cubs_Units", "level": "Group"}
+        self.SECTIONS["Scouts"] = {"name": 'Troop', "male": "Scouts_m", "female": "Scouts_f", "waitlist": self.CENSUS_SCOUTS_WAITING, "unit_label": "Scouts_Units", "level": "Group"}
+        self.SECTIONS["Explorers"] = {"name": 'Unit', "male": "Explorers_m", "female": "Explorers_f", "waitlist": self.CENSUS_EXPLORERS_WAITING, "unit_label": "Explorers_Units", "level": "District"}
         # The value in self.CENSUS_TYPE_HEADING that denote a group
         self.CENSUS_TYPE_GROUP = "Group"
         # The value in self.CENSUS_TYPE_HEADING that denote a district
@@ -81,4 +79,4 @@ class CensusData:
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return (self.constants['CLEAN_POSTCODE'] in list(self.sections_postcode_data.columns.values))
+        return self.constants['CLEAN_POSTCODE'] in list(self.sections_postcode_data.columns.values)
