@@ -19,7 +19,7 @@ class CensusMergePostcode:
     def __init__(self, ons_data, section_data, output_csv_path):
         # ons_data      - an ONSData object
         # input_csv     - a CensusData object
-        # output_csv    - path to a csv where the output is stored. The output is the original csv with the additional columns 'clean_postcode' and those specified in fields
+        # output_csv    - path to a csv where the output is stored. The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
         # fields        - a list of strings, which are the headings for the relevant columns of the ONS Postcode Directory
         self.ons_data = ons_data
         self.input = section_data

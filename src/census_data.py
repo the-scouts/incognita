@@ -7,7 +7,6 @@ class CensusData:
         'DEFAULT_VALUE': "error",
 
         # Column headings
-        'CLEAN_POSTCODE': "clean_postcode",
         'ONSPD_POSTCODE_FIELD': 'pcd',
         'CENSUS_TYPE_HEADING': "type",
         'CENSUS_POSTCODE_HEADING': "postcode",
@@ -79,4 +78,4 @@ class CensusData:
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return self.constants['CLEAN_POSTCODE'] in list(self.sections_postcode_data.columns.values)
+        return self.constants['CENSUS_VALID_POSTCODE'] in list(self.sections_postcode_data.columns.values)

@@ -558,7 +558,7 @@ class ScoutMap:
     def add_sections_to_map(self, sections, colour, marker_data):
         self.logger.info("Adding section markers to map")
         # sections = self.sections_data.sections_postcode_data.loc[self.sections_data.sections_postcode_data[CensusData.CENSUS_TYPE_HEADING] == section]
-        postcodes = sections[CensusData.constants['CLEAN_POSTCODE']].unique()
+        postcodes = sections[CensusData.constants['CENSUS_POSTCODE_HEADING']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
         if "nan" in postcodes:
             postcodes.remove("nan")
@@ -575,7 +575,7 @@ class ScoutMap:
 
             self.logger.debug(postcode)
 
-            colocated_sections = sections.loc[sections[CensusData.constants['CLEAN_POSTCODE']] == postcode]
+            colocated_sections = sections.loc[sections[CensusData.constants['CENSUS_POSTCODE_HEADING']] == postcode]
             colocated_district_sections = colocated_sections.loc[colocated_sections[CensusData.CENSUS_TYPE_HEADING].isin(self.census_data.section_district_types())]
             colocated_group_sections = colocated_sections.loc[colocated_sections[CensusData.CENSUS_TYPE_HEADING].isin(self.census_data.section_group_types())]
 
@@ -756,7 +756,7 @@ class ScoutMap:
                 if min_imd_records.empty:
                     min_imd_records = group_records
 
-            group_data["Postcode"] = min_imd_records[CensusData.constants['CLEAN_POSTCODE']].unique()[0]
+            group_data["Postcode"] = min_imd_records[CensusData.constants['CENSUS_POSTCODE_HEADING']].unique()[0]
             country = self.ons_data.COUNTRY_CODES.get(min_imd_records["ctry"].unique()[0])
             if country:
                 group_data["IMD Country"] = country
@@ -1053,8 +1053,8 @@ class ScoutMap:
             # self.logger.debug(f"Identified:\n{most_recent} determined postcode valid:\n{postcode_valid}\n{postcode_valid == 1}\n{int(postcode_valid) == 1}")
             # add postcode
             if postcode_valid == "1":
-                self.logger.debug(f"Adding postcode {most_recent.at[CensusData.constants['CLEAN_POSTCODE']]}")
-                section_data["Postcode"] = most_recent.at[CensusData.constants['CLEAN_POSTCODE']]
+                self.logger.debug(f"Adding postcode {most_recent.at[CensusData.constants['CENSUS_POSTCODE_HEADING']]}")
+                section_data["Postcode"] = most_recent.at[CensusData.constants['CENSUS_POSTCODE_HEADING']]
                 country = self.ons_data.COUNTRY_CODES.get(most_recent.at["ctry"])
                 if country:
                     section_data["IMD Country"] = country
