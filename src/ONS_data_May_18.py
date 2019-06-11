@@ -24,19 +24,11 @@ class ONSDataMay18(ONSData):
         ONSData.__init__(self, csv_data, ONSDataMay18.index_column, ONSDataMay18.fields, ONSDataMay18.data_types)
         self.PUBLICATION_DATE = "May 2018"
 
-        self.IMD_MAX = {}
-        self.IMD_MAX["England"] = 32844  # IMD 2015
-        self.IMD_MAX["Wales"] = 1909  # WIMD 2014
-        self.IMD_MAX["Scotland"] = 6976  # SIMD 2016
-        self.IMD_MAX["Northern Ireland"] = 890 # NIMDM2017
+        # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017
+        self.IMD_MAX = {"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890}
 
-        self.COUNTRY_CODES = {}
-        self.COUNTRY_CODES["E92000001"] = "England"
-        self.COUNTRY_CODES["W92000004"] = "Wales"
-        self.COUNTRY_CODES["S92000003"] = "Scotland"
-        self.COUNTRY_CODES["N92000002"] = "Northern Ireland"
-        # self.COUNTRY_CODES["L93000001"] = "Channel Islands"
-        # self.COUNTRY_CODES["M83000003"] = "Isle of Man"
+        self.COUNTRY_CODES = {"E92000001": "England", "W92000004": "Wales", "S92000003": "Scotland", "N92000002": "Northern Ireland", }
+                              # "L93000001": "Channel Islands", "M83000003": "Isle of Man"
 
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
         LAD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp"]

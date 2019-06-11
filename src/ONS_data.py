@@ -8,11 +8,7 @@ class ONSData:
         self.fields = fields
         self.PUBLICATION_DATE = None
 
-        self.IMD_MAX = {}
-        self.IMD_MAX["England"] = None
-        self.IMD_MAX["Wales"] = None
-        self.IMD_MAX["Scotland"] = None
-        self.IMD_MAX["Northern Ireland"] = None
+        self.IMD_MAX = {"England": None, "Wales": None, "Scotland": None, "Northern Ireland": None}
 
         self.COUNTRY_CODES = {}
 
