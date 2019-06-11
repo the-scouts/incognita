@@ -41,7 +41,7 @@ class CensusData:
         data_values_16 = {key: "Int16" for key in ["Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Cubs_m", "Scouts_f", "Scouts_m", "Explorers_f", "Explorers_m", "Network_f", "Network_m", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "SectAssistants", "OtherAdults", "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA"]}
         data_values_sections = {**data_values_32, **data_values_cat, **data_values_16}
         self.sections_file_path = file_path_csv
-        self.sections_postcode_data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
+        self.census_postcode_data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
         self.DEFAULT_VALUE = "error"
 
         # The values in self.CENSUS_TYPE_HEADING that denote a section.
@@ -78,4 +78,4 @@ class CensusData:
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return self.constants['CENSUS_VALID_POSTCODE'] in list(self.sections_postcode_data.columns.values)
+        return self.constants['CENSUS_VALID_POSTCODE'] in list(self.census_postcode_data.columns.values)

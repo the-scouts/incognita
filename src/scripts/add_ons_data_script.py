@@ -13,7 +13,7 @@ import json
 
 if __name__ == "__main__":
 
-    script_handler = ScriptHandler(ons=False)
+    script_handler = ScriptHandler(csv_has_ons_data=False)
     with open("settings.json", "r") as read_file:
         settings = json.load(read_file)["settings"]
     ons_data = ONSDataMay18(settings["ONS PD location"])
