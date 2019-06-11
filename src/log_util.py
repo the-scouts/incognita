@@ -1,4 +1,5 @@
 import logging
+import time
 
 
 def create_logger(name, file_path=None):
@@ -17,3 +18,7 @@ def create_logger(name, file_path=None):
     logger.addHandler(console)
 
     return logger
+
+
+def duration(start_time):
+    return time.time() - start_time

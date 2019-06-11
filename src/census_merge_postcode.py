@@ -1,33 +1,24 @@
-# ------------------------------------------------------------------------------
-# Class CensusMergePostcode
-#
-# The purpose of this class is to allow easy scripting of generating the
-# corresponding administrative areas from a postcode using the ONS postcode
-# directory. It outputs a file which is contains the original data, with the
-# administrative regions appended.
-# ------------------------------------------------------------------------------
-
-# This class has been tested in in Python 3.7.0 and using pandas 0.23.3
-# csv and re are distributed with standard Python
 import pandas as pd
 import re
 from src.census_data import CensusData
-from src.log_util import create_logger
+import src.log_util as log_util
 
 
 class CensusMergePostcode:
     def __init__(self, section_data, output_csv_path):
-        # ons_data      - an ONSData object
-        # input_csv     - a CensusData object
-        # output_csv    - path to a csv where the output is stored. The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
-        # fields        - a list of strings, which are the headings for the relevant columns of the ONS Postcode Directory
+        """Merges input data with a CensusData object on a given field
+        Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
+
+        :param section_data: a CensusData object
+        :param output_csv_path: path to a csv where the output is stored. The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
+        """
         self.input = section_data
         self.output_file_path = output_csv_path
 
         self.ERROR_FILE = "error_file.txt"
 
         # Facilitates logging
-        self.logger = create_logger(__name__, )
+        self.logger = log_util.create_logger(__name__, )
 
     @staticmethod
     def postcode_cleaner(postcode):

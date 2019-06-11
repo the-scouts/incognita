@@ -19,6 +19,8 @@ class ONSDataMay18(ONSData):
         'long': 'float32',
         'imd': 'Int32',  # should be uint16 but not atm because the NaN thing
     }  # capitalise Int as of Optional Integer NA Support pandas 24 # Int capitalised as this ignores NaNs
+
+    # Date of ONS postcode directory
     PUBLICATION_DATE = "May 2018"
 
     # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017

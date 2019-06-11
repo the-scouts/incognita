@@ -10,7 +10,7 @@ from itertools import cycle
 import json
 # import geopandas as gpd
 # import shapely
-from src.log_util import create_logger
+import src.log_util as log_util
 
 
 class ScoutMap:
@@ -40,14 +40,14 @@ class ScoutMap:
         self.OUTPUT = self.settings["Output folder"]
 
         # Facilitates logging
-        self.logger = create_logger(__name__,)
+        self.logger = log_util.create_logger(__name__,)
 
     def create_ONS_lookup(self, ONS_postcode_directory):
         """
         :param ONS_postcode_directory: Refers to the ONS Postcode Directory
         :type ONS_postcode_directory: ONSData object
         """
-        # Modifies self.sections_postcode_data with the ONS fields info, and saves the output
+        # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
             'categorical': ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'ctry', 'rgn'],
             'int': ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd']}
@@ -87,16 +87,12 @@ class ScoutMap:
         if valid:
             self.logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
             if exclusion_analysis:
-                # grouped_data_by_field = self.sections_data.sections_postcode_data.groupby([field])
-                # excluded_data = pd.concat([grouped_data_by_field.get_group(val) for val in grouped_data_by_field.groups.keys() if val not in value_list])
                 excluded_data = self.census_data.census_postcode_data.loc[~self.census_data.census_postcode_data[field].isin(value_list)]
             self.census_data.census_postcode_data = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[field].isin(value_list)]
         else:
             self.logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
             if exclusion_analysis:
-                # grouped_data_by_field = self.sections_data.sections_postcode_data.groupby([field])
-                # excluded_data = pd.concat([grouped_data_by_field.get_group(val) for val in value_list])
-                excluded_data = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[field].isin(value_list)]
+               excluded_data = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[field].isin(value_list)]
             self.census_data.census_postcode_data = self.census_data.census_postcode_data.loc[~self.census_data.census_postcode_data[field].isin(value_list)]
 
         remaining_records = self.count_records()
@@ -153,15 +149,14 @@ class ScoutMap:
         :rtype: None
         """
         name = self.boundary_data["name"]
-        self.logger.info(f"Filtering {len(self.boundary_list.index)} {name} boundaries by {field} being in {value_list}")
+        code_col_name = self.boundary_data["code_col_name"]
 
-        grouped_data_by_field = self.census_data.census_postcode_data.groupby([field])
-        filtered_data = pd.concat([grouped_data_by_field.get_group(val) for val in value_list])
+        self.logger.info(f"Filtering {len(self.boundary_list.index)} {name} boundaries by {field} being in {value_list}")
+        filtered_data = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[field].isin(value_list)]
         boundary_subset = filtered_data[name].unique()
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
-        boundary_list_grouped = self.boundary_list.groupby([self.boundary_data["code_col_name"]])
-        self.boundary_list = pd.concat([boundary_list_grouped.get_group(val) for val in boundary_subset])
+        self.boundary_list = self.boundary_list.loc[self.boundary_list[code_col_name].isin(boundary_subset)]
         self.logger.info(f"Resulting in {len(self.boundary_list.index)} {name} boundaries")
 
     def ons_from_scout_area(self, ons_code, column, value_list):
@@ -217,7 +212,7 @@ class ScoutMap:
         """
         self.logger.debug("Creating mapping from ons boundary to district")
         oslauas = self.boundary_list[self.boundary_data["code_col_name"]]
-        # oslauas = self.sections_data.sections_postcode_data[ons_code].unique()
+        # oslauas = self.census_data.census_postcode_data[ons_code].unique()
         mapping = {}
         for oslaua in oslauas:
             self.logger.debug(f"Finding districts in {oslaua}")
@@ -345,21 +340,21 @@ class ScoutMap:
             if ("Section numbers" in options) or ("6 to 17 numbers" in options):
                 for year in years_in_data:
                     year_records = records_in_boundary.loc[records_in_boundary[CensusData.CENSUS_YEAR_HEADING] == year]
-                    # beaver_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.SECTIONS["Beavers"]]
-                    # cub_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.SECTIONS["Cubs"]]
-                    # scout_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.SECTIONS["Scouts"]]
-                    # explorer_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.SECTIONS["Explorers"]]
+                    # beaver_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.SECTIONS["Beavers"]]
+                    # cub_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.SECTIONS["Cubs"]]
+                    # scout_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.SECTIONS["Scouts"]]
+                    # explorer_sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.SECTIONS["Explorers"]]
                     #
-                    # group_records = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.CENSUS_TYPE_GROUP]
-                    # explorer_waiting = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.CENSUS_TYPE_DISTRICT]
+                    # group_records = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.CENSUS_TYPE_GROUP]
+                    # explorer_waiting = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.CENSUS_TYPE_DISTRICT]
                     # boundary_data["Waiting List"] = 0
-                    # for section in self.sections_data.SECTIONS.keys():
-                    #    boundary_data["Waiting List"] += group_records[self.sections_data.SECTIONS[section]["waitlist"]].sum()
-                    # boundary_data["Waiting List"] += explorer_waiting[self.sections_data.SECTIONS["Explorers"]["waitlist"]].sum()
+                    # for section in self.census_data.SECTIONS.keys():
+                    #    boundary_data["Waiting List"] += group_records[self.census_data.SECTIONS[section]["waitlist"]].sum()
+                    # boundary_data["Waiting List"] += explorer_waiting[self.census_data.SECTIONS["Explorers"]["waitlist"]].sum()
 
                     boundary_data[f"All-{year}"] = 0
                     for section in self.census_data.SECTIONS.keys():
-                        # sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.sections_data.SECTIONS[section]["name"]]
+                        # sections = year_records.loc[year_records[CensusData.CENSUS_TYPE_HEADING] == self.census_data.SECTIONS[section]["name"]]
                         boundary_data[f"{section}-{year}"] = year_records[self.census_data.SECTIONS[section]["male"]].sum() + year_records[self.census_data.SECTIONS[section]["female"]].sum()
                         boundary_data[f"All-{year}"] += boundary_data[f"{section}-{year}"]
 
@@ -551,7 +546,7 @@ class ScoutMap:
 
     def add_sections_to_map(self, sections, colour, marker_data):
         self.logger.info("Adding section markers to map")
-        # sections = self.sections_data.sections_postcode_data.loc[self.sections_data.sections_postcode_data[CensusData.CENSUS_TYPE_HEADING] == section]
+        # sections = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[CensusData.CENSUS_TYPE_HEADING] == section]
         postcodes = sections[CensusData.constants['CENSUS_POSTCODE_HEADING']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
         if "nan" in postcodes:
@@ -677,7 +672,7 @@ class ScoutMap:
         return self.history_summary(years, "compass ID", "compass")
 
     def history_summary(self, years, id_name, census_col):
-        # Must have imd scores and deciles already in sections_postcode_data.
+        # Must have imd scores and deciles already in census_postcode_data.
         section_numbers = []
         for year in years:
             for section in self.census_data.SECTIONS.keys():
