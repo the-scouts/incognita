@@ -53,13 +53,14 @@ class ScoutMap:
             'categorical': ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'ctry', 'rgn'],
             'int': ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd']}
 
-        self.logger.info("Adding ONS data to Sections")
-        self.mapping = CensusMergePostcode(self.census_data,
-                                           self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",)
-        self.mapping.merge_and_output(self.census_data.census_postcode_data,
-                                      ONS_postcode_directory.data,
-                                      CensusData.constants['CENSUS_POSTCODE_HEADING'],
-                                      ons_fields_data_types)
+        self.logger.debug("Initialising merge object")
+        merge = CensusMergePostcode(self.census_data,
+                                    self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",)
+        self.logger.info("Adding ONS postcode directory data to Census and outputting")
+        merge.merge_and_output(self.census_data.census_postcode_data,
+                               ONS_postcode_directory.data,
+                               CensusData.constants['CENSUS_POSTCODE_HEADING'],
+                               ons_fields_data_types)
 
     def has_ons_data(self):
         """Finds whether ONS data has been added
