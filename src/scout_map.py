@@ -93,14 +93,14 @@ class ScoutMap:
         # Filter records
         if not mask:
             self.logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
+            self.census_data.data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
             if exclusion_analysis:
                 excluded_data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
-            self.census_data.data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
         else:
             self.logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
+            self.census_data.data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
             if exclusion_analysis:
                 excluded_data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
-            self.census_data.data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
 
         remaining_records = len(self.census_data.data.index)
         self.logger.info(f"Resulting in {remaining_records} records remaining.")
@@ -110,13 +110,16 @@ class ScoutMap:
             self.logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
             for section in CensusData.column_labels['sections'].keys():
-                sections = excluded_data.loc[excluded_data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]]
-                excluded_members = sections[CensusData.column_labels['sections'][section]["male"]].sum() + sections[CensusData.column_labels['sections'][section]["female"]].sum()
+                section_type = CensusData.column_labels['sections'][section]["type"]
+                section_dict = CensusData.column_labels['sections'][section]
 
-                sections = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]]
-                counted_members = sections[CensusData.column_labels['sections'][section]["male"]].sum() + sections[CensusData.column_labels['sections'][section]["female"]].sum()
-                percentage_member_exclusion = (excluded_members / (counted_members + excluded_members)) * 100
-                self.logger.info(f"{excluded_members} {section} ({percentage_member_exclusion}%) were removed")
+                excluded_sections = excluded_data.loc[excluded_data[CensusData.column_labels['UNIT_TYPE']] == section_type]
+                excluded_members = excluded_sections[CensusData.column_labels['sections'][section]["male"]].sum() + excluded_sections[CensusData.column_labels['sections'][section]["female"]].sum()
+
+                sections = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == section_type]
+                counted_members = sections[section_dict["male"]].sum() + sections[section_dict["female"]].sum()
+
+                self.logger.info(f"{excluded_members} {section} records were removed ({excluded_members / (counted_members) * 100}%) of total")
 
     def set_boundary(self, boundary):
         """Sets the boundary_data and boundary_list members
@@ -353,7 +356,7 @@ class ScoutMap:
 
                     boundary_data[f"All-{year}"] = 0
                     for section in CensusData.column_labels['sections'].keys():
-                        # sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]]
+                        # sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
                         boundary_data[f"{section}-{year}"] = year_records[CensusData.column_labels['sections'][section]["male"]].sum() + year_records[CensusData.column_labels['sections'][section]["female"]].sum()
                         boundary_data[f"All-{year}"] += boundary_data[f"{section}-{year}"]
 
@@ -541,7 +544,7 @@ class ScoutMap:
         self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.section_types())], colour, marker_data)
 
     def add_single_section_to_map(self, section, colour, marker_data):
-        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]], colour, marker_data)
+        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]], colour, marker_data)
 
     def add_sections_to_map(self, sections, colour, marker_data):
         self.logger.info("Adding section markers to map")
@@ -638,7 +641,7 @@ class ScoutMap:
     @staticmethod
     def section_from_type(type):
         for section in CensusData.column_labels['sections'].keys():
-            if type == CensusData.column_labels['sections'][section]["name"]:
+            if type == CensusData.column_labels['sections'][section]["type"]:
                 return section
 
     def filter_set_boundaries_in_scout_area(self, column, value_list):
@@ -901,7 +904,7 @@ class ScoutMap:
                 year_records = records.loc[records["Year"] == year]
                 if int(year) >= 2018:
                     compass_id = section_data.get("Object_ID")
-                    section_year_records = year_records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]]
+                    section_year_records = year_records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
 
                     if compass_id:
                         section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
@@ -990,7 +993,7 @@ class ScoutMap:
                     elif section in self.census_data.sections_name_by_level('District'):
                         section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_TYPE_DISTRICT]
                 elif int(open_years[-1]) == 2017:
-                    section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]]
+                    section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
                 else:
                     raise Exception(f"Unable to find section records for {new_section_ids}")
 
@@ -1025,7 +1028,7 @@ class ScoutMap:
                     self.logger.debug(f"There are {records.shape[0]} group records")
                     group_sections = records.loc[records[CensusData.column_labels['id']["GROUP"]] == section_data["Group_ID"]]
                     self.logger.debug(f"There are {group_sections.shape[0]} group records")
-                    section_rec = group_sections.loc[group_sections[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["name"]]
+                    section_rec = group_sections.loc[group_sections[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
                     self.logger.debug(f"There are {section_rec.shape[0]} group records in {section}")
                     most_recent_sec = section_rec.loc[section_rec["Year"] == most_recent_year]
                     self.logger.debug(f"There are {most_recent_sec.shape[0]} group records in {section} in {most_recent_year}")
@@ -1120,7 +1123,7 @@ class ScoutMap:
     def create_district_boundaries(self):
         if not self.has_ons_data():
             raise Exception("Must have ons data added before creating district boundaries")
-        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['name']["DISTRICT"]]].drop_duplicates()
+        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['type']["DISTRICT"]]].drop_duplicates()
 
         valid_locations = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == "1"]
         all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long"])
