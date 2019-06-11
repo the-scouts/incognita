@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Class PostcodeToArea
+# Class CensusMergePostcode
 #
 # The purpose of this class is to allow easy scripting of generating the
 # corresponding administrative areas from a postcode using the ONS postcode
@@ -15,8 +15,8 @@ import logging
 from src.census_data import CensusData
 
 
-class PostcodeToArea:
-    def __init__(self, ons_data, section_data, output_csv_path, fields):
+class CensusMergePostcode:
+    def __init__(self, ons_data, section_data, output_csv_path):
         # ons_data      - an ONSData object
         # input_csv     - a CensusData object
         # output_csv    - path to a csv where the output is stored. The output is the original csv with the additional columns 'clean_postcode' and those specified in fields
@@ -24,7 +24,6 @@ class PostcodeToArea:
         self.ons_data = ons_data
         self.input = section_data
         self.output_file_path = output_csv_path
-        self.fields = fields
 
         self.ERROR_FILE = "error_file.txt"
 
@@ -69,32 +68,42 @@ class PostcodeToArea:
             .astype(int)
         return m, postcode
 
-    def merge_and_output(self):
-        self.logger.info("Cleaning postcodes")
-        self.input.sections_postcode_data['postcode_is_valid'], self.input.sections_postcode_data[CensusData.constants['CENSUS_POSTCODE_HEADING']] = PostcodeToArea.postcode_cleaner(self.input.sections_postcode_data[CensusData.constants['CENSUS_POSTCODE_HEADING']])
-        self.input.sections_postcode_data[CensusData.constants['CLEAN_POSTCODE']] = self.input.sections_postcode_data[CensusData.constants['CENSUS_POSTCODE_HEADING']]
-        self.logger.info("Merging")
-        self.input.sections_postcode_data = pd.merge(self.input.sections_postcode_data, self.ons_data.data, how='left', left_on=CensusData.constants['CENSUS_POSTCODE_HEADING'], right_index=True, sort=False)
+    def merge_and_output(self, census_data, data_to_merge, census_index_column, fields_data_types):
+        """
+        :param census_data: pandas DataFrame with census data
+        :param data_to_merge: pandas DataFrame with index col as index to merge
+        :param census_index_column: column label to merge on in census data
+        :param fields_data_types: dict of data types -> lists of fields
+        :return: None
+        """
 
-        for field in ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'ctry', 'rgn', CensusData.constants['CLEAN_POSTCODE']]:
-            self.input.sections_postcode_data.loc[self.input.sections_postcode_data['postcode_is_valid'] == 0, field] = CensusData.constants['DEFAULT_VALUE']
-        for field in ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd']:
-            self.input.sections_postcode_data.loc[self.input.sections_postcode_data['postcode_is_valid'] == 0, field] = 0
+        valid_postcode_label = CensusData.constants['CENSUS_VALID_POSTCODE']
+        
+        self.logger.info("Cleaning postcodes")
+        census_data[valid_postcode_label], census_data[census_index_column] = CensusMergePostcode.postcode_cleaner(census_data[census_index_column])
+        self.logger.info("Merging data")
+        census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
+
+        for field in fields_data_types['categorical']:
+            census_data.loc[census_data[valid_postcode_label] == 0, field] = CensusData.constants['DEFAULT_VALUE']
+        for field in fields_data_types['int']:
+            census_data.loc[census_data[valid_postcode_label] == 0, field] = 0
 
         # # Find records that haven't had postcode data attached
-        # invalid_postcodes = self.input.sections_postcode_data.loc[self.input.sections_postcode_data["postcode_is_valid"] == 0]
+        # invalid_postcodes = census_data.loc[census_data["postcode_is_valid"] == 0]
         # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.CENSUS_TYPE_HEADING].isin(self.input.section_types())]
         # self.logger.debug(invalid_section_postcodes)
         # self.logger.info("Updating sections with invalid postcodes, in groups with valid")
         # for (row_index, row) in invalid_section_postcodes.iterrows():
         #     self.logger.debug(row_index)
         #     group_id = row[CensusData.CENSUS_GROUP_ID]
-        #     group_records = self.input.sections_postcode_data.loc[self.input.sections_postcode_data[CensusData.CENSUS_GROUP_ID] == group_id]
+        #     group_records = census_data.loc[census_data[CensusData.CENSUS_GROUP_ID] == group_id]
         #     valid_postcode = group_records.loc[group_records[CensusData.CENSUS_VALID_POSTCODE] == 1]
         #     if not valid_postcode.empty:
         #         self._write_row(row_index, valid_postcode[self.ons_data.fields])
 
         # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
-        self.input.sections_postcode_data.loc[self.input.sections_postcode_data['postcode_is_valid'] == 0, CensusData.constants['CENSUS_POSTCODE_HEADING']].dropna().to_csv('error_file.txt', index=False, header=False)
+        self.logger.info("Writing merged data")
+        census_data.loc[census_data[valid_postcode_label] == 0, census_index_column].dropna().to_csv('error_file.txt', index=False, header=False)
         # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
-        self.input.sections_postcode_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig')
+        census_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig')
