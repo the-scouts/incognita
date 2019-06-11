@@ -1,6 +1,5 @@
 import pandas as pd
 # from src.cholopleth import CholoplethMapPlotter
-import logging
 from src.census_data import CensusData
 from src.census_merge_postcode import CensusMergePostcode
 import numpy as np
@@ -11,6 +10,7 @@ from itertools import cycle
 import json
 # import geopandas as gpd
 # import shapely
+from src.log_util import create_logger
 
 
 class ScoutMap:
@@ -40,13 +40,7 @@ class ScoutMap:
         self.OUTPUT = self.settings["Output folder"]
 
         # Facilitates logging
-        self.logger = logging.getLogger(__name__)
-        # define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        console.setFormatter(logging.Formatter(fmt="%(name)s - %(levelname)s - %(message)s"))
-        # add the handler to the root logger
-        self.logger.addHandler(console)
+        self.logger = create_logger(__name__,)
 
     def create_ONS_lookup(self, ONS_postcode_directory):
         """

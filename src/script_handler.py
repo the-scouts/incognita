@@ -2,8 +2,8 @@ from src.scout_map import ScoutMap
 from src.census_data import CensusData
 from src.ONS_data_May_18 import ONSDataMay18
 import time
-import logging
 import json
+from src.log_util import create_logger
 
 
 class ScriptHandler:
@@ -14,19 +14,7 @@ class ScriptHandler:
         :type csv_has_ons_data: Bool
         """
         self.start_time = time.time()
-
-        # set up a log to file
-        logging.basicConfig(filename='logs/geo_scout.log', level=logging.DEBUG, filemode="w")
-
-        # set up a log to the console
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        console.setFormatter(logging.Formatter(fmt="%(name)s - %(levelname)s - %(message)s"))
-
-        # creates the main logger
-        self.logger = logging.getLogger(__name__)
-        # add the handler to the root logger
-        self.logger.addHandler(console)
+        self.logger = create_logger(__name__, 'logs/geo_scout.log')
 
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
@@ -66,3 +54,4 @@ class ScriptHandler:
     @staticmethod
     def duration(start_time):
         return time.time() - start_time
+

@@ -11,8 +11,8 @@
 # csv and re are distributed with standard Python
 import pandas as pd
 import re
-import logging
 from src.census_data import CensusData
+from src.log_util import create_logger
 
 
 class CensusMergePostcode:
@@ -26,13 +26,8 @@ class CensusMergePostcode:
 
         self.ERROR_FILE = "error_file.txt"
 
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        console.setFormatter(logging.Formatter(fmt="%(name)s - %(levelname)s - %(message)s"))
-        # add the handler to the root logger
-        self.logger.addHandler(console)
+        # Facilitates logging
+        self.logger = create_logger(__name__, )
 
     @staticmethod
     def postcode_cleaner(postcode):
