@@ -20,6 +20,7 @@ ONSData in ONS_data.py
 You will need to populate the settings.json file with the appropriate file paths
 
 ### Resources: ###
+**Shapefiles:**
  * Latest ONS Postcode Directory ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory))
  * Local Authority Districts (December 2018) Boundaries UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=bdy_lad))
  * Counties and Unitary Authorities (December 2018) Boundaries UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_CTYUA))
@@ -28,7 +29,11 @@ You will need to populate the settings.json file with the appropriate file paths
  * Lower Layer Super Output Areas (December 2011) Generalised Clipped Boundaries in England and Wales ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_LSOA%2CDEC_2011))
  * Middle Layer Super Output Areas (December 2011) Full Clipped Boundaries ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_MSOA))
  * Scottish Intermediate Zone Boundary 2011 ([link](https://data.gov.uk/dataset/133d4983-c57d-4ded-bc59-390c962ea280/intermediate-zone-boundaries-2011))
- * https://geoportal.statistics.gov.uk/search?collection=Document&sort=name&tags=DOC_BGG 
+ 
+**Names and Codes:**
+
+
+The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk/search?collection=Document&sort=name&tags=DOC_BGG)) can be useful as an introduction for those new to GIS.
 
 **Notes:**
 I suspect that this will generalise beyond the specific application to Scouts,
