@@ -8,40 +8,60 @@ import json
 
 class ScriptHandler:
     def __init__(self, csv_has_ons_data=True):
-        logging.basicConfig(filename='logs/geo_scout.log', level=logging.DEBUG, filemode="w")
-        self.logger = logging.getLogger(__name__)
+        """Acts to manage all functions, providing setup, logging and timing
+
+        :param csv_has_ons_data: Whether ONS Postcode Directory has data been added to the census csv
+        :type csv_has_ons_data: Bool
+        """
         self.start_time = time.time()
+
+        # set up a log to file
+        logging.basicConfig(filename='logs/geo_scout.log', level=logging.DEBUG, filemode="w")
+
+        # set up a log to the console
         console = logging.StreamHandler()
         console.setLevel(logging.INFO)
         console.setFormatter(logging.Formatter(fmt="%(name)s - %(levelname)s - %(message)s"))
+
+        # creates the main logger
+        self.logger = logging.getLogger(__name__)
         # add the handler to the root logger
         self.logger.addHandler(console)
+
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
+
+        self.logger.info(f"Finished logging setup, {self.duration(self.start_time)} seconds elapsed")
+
         self.logger.info("Loading Scout Census data")
         self.map = ScoutMap(self.settings["Scout Census location"])
         self.logger.info(f"Finished loading Scout Census data, {self.duration(self.start_time)} seconds elapsed")
+
         if csv_has_ons_data:
             self.logger.info("Loading ONS data")
-            ons_data = ONSDataMay18(None, load_data=False)
+
             if self.map.has_ons_data():
-                self.map.ons_data = ons_data
+                self.map.ons_data = ONSDataMay18(None, load_data=False)
             else:
                 raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {CensusData.constants['CENSUS_VALID_POSTCODE']} column")
-            self.logger.info(f"Finished loading ONS data from {ons_data.PUBLICATION_DATE}, {self.duration(self.start_time)} seconds elapsed")
+
+            self.logger.info(f"Finished loading ONS data from {self.map.ons_data.PUBLICATION_DATE}, {self.duration(self.start_time)} seconds elapsed")
 
     def close(self):
         self.logger.info(f"Script took {self.duration(self.start_time)} seconds")
 
     def run(self, function, args=[], file_name=None):
         start_time = time.time()
+
         self.logger.info(f"Calling function {function.__name__}")
-        output_pd = function(self.map, *args)
+        output = function(self.map, *args)
+
         if file_name:
             self.logger.info(f"Writing to {file_name}")
-            output_pd.to_csv(self.settings["Output folder"] + file_name + ".csv")
+            output.to_csv(self.settings["Output folder"] + file_name + ".csv")
+
         self.logger.info(f"{function.__name__} took {self.duration(start_time)} seconds")
-        return output_pd
+        return output
 
     @staticmethod
     def duration(start_time):
