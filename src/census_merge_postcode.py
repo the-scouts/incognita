@@ -62,7 +62,7 @@ class CensusMergePostcode:
         :return: None
         """
 
-        valid_postcode_label = CensusData.constants['CENSUS_VALID_POSTCODE']
+        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
         
         self.logger.info("Cleaning postcodes")
         census_data[valid_postcode_label], census_data[census_index_column] = CensusMergePostcode.postcode_cleaner(census_data[census_index_column])
@@ -76,14 +76,14 @@ class CensusMergePostcode:
 
         # # Find records that haven't had postcode data attached
         # invalid_postcodes = census_data.loc[census_data["postcode_is_valid"] == 0]
-        # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.CENSUS_TYPE_HEADING].isin(self.input.section_types())]
+        # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.column_labels['UNIT_TYPE']].isin(self.input.section_types())]
         # self.logger.debug(invalid_section_postcodes)
         # self.logger.info("Updating sections with invalid postcodes, in groups with valid")
         # for (row_index, row) in invalid_section_postcodes.iterrows():
         #     self.logger.debug(row_index)
-        #     group_id = row[CensusData.CENSUS_GROUP_ID]
-        #     group_records = census_data.loc[census_data[CensusData.CENSUS_GROUP_ID] == group_id]
-        #     valid_postcode = group_records.loc[group_records[CensusData.CENSUS_VALID_POSTCODE] == 1]
+        #     group_id = row[CensusData.column_labels['id']["GROUP"]]
+        #     group_records = census_data.loc[census_data[CensusData.column_labels['id']["GROUP"]] == group_id]
+        #     valid_postcode = group_records.loc[group_records[CensusData.column_labels['VALID_POSTCODE']] == 1]
         #     if not valid_postcode.empty:
         #         self._write_row(row_index, valid_postcode[self.ons_data.fields])
 

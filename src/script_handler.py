@@ -31,7 +31,7 @@ class ScriptHandler:
             if self.map.has_ons_data():
                 self.map.ons_data = ONSDataMay18(None, load_data=False)
             else:
-                raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {CensusData.constants['CENSUS_VALID_POSTCODE']} column")
+                raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {CensusData.column_labels['VALID_POSTCODE']} column")
 
             self.logger.info(f"Finished loading ONS data from {self.map.ons_data.PUBLICATION_DATE}, {log_util.duration(self.start_time)} seconds elapsed")
 
