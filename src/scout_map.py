@@ -16,12 +16,12 @@ import src.log_util as log_util
 class ScoutMap:
     """Provides access to manipulate and process data"""
 
-    BEAVERS = {"field_name": "%-Beavers", "ages": [(6,1),(7,1)]}
-    CUBS = {"field_name": "%-Cubs", "ages": [(8,1),(9,1),(10,0.5)]}
-    SCOUTS = {"field_name": "%-Scouts", "ages": [(10,0.5),(11,1),(12,1),(13,1)]}
-    EXPLORERS = {"field_name": "%-Explorers", "ages":[(14,1),(15,1),(16,1),(17,1)]}
-
-    SECTIONS = {"Beavers": BEAVERS, "Cubs": CUBS, "Scouts": SCOUTS, "Explorers": EXPLORERS}
+    SECTIONS = {
+        'Beavers': {'field_name': '%-Beavers', 'ages': [(6, 1), (7, 1)]},
+        'Cubs': {'field_name': '%-Cubs', 'ages': [(8, 1), (9, 1), (10, 0.5)]},
+        'Scouts': {'field_name': '%-Scouts', 'ages': [(10, 0.5), (11, 1), (12, 1), (13, 1)]},
+        'Explorers': {'field_name': '%-Explorers', 'ages': [(14, 1), (15, 1), (16, 1), (17, 1)]}
+    }
 
     def __init__(self, census_csv_path):
         """Loads Scout Census Data
