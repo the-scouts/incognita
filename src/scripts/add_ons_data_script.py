@@ -17,4 +17,4 @@ if __name__ == "__main__":
     with open("settings.json", "r") as read_file:
         settings = json.load(read_file)["settings"]
     ons_data = ONSDataMay18(settings["ONS PD location"])
-    script_handler.run(ScoutMap.create_ONS_lookup, [ons_data])
+    script_handler.run(ScoutMap.merge_ons_postcode_directory, [ons_data])

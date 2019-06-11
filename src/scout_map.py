@@ -42,8 +42,9 @@ class ScoutMap:
         # Facilitates logging
         self.logger = log_util.create_logger(__name__,)
 
-    def create_ONS_lookup(self, ONS_postcode_directory):
-        """
+    def merge_ons_postcode_directory(self, ONS_postcode_directory):
+        """Merges CensusData object with ONSData object and outputs to csv
+
         :param ONS_postcode_directory: Refers to the ONS Postcode Directory
         :type ONS_postcode_directory: ONSData object
         """
