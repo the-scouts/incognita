@@ -6,9 +6,9 @@ Directory published in May 2018.
 This script has no command line options.
 """
 
-from src.script_handler import ScriptHandler
-from src.scout_map import ScoutMap
-from src.ONS_data_May_18 import ONSDataMay18
+from geo_scout.src.script_handler import ScriptHandler
+from geo_scout.src.scout_map import ScoutMap
+from geo_scout.src.ONS_data_May_18 import ONSDataMay18
 import json
 
 if __name__ == "__main__":

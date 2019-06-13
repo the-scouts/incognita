@@ -1,6 +1,6 @@
 import pandas as pd
 import json
-from src.census_data import CensusData
+from geo_scout.src.census_data import CensusData
 
 
 class ONSData:
@@ -19,4 +19,4 @@ class ONSData:
 
             for field in data_types:
                 if data_types[field] == 'category':
-                    self.data[field] = self.data[field].cat.add_categories([CensusData.constants['DEFAULT_VALUE']])
+                    self.data[field] = self.data[field].cat.add_categories([CensusData.DEFAULT_VALUE])

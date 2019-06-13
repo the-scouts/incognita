@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from src.census_data import CensusData
+from geo_scout.src.census_data import CensusData
 import src.log_util as log_util
 
 
@@ -70,7 +70,7 @@ class CensusMergePostcode:
         census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
 
         for field in fields_data_types['categorical']:
-            census_data.loc[census_data[valid_postcode_label] == 0, field] = CensusData.constants['DEFAULT_VALUE']
+            census_data.loc[census_data[valid_postcode_label] == 0, field] = CensusData.DEFAULT_VALUE
         for field in fields_data_types['int']:
             census_data.loc[census_data[valid_postcode_label] == 0, field] = 0
 

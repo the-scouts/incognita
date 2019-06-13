@@ -1,4 +1,4 @@
-from src.ONS_data import ONSData
+from geo_scout.src.ONS_data import ONSData
 
 
 class ONSDataMay18(ONSData):

@@ -1,5 +1,5 @@
-from geo_scout.script_handler import ScriptHandler
-from geo_scout.scout_map import ScoutMap
+from geo_scout.src.script_handler import ScriptHandler
+from geo_scout.src.scout_map import ScoutMap
 import pandas as pd
 
 if __name__ == "__main__":

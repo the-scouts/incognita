@@ -1,7 +1,7 @@
 import pandas as pd
-# from src.cholopleth import CholoplethMapPlotter
-from src.census_data import CensusData
-from src.census_merge_postcode import CensusMergePostcode
+# from geo_scout.src.cholopleth import CholoplethMapPlotter
+from geo_scout.src.census_data import CensusData
+from geo_scout.src.census_merge_postcode import CensusMergePostcode
 import numpy as np
 from folium import IFrame
 from folium import Popup

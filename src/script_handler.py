@@ -1,6 +1,6 @@
-from src.scout_map import ScoutMap
-from src.census_data import CensusData
-from src.ONS_data_May_18 import ONSDataMay18
+from geo_scout.src.scout_map import ScoutMap
+from geo_scout.src.census_data import CensusData
+from geo_scout.src.ONS_data_May_18 import ONSDataMay18
 import time
 import json
 import src.log_util as log_util
