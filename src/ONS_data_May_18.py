@@ -41,28 +41,47 @@ class ONSDataMay18(ONSData):
         MSOA_SHAPEFILE = [self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp"]
         IZ_SHAPEFILE = [self.settings["Boundaries folder"] + r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp"]
 
-        LAD_SHAPE = {"shapefiles": LAD_SHAPEFILE, "key": 'lad18cd', "name": 'lad18nm'}
-        CTY_SHAPE = {"shapefiles": CTY_SHAPEFILE, "key": 'ctyua17cd', "name": 'ctyua17nm'}
-        OSWARD_SHAPE = {"shapefiles": WARD_SHAPEFILE, "key": 'wd18cd', "name": 'wd18nm'}
-        PCON_SHAPE = {"shapefiles": PCON_SHAPEFILE, "key": 'pcon17cd'}
-        LSOA_SHAPE = {"shapefiles": LSOA_SHAPEFILE, "key": 'lsoa11cd', "name": 'lsoa11nm'}
-        MSOA_SHAPE = {"shapefiles": MSOA_SHAPEFILE, "key": 'msoa11cd'}
-        IZ_SHAPE = {"shapefiles": IZ_SHAPEFILE, "key": 'InterZone'}
-
-        LAD = {"name": "oslaua", "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD", "boundary": LAD_SHAPE, "age_profile": "lad_by_age.csv", "age_profile_code_col": "Code"}
-        CTY = {"name": "oslaua", "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD", "boundary": CTY_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        OSWARD = {"name": "osward", "codes": 'Ward names and codes UK as at 05_18.csv', "code_col_name":"WD18CD", "boundary": OSWARD_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        PCON = {"name": "pcon", "codes": 'Westminster Parliamentary Constituency names and codes UK as at 12_14.csv', "boundary": PCON_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        LSOA = {"name": "lsoa11", "codes": 'LSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": "LSOA11CD", "boundary": LSOA_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        MSOA = {"name": "msoa", "codes": 'MSOA (2011) names and codes UK as at 12_12.csv', "boundary": MSOA_SHAPE, "age_profile": None, "age_profile_code_col": None}
-        IZ = {"name": "iz", "codes": None, "boundary": IZ_SHAPE, "age_profile": None, "age_profile_code_col": None}
-
         self.BOUNDARIES = {
-            "lad": LAD,
-            "cty": CTY,
-            "osward": OSWARD,
-            "pcon": PCON,
-            "lsoa": LSOA,
-            "msoa": MSOA,
-            "iz": IZ,
+            "lad": {
+                "name": "oslaua",
+                "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD",
+                "boundary": {"shapefiles": LAD_SHAPEFILE, "key": 'lad18cd', "name": 'lad18nm',},
+                "age_profile": "lad_by_age.csv", "age_profile_code_col": "Code",
+            },
+            "cty": {
+                "name": "oslaua",
+                "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD",
+                "boundary": {"shapefiles": CTY_SHAPEFILE, "key": 'ctyua17cd', "name": 'ctyua17nm',},
+                "age_profile": None, "age_profile_code_col": None,
+            },
+            "osward": {
+                "name": "osward",
+                "codes": 'Ward names and codes UK as at 05_18.csv', "code_col_name": "WD18CD",
+                "boundary": {"shapefiles": WARD_SHAPEFILE, "key": 'wd18cd', "name": 'wd18nm',},
+                "age_profile": None, "age_profile_code_col": None,
+            },
+            "pcon": {
+                "name": "pcon",
+                "codes": 'Westminster Parliamentary Constituency names and codes UK as at 12_14.csv', "code_col_name": None,
+                "boundary": {"shapefiles": PCON_SHAPEFILE, "key": 'pcon17cd',},
+                "age_profile": None, "age_profile_code_col": None,
+            },
+            "lsoa": {
+                "name": "lsoa11",
+                "codes": 'LSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": "LSOA11CD",
+                "boundary": {"shapefiles": LSOA_SHAPEFILE, "key": 'lsoa11cd', "name": 'lsoa11nm',},
+                "age_profile": None, "age_profile_code_col": None,
+            },
+            "msoa": {
+                "name": "msoa",
+                "codes": 'MSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": None,
+                "boundary": {"shapefiles": MSOA_SHAPEFILE, "key": 'msoa11cd',},
+                "age_profile": None, "age_profile_code_col": None,
+            },
+            "iz": {
+                "name": "iz",
+                "codes": None, "code_col_name": None,
+                "boundary": {"shapefiles": IZ_SHAPEFILE, "key": 'InterZone',},
+                "age_profile": None, "age_profile_code_col": None,
+            },
         }

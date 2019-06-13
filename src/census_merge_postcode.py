@@ -26,7 +26,7 @@ class CensusMergePostcode:
         # Returns a boolean signifying validity and the cleaned postcode
 
         # Regular expression to determine a valid postcode
-        regex_uk_postcode = re.compile(r"[A-Z]{1,2}\d[A-Z\d]? {0,2}\d[A-Z]{2}")
+        regex_uk_postcode = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]? {0,2}\d[A-Z]{2}$")
         # RegExp to remove whitespace, non-alphanumeric (keep shifted numbers)
         regex_clean = re.compile(r'[\s+]|[^a-zA-Z\d!"£$%^&*()]')
 

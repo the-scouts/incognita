@@ -133,13 +133,11 @@ class ScoutMap:
         self.logger.info(f"Setting the boundary to {boundary}")
 
         if boundary == "district":
-            # DISTRICT_SHAPE = {"shapefiles": [r"C:\Users\tyems\Dropbox\Tom Yems\Development\geo_scout\geo_scout\districts_buffered.geojson"], "key": 'id', "name": 'name'}
-            # self.boundary_data = {"name": "D_ID", "codes": r"C:\Users\tyems\Dropbox\Tom Yems\Development\geo_scout\geo_scout\data\Scout Census Data\district_id_mapping.csv", "code_col_name": "D_ID", "boundary": DISTRICT_SHAPE, "age_profile": None, "age_profile_code_col": None}
             self.boundary_data = self.settings["Scout Mappings"]["District"]
-            self.boundary_list = pd.read_csv(self.boundary_data["codes"])
+            self.boundary_list = pd.read_csv(self.boundary_data["codes"])  # TODO: datatypes
         elif boundary in self.ons_data.BOUNDARIES.keys():
             self.boundary_data = self.ons_data.BOUNDARIES[boundary]
-            self.boundary_list = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + self.boundary_data["codes"])
+            self.boundary_list = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + self.boundary_data["codes"])  # TODO: datatypes
         else:
             raise Exception("Invalid boundary supplied")
 
@@ -162,8 +160,7 @@ class ScoutMap:
         code_col_name = self.boundary_data["code_col_name"]
 
         self.logger.info(f"Filtering {len(self.boundary_list.index)} {name} boundaries by {field} being in {value_list}")
-        filtered_data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
-        boundary_subset = filtered_data[name].unique()
+        boundary_subset = self.census_data.data.loc[self.census_data.data[field].isin(value_list)][name].unique()
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
         self.boundary_list = self.boundary_list.loc[self.boundary_list[code_col_name].isin(boundary_subset)]
