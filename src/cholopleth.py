@@ -2,7 +2,6 @@ import pandas as pd
 import folium
 from folium.plugins import MarkerCluster
 import geopandas
-from json import dumps
 import webbrowser
 import branca
 import os
@@ -24,6 +23,7 @@ WGS_84 = '4326'
 # 'code' property of the GeoJSON (which has been converted from the shape file)
 #
 # ------------------------------------------------------------------------------
+
 
 class CholoplethMapPlotter:
     def __init__(self, shape_files, data_info, out_file, color, scale, legend_label):
@@ -53,7 +53,6 @@ class CholoplethMapPlotter:
         self.shape_files = shape_files["shapefiles"]
         self.update_shape_file(self.shape_files)
 
-
     def update_shape_file(self, shape_files):
         # Read a shape file
         data_frames = []
@@ -76,7 +75,7 @@ class CholoplethMapPlotter:
         self.map_data = data_info['data']
         self.CODE_COL = data_info['code_col']
         self.SCORE_COL = data_info['score_col']
-        self.update_shape_file(self, self.shape_files)
+        self.update_shape_file(self.shape_files)
 
     def update_score_col(self, score_col):
         self.SCORE_COL = score_col
@@ -98,7 +97,7 @@ class CholoplethMapPlotter:
 
     def my_colormap(self, properties, colormap):
         area_score = properties[self.SCORE_COL]
-        if area_score == None:
+        if area_score is None:
             return '#cccccc'
         elif float(area_score) == 0:
             return '#555555'
@@ -106,11 +105,11 @@ class CholoplethMapPlotter:
             return colormap(area_score)
 
     def add_marker(self, lat, long, popup, color):
-        #folium.Marker(
+        # folium.Marker(
         #    location=[lat, long],
         #    popup=popup,
         #    icon=folium.Icon(color=color)
-        #).add_to(self.marker_cluster)
+        # ).add_to(self.marker_cluster)
         folium.Marker(
             location=[lat, long],
             popup=popup,

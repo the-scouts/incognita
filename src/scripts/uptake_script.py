@@ -6,11 +6,10 @@ the percentage of young people.
 This script has no command line options.
 """
 
-from script_handler import ScriptHandler
-from scout_map import ScoutMap
+from geo_scout.src.script_handler import ScriptHandler
+from geo_scout.src.scout_map import ScoutMap
 
 if __name__ == "__main__":
-    start_time = time.time()
     script_handler = ScriptHandler()
     script_handler.run(ScoutMap.set_boundary, ["lad"])
     script_handler.run(ScoutMap.filter_records, ["X_name", ["England", "Scotland", "Wales", "Northern Ireland"]])

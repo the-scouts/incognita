@@ -1,5 +1,5 @@
-import pandas as pd
 from geo_scout.src.ONS_data import ONSData
+
 
 class ONSDataMay18(ONSData):
     def __init__(self, csv_data):
