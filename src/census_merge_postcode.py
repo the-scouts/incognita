@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from geo_scout.src.census_data import CensusData
+from src.census_data import CensusData
 import src.log_util as log_util
 
 

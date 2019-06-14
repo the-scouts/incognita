@@ -1,3 +1,2 @@
 geopandas
 folium
-git+https://github.com/ox-baloo/geo_scout.git#egg=geo_scout

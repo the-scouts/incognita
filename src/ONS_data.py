@@ -1,6 +1,6 @@
 import pandas as pd
 import json
-from geo_scout.src.census_data import CensusData
+from src.census_data import CensusData
 
 
 class ONSData:

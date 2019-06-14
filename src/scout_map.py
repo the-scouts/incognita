@@ -1,7 +1,7 @@
 import pandas as pd
-# from geo_scout.src.cholopleth import CholoplethMapPlotter
-from geo_scout.src.census_data import CensusData
-from geo_scout.src.census_merge_postcode import CensusMergePostcode
+# from src.cholopleth import CholoplethMapPlotter
+from src.census_data import CensusData
+from src.census_merge_postcode import CensusMergePostcode
 import numpy as np
 from folium import IFrame
 from folium import Popup
@@ -252,7 +252,7 @@ class ScoutMap:
     def create_boundary_report(self, options=["Groups", "Section numbers", "6 to 17 numbers", "awards"], historical=False):
         """Produces .csv file summarising by boundary provided.
 
-        Requires self.boundary_data to be set, preferably by :meth:geo_scout.set_boundary
+        Requires self.boundary_data to be set, preferably by :meth:scout_map.set_boundary
 
         :param options: List of data to be included in report
         :param historical: Check to ensure that multiple years of data are intentional
@@ -395,7 +395,7 @@ class ScoutMap:
         return output_data
 
     def load_boundary_report(self, boundary_report_csv_path):
-        """Load a boundary report created with the :meth:geo_scout.create_boundary_report
+        """Load a boundary report created with the :meth:scout_map.create_boundary_report
 
         :returns: Nothing
         :rtype: None
