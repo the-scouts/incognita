@@ -1,5 +1,5 @@
-from geo_scout.src.script_handler import ScriptHandler
-from geo_scout.src.scout_map import ScoutMap
+from src.script_handler import ScriptHandler
+from src.scout_map import ScoutMap
 
 if __name__ == "__main__":
 

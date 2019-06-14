@@ -6,8 +6,8 @@ the percentage of young people.
 This script has no command line options.
 """
 
-from geo_scout.src.script_handler import ScriptHandler
-from geo_scout.src.scout_map import ScoutMap
+from src.script_handler import ScriptHandler
+from src.scout_map import ScoutMap
 
 if __name__ == "__main__":
     script_handler = ScriptHandler()

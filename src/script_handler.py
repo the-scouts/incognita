@@ -1,6 +1,6 @@
-from geo_scout.src.scout_map import ScoutMap
-from geo_scout.src.census_data import CensusData
-from geo_scout.src.ONS_data_May_18 import ONSDataMay18
+from src.scout_map import ScoutMap
+from src.census_data import CensusData
+from src.ONS_data_May_18 import ONSDataMay18
 import time
 import json
 import src.log_util as log_util
@@ -14,7 +14,7 @@ class ScriptHandler:
         :type csv_has_ons_data: Bool
         """
         self.start_time = time.time()
-        self.logger = log_util.create_logger(__name__, 'logs/geo_scout.log')
+        self.logger = log_util.create_logger(__name__, 'logs/geo_mapping.log')
 
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]

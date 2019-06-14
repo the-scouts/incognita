@@ -1,4 +1,4 @@
-# geo_scout
+# geo_mapping
 Mapping Scouts data to UK administrative regions.
 
 ## Prerequisites: ##
