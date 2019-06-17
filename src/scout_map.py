@@ -34,6 +34,9 @@ class ScoutMap:
         self.boundary_report = {}
         self.district_mapping = {}
 
+        self.boundary_dict = None
+        self.boundary_regions_data = None
+
         # Load the settings file
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
@@ -121,23 +124,25 @@ class ScoutMap:
 
                 self.logger.info(f"{excluded_members} {section} records were removed ({excluded_members / (counted_members) * 100}%) of total")
 
-    def set_boundary(self, boundary):
-        """Sets the boundary_data and boundary_list members
+    def set_boundary(self, geography_name):
+        """Sets the boundary_dict and boundary_regions_list members
 
-        :param boundary: The boundary code, must be a key in the ONSData.BOUNDARIES dictionary
-        :type boundary: str
+        :param geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSData.BOUNDARIES.
+        :type geography_name: str
 
         :returns: Nothing
         :rtype: None
         """
-        self.logger.info(f"Setting the boundary to {boundary}")
+        self.logger.info(f"Setting the boundary to {geography_name}")
 
-        if boundary == "district":
-            self.boundary_data = self.settings["Scout Mappings"]["District"]
-            self.boundary_list = pd.read_csv(self.boundary_data["codes"])  # TODO: datatypes
-        elif boundary in self.ons_data.BOUNDARIES.keys():
-            self.boundary_data = self.ons_data.BOUNDARIES[boundary]
-            self.boundary_list = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + self.boundary_data["codes"])  # TODO: datatypes
+        if geography_name in self.ons_data.BOUNDARIES.keys():
+            self.boundary_dict = self.ons_data.BOUNDARIES[geography_name]
+            names_and_codes_file_path = self.boundary_dict["codes"]["path"]
+            self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path)  # TODO: datatypes
+        elif geography_name == "district":
+            self.boundary_dict = self.settings["Scout Mappings"]["District"]
+            district_codes_path = self.boundary_dict["codes"]
+            self.boundary_regions_data = pd.read_csv(district_codes_path)  # TODO: datatypes
         else:
             raise Exception("Invalid boundary supplied")
 
@@ -156,15 +161,15 @@ class ScoutMap:
         :returns: Nothing
         :rtype: None
         """
-        name = self.boundary_data["name"]
-        code_col_name = self.boundary_data["code_col_name"]
+        name = self.boundary_dict["name"]
+        codes_key = self.boundary_dict["codes"]["key"]
 
         self.logger.info(f"Filtering {len(self.boundary_list.index)} {name} boundaries by {field} being in {value_list}")
         boundary_subset = self.census_data.data.loc[self.census_data.data[field].isin(value_list)][name].unique()
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
-        self.boundary_list = self.boundary_list.loc[self.boundary_list[code_col_name].isin(boundary_subset)]
-        self.logger.info(f"Resulting in {len(self.boundary_list.index)} {name} boundaries")
+        self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[codes_key].isin(boundary_subset)]
+        self.logger.info(f"Resulting in {len(self.boundary_regions_data.index)} {name} boundaries")
 
     def ons_from_scout_area(self, ons_code, column, value_list):
         """Produces list of ONS Geographical codes that exist within a subset
@@ -266,7 +271,7 @@ class ScoutMap:
         if isinstance(options, str):
             options = [options]
 
-        name = self.boundary_data.get("name")
+        name = self.boundary_dict.get("name")  # e.g oslaua osward pcon
         if not name:
             raise Exception("Function set_boundary must be run before a boundary report can be created")
         self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.census_data.data.index)} records")
@@ -281,7 +286,7 @@ class ScoutMap:
             if len(years_in_data) > 1:
                 self.logger.error(f"Historical option not selected, but multiple years of data selected ({', '.join(years_in_data)})")
 
-        output_columns = ["Name", self.boundary_data["name"]]
+        output_columns = ["Name", self.boundary_dict["name"]]
         if name == "lsoa11":
             output_columns.append("imd_decile")
         if "Groups" in options:
@@ -305,12 +310,13 @@ class ScoutMap:
         output_data = pd.DataFrame(columns=output_columns)
         self.logger.debug(f"Report contains the following data:\n{output_columns}")
 
-        for ii in range(len(self.boundary_list.index)):
-            self.logger.debug(f"{ii+1} out of {len(self.boundary_list.index)}")
+        district_id_column = CensusData.column_labels['id']["DISTRICT"]
+        for ii in range(len(self.boundary_regions_data.index)):
+            self.logger.debug(f"{ii+1} out of {len(self.boundary_regions_data.index)}")
             boundary_data = {
-                "Name": self.boundary_list.iloc[ii, 1],
-                name: self.boundary_list.iloc[ii, 0]}
-            code = boundary_data[name]
+                "Name": self.boundary_regions_data.iloc[ii, 1],
+                name: self.boundary_regions_data.iloc[ii, 0]}
+            code = boundary_data[name]  # == self.boundary_regions_data.iloc[ii, 0]
 
             records_in_boundary = self.census_data.data.loc[self.census_data.data[name] == str(code)]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
@@ -391,7 +397,7 @@ class ScoutMap:
             output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].clip(upper=max_value, inplace=True)
 
         output_data.reset_index(drop=True, inplace=True)
-        self.boundary_report[self.boundary_data["name"]] = output_data
+        self.boundary_report[self.boundary_dict["name"]] = output_data
         return output_data
 
     def load_boundary_report(self, boundary_report_csv_path):
@@ -400,7 +406,7 @@ class ScoutMap:
         :returns: Nothing
         :rtype: None
         """
-        self.boundary_report[self.boundary_data["name"]] = pd.read_csv(self.settings["Output folder"] + boundary_report_csv_path)
+        self.boundary_report[self.boundary_dict["name"]] = pd.read_csv(self.settings["Output folder"] + boundary_report_csv_path)
 
     def create_uptake_report(self):
         """Creates an report by the boundary that has been set, requires
@@ -410,16 +416,16 @@ class ScoutMap:
         :returns: Uptake data of Scouts in the boundary
         :rtype: pandas.DataFrame
         """
-        boundary = self.boundary_data["name"]
-        boundary_report = self.boundary_report.get(self.boundary_data["name"], "Boundary report doesn't exist")
+        boundary = self.boundary_dict["name"]
+        boundary_report = self.boundary_report.get(self.boundary_dict["name"], "Boundary report doesn't exist")
 
         if isinstance(boundary_report, str):
             self.create_boundary_report(boundary)
-            boundary_report = self.boundary_report[self.boundary_data["name"]]
+            boundary_report = self.boundary_report[self.boundary_dict["name"]]
 
-        age_profile = self.boundary_data.get("age_profile")
-        if age_profile:
-            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile, encoding='latin-1')
+        age_profile_path = self.boundary_dict.get("age_profile").get("path")
+        if age_profile_path:
+            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, encoding='latin-1')
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
@@ -434,7 +440,7 @@ class ScoutMap:
         for area_row in range(len(boundary_report.index)):
             boundary_row = boundary_report.iloc[area_row]
             area_code = boundary_row.at[boundary]
-            area_pop = age_profile_pd.loc[age_profile_pd[self.boundary_data["age_profile_code_col"]] == area_code]
+            area_pop = age_profile_pd.loc[age_profile_pd[self.boundary_dict["age_profile"]["key"]] == area_code]
             if area_pop.size > 0:
                 for section in ScoutMap.SECTIONS.keys():
                     section_total = 0
@@ -507,11 +513,13 @@ class ScoutMap:
 
     def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None):
         self.logger.info(f"Creating map from {score_col} with name {name}")
-        boundary = self.boundary_data["name"]
+        boundary = self.boundary_dict["name"]
 
         data_codes = {"data": self.boundary_report[boundary], "code_col": boundary, "score_col": score_col, "display_score_col": display_score_col}
 
-        self.map = CholoplethMapPlotter(self.boundary_data["boundary"],data_codes,self.settings["Output folder"] + name,'YlOrRd',6,score_col)
+        self.map = ChoroplethMapPlotter(self.boundary_dict["boundary"],
+                                        data_codes,
+                                        self.settings["Output folder"] + name)
 
         non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
         non_zero_score_col.dropna(inplace=True)
@@ -526,7 +534,7 @@ class ScoutMap:
         colormap = colormap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
         colormap.caption = legend_label
-        self.map.plot(legend_label, show=True, boundary_name=self.boundary_data["boundary"]["name"], colormap=colormap)
+        self.map.plot(legend_label, show=True, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap)
 
         if static_scale:
             colormap_static = branca.colormap.LinearColormap(colors=['#ca0020', '#f7f7f7', '#0571b0'],
@@ -535,7 +543,7 @@ class ScoutMap:
                                                              vmax=static_scale["max"])\
                 .to_step(index=static_scale["boundaries"])
             colormap_static.caption = legend_label + " (static)"
-            self.map.plot(legend_label + " (static)", show=False, boundary_name=self.boundary_data["boundary"]["name"], colormap=colormap_static)
+            self.map.plot(legend_label + " (static)", show=False, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap_static)
 
     def add_all_sections_to_map(self, colour, marker_data):
         self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.section_types())], colour, marker_data)
@@ -643,15 +651,15 @@ class ScoutMap:
 
     def filter_set_boundaries_in_scout_area(self, column, value_list):
         records_in_scout_area = self.census_data.data.loc[self.census_data.data[column].isin(value_list)]
-        boundaries_in_scout_area = records_in_scout_area[self.boundary_data["name"]].unique()
-        self.boundary_list = self.boundary_list.loc[self.boundary_list[self.boundary_data["code_col_name"]].isin(boundaries_in_scout_area)]
+        boundaries_in_scout_area = records_in_scout_area[self.boundary_dict["name"]].unique()
+        self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[self.boundary_dict["codes"]["key"]].isin(boundaries_in_scout_area)]
 
     def filter_boundaries_by_scout_area(self, boundary, column, value_list):
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
         self.filter_boundaries(boundary, ons_value_list)
 
     def filter_records_by_boundary(self):
-        self.filter_records(self.boundary_data["name"], self.boundary_list[self.boundary_data["code_col_name"]])
+        self.filter_records(self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]])
 
     def set_region_of_interest(self, column, value_list):
         self.region_of_interest = {"column": column, "value_list": value_list}
