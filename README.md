@@ -11,9 +11,7 @@ There are several python packages that are required to be installed, including:
     * branca
  * geopandas
     * shapely
-    * fiona
  
- We recommend using [Conda](https://conda.io/en/latest/) to setup your environment, especially on Windows.
 
 ## Getting Started: 
 You will need to obtain the latest version of the ONS Postcode Directory. Note
@@ -23,6 +21,21 @@ If this is not May 2018, then you will need to create another child class of
 ONSData in ONS_data.py
 
 You will need to populate the settings.json file with the appropriate file paths
+
+### Installing required packages:
+Use setup.py or environment.yml with pip or conda to install the required packages and their dependancies.
+
+#### geopandas:
+To install geopandas using pip on windows, follow the following steps:
+* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), [pyproj](http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyproj), [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree), and [Shapely](http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely). Choose the correct python version & platform (note as of Jun 19 Fiona doesn't support GDAL 3.x)
+* Install any prerequisites (e.g. C++ redistributables)
+* pip install the wheels in the following order (preferably in a VirtualEnv)
+    1. GDAL
+    2. Fiona 
+    3. pyproj 
+    4. Rtree 
+    5. Shapely
+* pip install geopandas
 
 ## Resources: 
 ### Postcode Directory:
