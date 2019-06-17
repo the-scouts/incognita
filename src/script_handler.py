@@ -1,6 +1,6 @@
 from src.scout_map import ScoutMap
 from src.census_data import CensusData
-from src.ONS_data_May_18 import ONSDataMay18
+from src.ONS_data_May_19 import ONSDataMay19
 import time
 import json
 import src.log_util as log_util
@@ -29,7 +29,7 @@ class ScriptHandler:
             self.logger.info("Loading ONS data")
 
             if self.map.has_ons_data():
-                self.map.ons_data = ONSDataMay18(None, load_data=False)
+                self.map.ons_data = ONSDataMay19(None, load_data=False)
             else:
                 raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {CensusData.column_labels['VALID_POSTCODE']} column")
 

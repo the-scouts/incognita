@@ -1,7 +1,7 @@
 from src.ONS_data import ONSData
 
 
-class ONSDataMay18(ONSData):
+class ONSDataMay19(ONSData):
     fields = ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'oseast1m', 'osnrth1m', 'lat', 'long', 'imd', 'ctry', 'rgn', 'pcd']
     index_column = 'pcd'
     data_types = {
@@ -30,7 +30,7 @@ class ONSDataMay18(ONSData):
     # "L93000001": "Channel Islands", "M83000003": "Isle of Man"
 
     def __init__(self, csv_data, load_data=True):
-        ONSData.__init__(self, csv_data, load_data, ONSDataMay18.index_column, ONSDataMay18.fields, ONSDataMay18.data_types)
+        ONSData.__init__(self, csv_data, load_data, ONSDataMay19.index_column, ONSDataMay19.fields, ONSDataMay19.data_types)
 
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
         LAD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp"]
@@ -43,46 +43,45 @@ class ONSDataMay18(ONSData):
 
         self.BOUNDARIES = {
             "lad": {
+                # "friendly_name": "Local Authority District",
                 "name": "oslaua",
-                "codes": {"path": "LA_UA names and codes UK as at 12_18.csv", "key": "LAD18CD"},
-                # "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD",
+                "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "name": "LAD19NM"},
                 "boundary": {"shapefiles": LAD_SHAPEFILE, "key": 'lad18cd', "name": 'lad18nm',},
                 "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
-                # "age_profile": "lad_by_age.csv", "age_profile_code_col": "Code",
             },
             "cty": {
                 "name": "oslaua",
-                "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD",
+                "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "name": "LAD19NM"},
                 "boundary": {"shapefiles": CTY_SHAPEFILE, "key": 'ctyua17cd', "name": 'ctyua17nm',},
                 "age_profile": None, "age_profile_code_col": None,
             },
             "osward": {
                 "name": "osward",
-                "codes": 'Ward names and codes UK as at 05_18.csv', "code_col_name": "WD18CD",
+                "codes": {"path": "Ward names and codes UK as at 05_19_NSPD.csv", "key": "WD19CD", "name": "WD19NM"},
                 "boundary": {"shapefiles": WARD_SHAPEFILE, "key": 'wd18cd', "name": 'wd18nm',},
                 "age_profile": None, "age_profile_code_col": None,
             },
             "pcon": {
                 "name": "pcon",
-                "codes": 'Westminster Parliamentary Constituency names and codes UK as at 12_14.csv', "code_col_name": None,
+                "codes": {"path": "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv", "key": "PCON14CD", "name": "PCON14NM"},
                 "boundary": {"shapefiles": PCON_SHAPEFILE, "key": 'pcon17cd',},
                 "age_profile": None, "age_profile_code_col": None,
             },
             "lsoa": {
                 "name": "lsoa11",
-                "codes": 'LSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": "LSOA11CD",
+                "codes": {"path": "LSOA (2011) names and codes UK as at 12_12.csv", "key": "LSOA11CD", "name": "LSOA11NM"},
                 "boundary": {"shapefiles": LSOA_SHAPEFILE, "key": 'lsoa11cd', "name": 'lsoa11nm',},
                 "age_profile": None, "age_profile_code_col": None,
             },
             "msoa": {
                 "name": "msoa",
-                "codes": 'MSOA (2011) names and codes UK as at 12_12.csv', "code_col_name": None,
+                "codes": {"path": "MSOA (2011) names and codes UK as at 12_12.csv", "key": "MSOA11CD", "name": "MSOA11NM"},
                 "boundary": {"shapefiles": MSOA_SHAPEFILE, "key": 'msoa11cd',},
                 "age_profile": None, "age_profile_code_col": None,
             },
             "iz": {
                 "name": "iz",
-                "codes": None, "code_col_name": None,
+                "codes": {"path": None, "key": None, "name": None},
                 "boundary": {"shapefiles": IZ_SHAPEFILE, "key": 'InterZone',},
                 "age_profile": None, "age_profile_code_col": None,
             },
