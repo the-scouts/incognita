@@ -164,7 +164,7 @@ class ScoutMap:
         name = self.boundary_dict["name"]
         codes_key = self.boundary_dict["codes"]["key"]
 
-        self.logger.info(f"Filtering {len(self.boundary_list.index)} {name} boundaries by {field} being in {value_list}")
+        self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
         boundary_subset = self.census_data.data.loc[self.census_data.data[field].isin(value_list)][name].unique()
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
@@ -386,15 +386,25 @@ class ScoutMap:
                 if name == "D_ID":
                     districts = {code: 1}
                 else:
-                    districts = awards_mapping[code]
+                    districts = awards_mapping[code]  # self.district_mapping.get(name)[code] == self.district_mapping.get(name)[boundary_data[name]]
+                    #                                   self.district_mapping[ons_name][region][district_id]
 
                 boundary_data["QSA"] = 0
                 qsa_eligible = 0
-                for district in districts.keys():
-                    self.logger.debug(f"{district} in {districts[district]} ons boundaries")
-                    district_records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["DISTRICT"]] == district]
-                    boundary_data["QSA"] += district_records["Queens_Scout_Awards"].sum() / districts[district]
-                    qsa_eligible += district_records["Eligible4QSA"].sum() / districts[district]
+
+                # calculates the nominal QSAs per ONS region specified.
+                # Divides total # of awards by the number of Scout Districts that the ONS Region is in
+                for district_id in districts.keys():  # district_id within ONS region
+                    number_of_ons_regions_district_is_in = districts[district_id]
+                    self.logger.debug(f"{district_id} in {number_of_ons_regions_district_is_in} ons boundaries")
+
+                    district_records = self.census_data.data.loc[self.census_data.data[district_id_column] == district_id]  # Records for current district ID
+
+                    QSA_achieved_in_district_divided_by_number_of_regions_district_is_in = district_records["Queens_Scout_Awards"].sum() / number_of_ons_regions_district_is_in
+                    boundary_data["QSA"] += QSA_achieved_in_district_divided_by_number_of_regions_district_is_in
+
+                    YP_eligible_for_QSA_in_district_divided_by_number_of_regions_district_is_in = district_records["Eligible4QSA"].sum() / number_of_ons_regions_district_is_in
+                    qsa_eligible += YP_eligible_for_QSA_in_district_divided_by_number_of_regions_district_is_in
 
                 if qsa_eligible > 0:
                     boundary_data["%-QSA"] = (boundary_data["QSA"] * 100) / qsa_eligible
