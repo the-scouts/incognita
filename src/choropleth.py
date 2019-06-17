@@ -1,19 +1,17 @@
 import pandas as pd
 import folium
-from folium.plugins import MarkerCluster
+# from folium.plugins import MarkerCluster
 import geopandas
 import webbrowser
-import branca
 import os
-import numpy as np
-import logging
+import src.log_util as log_util
 
-# WGS_84 (World Geodetic System 1984) is a system for global positioning used
-# in GPS. It is used by folium to plot the data.
+# WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
+# It is used by folium to plot the data.
 WGS_84 = '4326'
 
 # ------------------------------------------------------------------------------
-# Class CholorplethMapPlotter
+# Class ChoroplethMapPlotter
 #
 # This class enables easy plotting of maps with a shape file. It makes the
 # following assumptions:
@@ -25,68 +23,56 @@ WGS_84 = '4326'
 # ------------------------------------------------------------------------------
 
 
-class CholoplethMapPlotter:
-    def __init__(self, shape_files, data_info, out_file, color, scale, legend_label):
-        self.logger = logging.getLogger(__name__)
-
-        # define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        console.setFormatter(logging.Formatter(fmt="%(name)s - %(levelname)s - %(message)s"))
-
-        # add the handler to the root logger
-        self.logger.addHandler(console)
+class ChoroplethMapPlotter:
+    def __init__(self, shape_files, data_info, out_file):
+        # Facilitates logging
+        self.logger = log_util.create_logger(__name__,)
 
         self.out_file = out_file + ".html"
         self.code_name = shape_files["key"]
+
         self.map_data = data_info['data']
-        self.color = color
-        self.scale = scale
-        self.legend_label = legend_label
         self.CODE_COL = data_info['code_col']
         self.SCORE_COL = data_info['score_col']
         self.display_score_col = data_info['display_score_col']
+
         # Create folium map
         self.map = folium.Map(location=[53.5,-1.49],zoom_start=6)
 
-        self.marker_cluster = MarkerCluster(name='Sections').add_to(self.map)
-        self.shape_files = shape_files["shapefiles"]
-        self.update_shape_file(self.shape_files)
+        # self.marker_cluster = MarkerCluster(name='Sections').add_to(self.map)
+        self.shape_file_paths = shape_files["shapefiles"]
+        self.filter_shape_file(self.shape_file_paths)
 
-    def update_shape_file(self, shape_files):
+        self.geo_data = None
+
+    def filter_shape_file(self, shape_file_paths):
+        # Load ShapeFiles
+        # Convert data from National Grid easting/northing to WGS84 co-ords
+        # output data to geoJSON
+
         # Read a shape file
         data_frames = []
-        for shape in shape_files:
-            data_frames.append(geopandas.GeoDataFrame.from_file(shape))
+        for shape_file_path in shape_file_paths:
+            data_frames.append(geopandas.GeoDataFrame.from_file(shape_file_path))
 
         all_shapes = pd.concat(data_frames,sort=False)
+
         original_number_of_shapes = len(all_shapes.index)
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
-        self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
+        # self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
+
         list_codes = [str(code) for code in self.map_data[self.CODE_COL].tolist()]
         all_shapes = all_shapes[all_shapes[self.code_name].isin(list_codes)]
         self.logger.info(f"Resulting in {len(all_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
-        self.geo_json = all_shapes.to_crs({'init':'epsg:'+str(WGS_84)})
-        self.logger.debug(f"geo_json\n{self.geo_json}")
-
-    def update_data(self, data_info):
-        self.map_data = data_info['data']
-        self.CODE_COL = data_info['code_col']
-        self.SCORE_COL = data_info['score_col']
-        self.update_shape_file(self.shape_files)
-
-    def update_score_col(self, score_col):
-        self.SCORE_COL = score_col
-
-    def set_colormap(self, colormap):
-        self.colormap = colormap
+        self.geo_data = all_shapes.to_crs({'init': f"epsg:{WGS_84}"})
+        # self.logger.debug(f"geo_data\n{self.geo_data}")
 
     def plot(self, name, show, boundary_name, colormap):
-        self.logger.debug(f"Merging geo_json on {self.code_name} with {self.CODE_COL} from boundary report")
-        merged_data = self.geo_json.merge(self.map_data, left_on=self.code_name,right_on=self.CODE_COL)
-        self.logger.debug(f"Merged_data\n{merged_data}")
+        # self.logger.debug(f"Merging geo_json on {self.code_name} with {self.CODE_COL} from boundary report")
+        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL)
+        # self.logger.debug(f"Merged_data\n{merged_data}")
 
         folium.GeoJson(merged_data.to_json(),
                        name=name,
@@ -105,16 +91,12 @@ class CholoplethMapPlotter:
             return colormap(area_score)
 
     def add_marker(self, lat, long, popup, color):
-        # folium.Marker(
-        #    location=[lat, long],
-        #    popup=popup,
-        #    icon=folium.Icon(color=color)
-        # ).add_to(self.marker_cluster)
         folium.Marker(
             location=[lat, long],
             popup=popup,
             icon=folium.Icon(color=color)
         ).add_to(self.map)
+        # ).add_to(self.marker_cluster)
 
     def save(self):
         # Add layer control to map
