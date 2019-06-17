@@ -6,11 +6,14 @@ This is written and tested in Python 3.7.2.
 
 There are several python packages that are required to be installed, including:
  * pandas
-    * geopandas
     * numpy
  * folium
     * branca
- * shapely
+ * geopandas
+    * shapely
+    * fiona
+ 
+ We recommend using [Conda](https://conda.io/en/latest/) to setup your environment, especially on Windows.
 
 ## Getting Started: 
 You will need to obtain the latest version of the ONS Postcode Directory. Note
