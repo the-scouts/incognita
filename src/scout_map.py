@@ -629,8 +629,8 @@ class ScoutMap:
                 height = 120
             else:
                 height = 240
-            iframe = IFrame(html=html, width=350, height=100)
-            popup = Popup(iframe, max_width=2650)
+            iframe = folium.IFrame(html=html, width=350, height=100)
+            popup = folium.Popup(iframe, max_width=2650)
 
             if isinstance(colour, dict):
                 census_column = colour["census_column"]
