@@ -1,16 +1,16 @@
 import pandas as pd
-# from src.cholopleth import CholoplethMapPlotter
+import numpy as np
+from src.choropleth import ChoroplethMapPlotter
 from src.census_data import CensusData
 from src.census_merge_postcode import CensusMergePostcode
-import numpy as np
-from folium import IFrame
-from folium import Popup
+import src.log_util as log_util
+import folium
 import branca
+import geopandas as gpd
+import shapely
+import collections
 from itertools import cycle
 import json
-# import geopandas as gpd
-# import shapely
-import src.log_util as log_util
 
 
 class ScoutMap:
