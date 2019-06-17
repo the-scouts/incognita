@@ -213,8 +213,7 @@ class ScoutMap:
         return district_ids
 
     def ons_to_district_mapping(self, ons_code):
-        """Create json file, containing which districts are within an each ONS
-        area, and how many ONS areas those districts are in.
+        """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
         :param ons_code: A field in the ONS Postcode directory
         :type ons_code: str
@@ -222,37 +221,50 @@ class ScoutMap:
         :returns: Nothing
         :rtype: None
         """
-        self.logger.debug("Creating mapping from ons boundary to district")
-        oslauas = self.boundary_list[self.boundary_data["code_col_name"]]
-        # oslauas = self.census_data.census_postcode_data[ons_code].unique()
-        mapping = {}
-        for oslaua in oslauas:
-            self.logger.debug(f"Finding districts in {oslaua}")
-            districts = self.districts_from_ons(ons_code, [oslaua])
-            self.logger.debug(f"Found districts {districts}")
-            mapping[oslaua] = {}
-            for district in districts:
-                nu_oslaua = len(self.ons_from_scout_area(ons_code, CensusData.column_labels['id']["DISTRICT"], [district]))
-                mapping[oslaua][district] = nu_oslaua
-        self.logger.debug("Finished mapping from ons boundary to district")
+
+        self.logger.debug("Creating mapping from ons boundary to scout district")
+        codes_key = self.boundary_dict["codes"]["key"]
+
+        region_type = ons_code  # Census column heading for the region geography type
+        district_id_column = CensusData.column_labels['id']["DISTRICT"]
+
+        region_ids = self.boundary_regions_data[codes_key].dropna().drop_duplicates()
+
+        district_ids_by_region = self.census_data.data.loc[self.census_data.data[region_type].isin(region_ids), [region_type, district_id_column,]].dropna().drop_duplicates()
+        district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
+
+        region_ids_by_district = self.census_data.data.loc[self.census_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
+        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == CensusData.DEFAULT_VALUE)].dropna().drop_duplicates()
+
+        count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})  # count of how many regions the district occupies
+        count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column)
+
+        count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
+
+        nested_dict = collections.defaultdict(dict)
+        for keys, value in count_by_district_by_region["count"].iteritems():
+            nested_dict[keys[0]][keys[1]] = value
+        mapping = dict(nested_dict)
+
         self.district_mapping[ons_code] = mapping
-        with open("district_mapping.json", 'w') as f:
-            json.dump(mapping, f)
+        self.logger.debug("Finished mapping from ons boundary to district")
+        # with open("district_mapping.json", 'w') as f:
+        #     json.dump(mapping, f)
 
-    def load_ons_to_district_mapping(self, file_name, ons_code):
-        """Reads a district mapping file (e.g. as created by ons_to_district_mapping)
-
-        :param file_name: Location of the json file
-        :param ons_code: The ONS field that the file contains
-
-        :type file_name: str
-        :type ons_code: str
-
-        :returns: Nothing
-        :rtype: None
-        """
-        with open(file_name, 'r') as f:
-            self.district_mapping[ons_code] = json.load(f)
+    # def load_ons_to_district_mapping(self, file_name, ons_code):
+    #     """Reads a district mapping file (e.g. as created by ons_to_district_mapping)
+    #
+    #     :param file_name: Location of the json file
+    #     :param ons_code: The ONS field that the file contains
+    #
+    #     :type file_name: str
+    #     :type ons_code: str
+    #
+    #     :returns: Nothing
+    #     :rtype: None
+    #     """
+    #     with open(file_name, 'r') as f:
+    #         self.district_mapping[ons_code] = json.load(f)
 
     def create_boundary_report(self, options=["Groups", "Section numbers", "6 to 17 numbers", "awards"], historical=False):
         """Produces .csv file summarising by boundary provided.
@@ -321,8 +333,8 @@ class ScoutMap:
             records_in_boundary = self.census_data.data.loc[self.census_data.data[name] == str(code)]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
 
-            list_of_groups = records_in_boundary[CensusData.column_labels['id']["GROUP"]].unique()
-            list_of_districts = records_in_boundary[CensusData.column_labels['id']["DISTRICT"]].unique()
+            # list_of_groups = records_in_boundary[CensusData.column_labels['id']["GROUP"]].unique()
+            # list_of_districts = records_in_boundary[CensusData.column_labels['id']["DISTRICT"]].unique()
 
             if name == "lsoa11":
                 lsoa11_data = self.census_data.data.loc[self.census_data.data[name] == code]
