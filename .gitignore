@@ -1,12 +1,10 @@
 *.html
-*.json
 *.csv
-src/error_file.txt
-src/*.log
-src/logs/*.log
-*/__pycache__/*
 __pycache__/*
+*/__pycache__/*
 data/*
-Output/*
-archive/*
 docs/build/*
+output/*
+output/archive/*
+src/error_file.txt
+src/logs/*.log
