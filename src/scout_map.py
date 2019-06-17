@@ -215,7 +215,7 @@ class ScoutMap:
     def ons_to_district_mapping(self, ons_code):
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
-        :param ons_code: A field in the ONS Postcode directory
+        :param ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
         :type ons_code: str
 
         :returns: Nothing
