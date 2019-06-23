@@ -4,18 +4,18 @@ import pandas as pd
 class CensusData:
     """Holds and accesses census data from a given file.
 
-            Data is read from passed path, and imported with specified data types.
-            Attributes are added to the class to aid accessing data in a structured way.
-            All column labels from the Census report are set in column_labels and can be
-                changed to reflect the input census file.
+    Data is read from passed path, and imported with specified data types.
+    Attributes are added to the class to aid accessing data in a structured way.
+    All column labels from the Census report are set in column_labels and can be
+        changed to reflect the input census file.
 
-            :param str file_path_csv: path to input file with Census data.
+    :param str file_path_csv: path to input file with Census data.
 
-            :var column_labels: holds strings of all census csv column headings, structured to help access
-            :var DEFAULT_VALUE: holds value for NaN values
-            :var UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
-            :var UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
-            """
+    :var column_labels: holds strings of all census csv column headings, structured to help access
+    :var DEFAULT_VALUE: holds value for NaN values
+    :var UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
+    :var UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+    """
 
     column_labels = {
         'UNIT_TYPE': "type",  # Colony, Group, ASU, Region etc.
