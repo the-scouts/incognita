@@ -568,7 +568,7 @@ class ScoutMap:
             self.map.plot(legend_label + " (static)", show=False, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap_static)
 
     def add_all_sections_to_map(self, colour, marker_data):
-        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.section_types())], colour, marker_data)
+        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
 
     def add_single_section_to_map(self, section, colour, marker_data):
         self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]], colour, marker_data)
@@ -594,8 +594,8 @@ class ScoutMap:
             self.logger.debug(postcode)
 
             colocated_sections = sections.loc[sections[CensusData.column_labels['POSTCODE']] == postcode]
-            colocated_district_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.section_labels_by_level('District'))]
-            colocated_group_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data. section_labels_by_level('Group'))]
+            colocated_district_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('District'))]
+            colocated_group_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
@@ -808,7 +808,7 @@ class ScoutMap:
         for group_id in group_ids:
             group_records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["GROUP"]] == group_id]
 
-            for section in self.census_data.sections_name_by_level('Group'):
+            for section in self.census_data.get_section_names('Group'):
                 nu_sections = []
                 for year in years:
                     group_records_year = group_records.loc[group_records["Year"] == year]
@@ -916,11 +916,11 @@ class ScoutMap:
             open_years = new_sections_id["years"]
             section = new_sections_id["section"]
 
-            if section in self.census_data.sections_name_by_level('Group'):
+            if section in self.census_data.get_section_names('Group'):
                 records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["GROUP"]] == section_id]
                 section_data["Group_ID"] = records[CensusData.column_labels['id']["GROUP"]].unique()[0]
                 section_data["Group"] = records[CensusData.column_labels['name']["GROUP"]].unique()[0]
-            elif section in self.census_data.sections_name_by_level('District'):
+            elif section in self.census_data.get_section_names('District'):
                 records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["DISTRICT"]] == section_id]
                 section_data["Group_ID"] = ""
                 section_data["Group"] = ""
@@ -1015,10 +1015,10 @@ class ScoutMap:
                 section_data["Section Name"] = section_records["name"].unique()[0]
             else:
                 if int(open_years[-1]) < 2017:
-                    if section in self.census_data.sections_name_by_level('Group'):
-                        section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_TYPE_GROUP]
-                    elif section in self.census_data.sections_name_by_level('District'):
-                        section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_TYPE_DISTRICT]
+                    if section in self.census_data.get_section_names('Group'):
+                        section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
+                    elif section in self.census_data.get_section_names('District'):
+                        section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_DISTRICT]
                 elif int(open_years[-1]) == 2017:
                     section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
                 else:
@@ -1049,7 +1049,7 @@ class ScoutMap:
                 most_recent = most_recent.iloc[0]
             elif most_recent.shape[0] == 0:
                 self.logger.warning("Inconsistent ids")
-                if section in self.census_data.sections_name_by_level('Group'):
+                if section in self.census_data.get_section_names('Group'):
                     # In the event that the Object_IDs aren't consistent, pick a section in the group that's most recent
                     # is only applicable after 2017, so sections are assumed to exist.
                     self.logger.debug(f"There are {records.shape[0]} group records")
@@ -1060,7 +1060,7 @@ class ScoutMap:
                     most_recent_sec = section_rec.loc[section_rec["Year"] == most_recent_year]
                     self.logger.debug(f"There are {most_recent_sec.shape[0]} group records in {section} in {most_recent_year}")
                     most_recent = most_recent_sec.iloc[0]
-                elif section in self.census_data.sections_name_by_level('District'):
+                elif section in self.census_data.get_section_names('District'):
                     district_sections = records.loc[records[CensusData.column_labels['id']["DISTRICT"]] == section_data["District_ID"]]
                     section_rec = district_sections.loc[district_sections[CensusData.column_labels['UNIT_TYPE']] == section]
                     most_recent = section_rec.loc[section_rec["Year"] == most_recent_year].iloc[0]
@@ -1110,7 +1110,7 @@ class ScoutMap:
             return "error"
 
     def group_IDs_from_fields(self, group_details, census_cols):
-        groups = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_TYPE_GROUP]
+        groups = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
         input_cols = list(group_details.columns.values)
         output_columns = input_cols + [CensusData.column_labels['id']["GROUP"]] + census_cols
         output_pd = pd.DataFrame(columns=output_columns)

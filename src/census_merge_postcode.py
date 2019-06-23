@@ -76,7 +76,7 @@ class CensusMergePostcode:
 
         # # Find records that haven't had postcode data attached
         # invalid_postcodes = census_data.loc[census_data["postcode_is_valid"] == 0]
-        # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.column_labels['UNIT_TYPE']].isin(self.input.section_types())]
+        # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.column_labels['UNIT_TYPE']].isin(self.input.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))]
         # self.logger.debug(invalid_section_postcodes)
         # self.logger.info("Updating sections with invalid postcodes, in groups with valid")
         # for (row_index, row) in invalid_section_postcodes.iterrows():
