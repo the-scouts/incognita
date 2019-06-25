@@ -33,7 +33,7 @@ class CensusMergePostcode:
 
         # Regular expression to determine a valid postcode
         regex_uk_postcode = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]? {0,2}\d[A-Z]{2}$")
-        # RegExp to remove whitespace, non-alphanumeric (keep shifted numbers)
+        # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
         regex_clean = re.compile(r'[\s+]|[^a-zA-Z\d!"£$%^&*()]')
 
         # If length of postcode is 6 or 5 then inert 1 or 2 spaces.
@@ -53,7 +53,7 @@ class CensusMergePostcode:
             .str.upper() \
             .apply(lambda single_postcode: pad_to_seven(single_postcode))
 
-        # Checks validity against regex, returns truthy/falsy as int (0 or 1)
+        # Checks validity against regex, returns truthy/falsy as int (1 or 0)
         m = postcode \
             .str.match(regex_uk_postcode, na=False) \
             .astype(int)
@@ -81,7 +81,7 @@ class CensusMergePostcode:
         for field in fields_data_types['int']:
             census_data.loc[census_data[valid_postcode_label] == 0, field] = 0
 
-        # # Find records that haven't had postcode data attached
+        # Find records that haven't had postcode data attached
         # invalid_postcodes = census_data.loc[census_data["postcode_is_valid"] == 0]
         # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.column_labels['UNIT_TYPE']].isin(self.input.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))]
         # self.logger.debug(invalid_section_postcodes)
