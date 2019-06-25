@@ -5,13 +5,16 @@ import src.log_util as log_util
 
 
 class CensusMergePostcode:
-    def __init__(self, section_data, output_csv_path):
-        """Merges input data with a CensusData object on a given field
+    """Merges input data with CensusData data on a given key
+
         Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
+        The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
 
         :param section_data: a CensusData object
-        :param output_csv_path: path to a csv where the output is stored. The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
+        :param output_csv_path: path to a csv where the output is stored.
         """
+
+    def __init__(self, section_data, output_csv_path):
         self.input = section_data
         self.output_file_path = output_csv_path
 
@@ -22,8 +25,11 @@ class CensusMergePostcode:
 
     @staticmethod
     def postcode_cleaner(postcode):
-        # Cleans the postcode to lookup in the ONS Postcode Directory.
-        # Returns a boolean signifying validity and the cleaned postcode
+        """Cleans postcode to ONS postcode directory format.
+
+        :param postcode: pandas series of postcodes
+        :return: boolean signifying validity, cleaned postcode
+        """
 
         # Regular expression to determine a valid postcode
         regex_uk_postcode = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]? {0,2}\d[A-Z]{2}$")
@@ -54,11 +60,12 @@ class CensusMergePostcode:
         return m, postcode
 
     def merge_and_output(self, census_data, data_to_merge, census_index_column, fields_data_types):
-        """
+        """Merge census data and input data on key and index. Save merged data to csv file.
+
         :param census_data: pandas DataFrame with census data
         :param data_to_merge: pandas DataFrame with index col as index to merge
         :param census_index_column: column label to merge on in census data
-        :param fields_data_types: dict of data types -> lists of fields
+        :param fields_data_types: dict of data types containing lists of fields
         :return: None
         """
 
