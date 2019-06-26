@@ -8,10 +8,9 @@ import src.log_util as log_util
 
 class ScriptHandler:
     def __init__(self, csv_has_ons_data=True):
-        """Acts to manage all functions, providing setup, logging and timing
+        """Acts to manage all functions, providing setup, logging and timing.
 
-        :param csv_has_ons_data: Whether ONS Postcode Directory has data been added to the census csv
-        :type csv_has_ons_data: Bool
+        :param bool csv_has_ons_data: Whether ONS Postcode Directory has data been added to the census csv
         """
         self.start_time = time.time()
         self.logger = log_util.create_logger(__name__, 'logs/geo_mapping.log')
@@ -36,9 +35,17 @@ class ScriptHandler:
             self.logger.info(f"Finished loading ONS data from {self.map.ons_data.PUBLICATION_DATE}, {log_util.duration(self.start_time)} seconds elapsed")
 
     def close(self):
+        """Outputs the duration of the programme """
         self.logger.info(f"Script took {log_util.duration(self.start_time)} seconds")
 
     def run(self, function, args=[], file_name=None):
+        """Runs function with self as the ScoutMap object, outputs to file
+
+        :param function: function to run
+        :param list args: arguments to pass to the function
+        :param file_name: filename to output the result to
+        :return: None
+        """
         start_time = time.time()
 
         self.logger.info(f"Calling function {function.__name__}")

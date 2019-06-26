@@ -5,13 +5,16 @@ import src.log_util as log_util
 
 
 class CensusMergePostcode:
-    def __init__(self, section_data, output_csv_path):
-        """Merges input data with a CensusData object on a given field
+    """Merges input data with CensusData data on a given key
+
         Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
+        The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
 
         :param section_data: a CensusData object
-        :param output_csv_path: path to a csv where the output is stored. The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
+        :param output_csv_path: path to a csv where the output is stored.
         """
+
+    def __init__(self, section_data, output_csv_path):
         self.input = section_data
         self.output_file_path = output_csv_path
 
@@ -22,12 +25,15 @@ class CensusMergePostcode:
 
     @staticmethod
     def postcode_cleaner(postcode):
-        # Cleans the postcode to lookup in the ONS Postcode Directory.
-        # Returns a boolean signifying validity and the cleaned postcode
+        """Cleans postcode to ONS postcode directory format.
+
+        :param postcode: pandas series of postcodes
+        :return: boolean signifying validity, cleaned postcode
+        """
 
         # Regular expression to determine a valid postcode
         regex_uk_postcode = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]? {0,2}\d[A-Z]{2}$")
-        # RegExp to remove whitespace, non-alphanumeric (keep shifted numbers)
+        # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
         regex_clean = re.compile(r'[\s+]|[^a-zA-Z\d!"£$%^&*()]')
 
         # If length of postcode is 6 or 5 then inert 1 or 2 spaces.
@@ -47,18 +53,19 @@ class CensusMergePostcode:
             .str.upper() \
             .apply(lambda single_postcode: pad_to_seven(single_postcode))
 
-        # Checks validity against regex, returns truthy/falsy as int (0 or 1)
+        # Checks validity against regex, returns truthy/falsy as int (1 or 0)
         m = postcode \
             .str.match(regex_uk_postcode, na=False) \
             .astype(int)
         return m, postcode
 
     def merge_and_output(self, census_data, data_to_merge, census_index_column, fields_data_types):
-        """
+        """Merge census data and input data on key and index. Save merged data to csv file.
+
         :param census_data: pandas DataFrame with census data
         :param data_to_merge: pandas DataFrame with index col as index to merge
         :param census_index_column: column label to merge on in census data
-        :param fields_data_types: dict of data types -> lists of fields
+        :param fields_data_types: dict of data types containing lists of fields
         :return: None
         """
 
@@ -74,9 +81,9 @@ class CensusMergePostcode:
         for field in fields_data_types['int']:
             census_data.loc[census_data[valid_postcode_label] == 0, field] = 0
 
-        # # Find records that haven't had postcode data attached
+        # Find records that haven't had postcode data attached
         # invalid_postcodes = census_data.loc[census_data["postcode_is_valid"] == 0]
-        # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.column_labels['UNIT_TYPE']].isin(self.input.section_types())]
+        # invalid_section_postcodes = invalid_postcodes.loc[invalid_postcodes[CensusData.column_labels['UNIT_TYPE']].isin(self.input.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))]
         # self.logger.debug(invalid_section_postcodes)
         # self.logger.info("Updating sections with invalid postcodes, in groups with valid")
         # for (row_index, row) in invalid_section_postcodes.iterrows():

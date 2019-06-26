@@ -2,7 +2,21 @@ import pandas as pd
 
 
 class CensusData:
-    # Column headings
+    """Holds and accesses census data from a given file.
+
+    Data is read from passed path, and imported with specified data types.
+    Attributes are added to the class to aid accessing data in a structured way.
+    All column labels from the Census report are set in column_labels and can be
+        changed to reflect the input census file.
+
+    :param str file_path_csv: path to input file with Census data.
+
+    :var column_labels: holds strings of all census csv column headings, structured to help access
+    :var DEFAULT_VALUE: holds value for NaN values
+    :var UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
+    :var UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+    """
+
     column_labels = {
         'UNIT_TYPE': "type",  # Colony, Group, ASU, Region etc.
         'POSTCODE': "postcode",  # Postcode field
@@ -51,14 +65,10 @@ class CensusData:
                 "top_award_eligible": "Eligible4QSA", },
         },
     }
-    DEFAULT_VALUE = "error"
 
-    # The value in column_labels['UNIT_TYPE'] that denote a group
-    UNIT_TYPE_GROUP = "Group"
-    # The value in column_labels['UNIT_TYPE'] that denote a district
-    UNIT_TYPE_DISTRICT = "District"
-    # The value in the column_labels['UNIT_TYPE'] that denote an entity made up of sections.
-    CENSUS_TYPE_ENTITY = [UNIT_TYPE_GROUP, UNIT_TYPE_DISTRICT]
+    DEFAULT_VALUE = "error"
+    UNIT_LEVEL_GROUP = "Group"
+    UNIT_LEVEL_DISTRICT = "District"
 
     def __init__(self, file_path_csv):
         data_values_32 = {key: "Int32" for key in ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "eastings", "northings"]}
@@ -68,20 +78,29 @@ class CensusData:
         self.sections_file_path = file_path_csv
         self.data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
 
-    def sections_name_by_level(self, level):
-        return [section for section in self.column_labels['sections'].keys() if self.column_labels['sections'][section]["level"] == level]
+    def get_section_names(self, level):
+        """Return list of section names that exist within a particular organisational level.
 
-    def section_labels_by_level(self, level):
-        section_types = self.sections_name_by_level(level)
-        return [self.column_labels['sections'][section]["type"] for section in section_types]
+        :param level: Organisational level. Usually Group or District.
+        :type level: str or list
+        :return: List of section names.
+        """
+        return [section_name for section_name, section_dict in self.column_labels['sections'].items() if section_dict["level"] in level]
 
-    def section_types(self):
-        return [self.column_labels['sections'][section]["type"] for section in self.column_labels['sections'].keys()]
+    def get_section_type(self, level):
+        """Return list of section types that exist within a particular organisational level.
+
+        :param level: Organisational level. Usually Group or District.
+        :type level: str or list
+        :return: List of section types
+        """
+        section_names_list = self.get_section_names(level)
+        return [self.column_labels['sections'][section]["type"] for section in section_names_list]
+        # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
 
     def has_ons_data(self):
         """Finds whether ONS data has been added
 
-        :returns: Whether the Scout Census data has ONS data added
-        :rtype: bool
+        :return bool: Whether the Scout Census data has ONS data added
         """
         return CensusData.column_labels['VALID_POSTCODE'] in list(self.data.columns.values)
