@@ -535,9 +535,13 @@ class ScoutMap:
 
     def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None):
         self.logger.info(f"Creating map from {score_col} with name {name}")
-        boundary = self.boundary_dict["name"]
 
-        data_codes = {"data": self.boundary_report[boundary], "code_col": boundary, "score_col": score_col, "display_score_col": display_score_col}
+        data_codes = {
+            "data": self.boundary_report[self.boundary_dict["name"]],
+            "code_col": self.boundary_dict["name"],
+            "score_col": score_col,
+            "score_col_label": display_score_col
+        }
 
         self.map = ChoroplethMapPlotter(self.boundary_dict["boundary"],
                                         data_codes,
