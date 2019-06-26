@@ -14,7 +14,12 @@ import json
 
 
 class ScoutMap:
-    """Provides access to manipulate and process data"""
+    """Provides access to manipulate and process data
+
+    :param str census_csv_path: A path to a .csv file that contains Scout Census data
+
+    :var dict ScoutMap.SECTIONS: Holds information about scout sections
+    """
 
     SECTIONS = {
         'Beavers': {'field_name': '%-Beavers', 'ages': [(6, 1), (7, 1)]},
@@ -24,13 +29,12 @@ class ScoutMap:
     }
 
     def __init__(self, census_csv_path):
-        """Loads Scout Census Data
 
-        :param census_csv_path: A path to a .csv file that contains Scout Census data
-        """
-
+        # Loads Scout Census Data
         self.census_data = CensusData(census_csv_path)
-        self.ons_data = None  # Set by ScriptHandler from above
+
+        # Set by ScriptHandler as 'parent'
+        self.ons_data = None
         self.boundary_report = {}
         self.district_mapping = {}
 
@@ -41,6 +45,7 @@ class ScoutMap:
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
 
+        # Folder to save output files to
         self.OUTPUT = self.settings["Output folder"]
 
         # Facilitates logging
@@ -55,16 +60,22 @@ class ScoutMap:
         # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
             'categorical': ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'ctry', 'rgn'],
-            'int': ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd']}
+            'int': ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd'],
+        }
 
         self.logger.debug("Initialising merge object")
-        merge = CensusMergePostcode(self.census_data,
-                                    self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",)
+        merge = CensusMergePostcode(
+            self.census_data,
+            self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",
+        )
+
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
-        merge.merge_and_output(self.census_data.data,
-                               ONS_postcode_directory.data,
-                               CensusData.column_labels['POSTCODE'],
-                               ons_fields_data_types)
+        merge.merge_and_output(
+            self.census_data.data,
+            ONS_postcode_directory.data,
+            CensusData.column_labels['POSTCODE'],
+            ons_fields_data_types
+        )
 
     def has_ons_data(self):
         """Finds whether ONS data has been added
@@ -77,18 +88,12 @@ class ScoutMap:
     def filter_records(self, field, value_list, mask=False, exclusion_analysis=False):
         """Filters the Census records by any field in ONS PD.
 
-        :param field: The field on which to filter
-        :param value_list: The values on which to filter
-        :param mask: If True, keep the values that match the filter. If False, keep the values that don't match the filter.
-        :param exclusion_analysis:
+        :param str field: The field on which to filter
+        :param list value_list: The values on which to filter
+        :param bool mask: If True, keep the values that match the filter. If False, keep the values that don't match the filter.
+        :param bool exclusion_analysis:
 
-        :type field: str
-        :type value_list: list
-        :type mask: bool
-        :type exclusion_analysis: bool
-
-        :returns: Nothing
-        :rtype: None
+        :returns None: Nothing
         """
         # Count number of rows
         original_records = len(self.census_data.data.index)
@@ -109,9 +114,11 @@ class ScoutMap:
         self.logger.info(f"Resulting in {remaining_records} records remaining.")
 
         if exclusion_analysis:
+            # Calculate the number of records that have been filtered out
             excluded_records = original_records - remaining_records
             self.logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
+            # Prints number of members and % of members filtered out for each section
             for section in CensusData.column_labels['sections'].keys():
                 section_type = CensusData.column_labels['sections'][section]["type"]
                 section_dict = CensusData.column_labels['sections'][section]
@@ -122,16 +129,17 @@ class ScoutMap:
                 sections = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == section_type]
                 counted_members = sections[section_dict["male"]].sum() + sections[section_dict["female"]].sum()
 
-                self.logger.info(f"{excluded_members} {section} records were removed ({excluded_members / (counted_members) * 100}%) of total")
+                self.logger.info(f"{excluded_members} {section} records were removed ({excluded_members / counted_members * 100}%) of total")
 
     def set_boundary(self, geography_name):
-        """Sets the boundary_dict and boundary_regions_list members
+        """Sets the boundary_dict and boundary_regions_data members
 
-        :param geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSData.BOUNDARIES.
-        :type geography_name: str
+        :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSData.BOUNDARIES.
 
-        :returns: Nothing
-        :rtype: None
+        :var dict self.boundary_dict: information about the boundary type
+        :var self.boundary_regions_data: table of region codes and human-readable names for those codes
+
+        :returns None: Nothing
         """
         self.logger.info(f"Setting the boundary to {geography_name}")
 
@@ -147,27 +155,30 @@ class ScoutMap:
             raise Exception("Invalid boundary supplied")
 
     def filter_boundaries(self, field, value_list):
-        """Filters the boundaries.
+        """Filters the boundary_regions_data table by if the area code is within both value_list and the census_data table.
+
         Requires set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.
 
-        :param field: The field on which to filter
-        :param value_list: The values on which to filter
+        :param str field: The field on which to filter
+        :param list value_list: The values on which to filter
 
-        :type field: str
-        :type value_list: list
-
-        :returns: Nothing
-        :rtype: None
+        :returns None: Nothing
         """
+
+        if not self.boundary_dict:
+            raise Exception("boundary_dict has not been set, or there is no data in it") # Has ScoutMap.set_boundary() been called?
+
         name = self.boundary_dict["name"]
         codes_key = self.boundary_dict["codes"]["key"]
 
         self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
+        # Filters census data table if field column is in value_list. Returns ndarray of unique area codes
         boundary_subset = self.census_data.data.loc[self.census_data.data[field].isin(value_list)][name].unique()
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
+        # Filters the boundary names and codes table by areas within the boundary_subset list
         self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[codes_key].isin(boundary_subset)]
         self.logger.info(f"Resulting in {len(self.boundary_regions_data.index)} {name} boundaries")
 
