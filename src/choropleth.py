@@ -41,9 +41,9 @@ class ChoroplethMapPlotter:
 
         # self.marker_cluster = MarkerCluster(name='Sections').add_to(self.map)
         self.shape_file_paths = shape_files["shapefiles"]
-        self.filter_shape_file(self.shape_file_paths)
-
         self.geo_data = None
+
+        self.filter_shape_file(self.shape_file_paths)
 
     def filter_shape_file(self, shape_file_paths):
         # Load ShapeFiles

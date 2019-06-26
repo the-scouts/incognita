@@ -96,14 +96,14 @@ class ScoutMap:
         # Filter records
         if not mask:
             self.logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
-            self.census_data.data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
             if exclusion_analysis:
                 excluded_data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
+            self.census_data.data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
         else:
             self.logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
-            self.census_data.data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
             if exclusion_analysis:
                 excluded_data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
+            self.census_data.data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
 
         remaining_records = len(self.census_data.data.index)
         self.logger.info(f"Resulting in {remaining_records} records remaining.")
@@ -113,16 +113,25 @@ class ScoutMap:
             self.logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
             for section in CensusData.column_labels['sections'].keys():
+                self.logger.debug(f"Analysis of {section} member exclusions")
                 section_type = CensusData.column_labels['sections'][section]["type"]
                 section_dict = CensusData.column_labels['sections'][section]
 
                 excluded_sections = excluded_data.loc[excluded_data[CensusData.column_labels['UNIT_TYPE']] == section_type]
-                excluded_members = excluded_sections[CensusData.column_labels['sections'][section]["male"]].sum() + excluded_sections[CensusData.column_labels['sections'][section]["female"]].sum()
+                self.logger.debug(f"Excluded sections\n{excluded_sections}")
+                self.logger.debug(f"Finding number of excluded {section} by summing {section_dict['male']} and {section_dict['female']}")
+                excluded_members = excluded_sections[section_dict["male"]].sum() + excluded_sections[section_dict["female"]].sum()
+                self.logger.debug(f"{excluded_members} {section} excluded")
 
                 sections = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == section_type]
                 counted_members = sections[section_dict["male"]].sum() + sections[section_dict["female"]].sum()
 
-                self.logger.info(f"{excluded_members} {section} records were removed ({excluded_members / (counted_members) * 100}%) of total")
+                original_members = counted_members + excluded_members
+
+                if original_members > 0:
+                    self.logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}% of total)")
+                else:
+                    self.logger.info(f"There are no {section} members present in data")
 
     def set_boundary(self, geography_name):
         """Sets the boundary_dict and boundary_regions_list members
@@ -186,7 +195,9 @@ class ScoutMap:
         :returns: List of ONS Geographical codes of type ons_code.
         :rtype: list
         """
+        self.logger.debug(f"Finding the ons areas that exist with {column} in {value_list}")
         records = self.census_data.data.loc[self.census_data.data[column].isin(value_list)]
+        self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
         ons_codes = records[ons_code].unique().tolist()
         if CensusData.DEFAULT_VALUE in ons_codes:
             ons_codes.remove(CensusData.DEFAULT_VALUE)
@@ -266,7 +277,7 @@ class ScoutMap:
     #     with open(file_name, 'r') as f:
     #         self.district_mapping[ons_code] = json.load(f)
 
-    def create_boundary_report(self, options=["Groups", "Section numbers", "6 to 17 numbers", "awards"], historical=False):
+    def create_boundary_report(self, options=["Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"], historical=False):
         """Produces .csv file summarising by boundary provided.
 
         Requires self.boundary_data to be set, preferably by :meth:scout_map.set_boundary
@@ -288,15 +299,18 @@ class ScoutMap:
             raise Exception("Function set_boundary must be run before a boundary report can be created")
         self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.census_data.data.index)} records")
 
-        years_in_data = self.census_data.data[CensusData.column_labels['YEAR']].unique().tolist()
-        years_in_data = [int(year) for year in years_in_data]
-        years_in_data.sort()
-        years_in_data = [str(year) for year in years_in_data]
+        min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
+        years_in_data = range(min_year, max_year + 1)
+
+        #years_in_data = self.census_data.data[CensusData.column_labels['YEAR']].unique().tolist()
+        #years_in_data = [int(year) for year in years_in_data]
+        #years_in_data.sort()
+        #years_in_data = [str(year) for year in years_in_data]
         if historical:
-            self.logger.info(f"Historical analysis including {', '.join(years_in_data)}")
+            self.logger.info(f"Historical analysis including {years_in_data}")
         else:
             if len(years_in_data) > 1:
-                self.logger.error(f"Historical option not selected, but multiple years of data selected ({', '.join(years_in_data)})")
+                self.logger.error(f"Historical option not selected, but multiple years of data selected ({years_in_data})")
 
         output_columns = ["Name", self.boundary_dict["name"]]
         if name == "lsoa11":
@@ -306,7 +320,9 @@ class ScoutMap:
         if "Section numbers" in options:
             for year in years_in_data:
                 output_columns += [f"Beavers-{year}", f"Cubs-{year}", f"Scouts-{year}", f"Explorers-{year}"]
-        if "6 to 17 numbers" in options:
+                if "6 to 17 numbers" in options:
+                    output_columns.append(f"All-{year}")
+        if ("6 to 17 numbers" in options) and not ("Section numbers" in options):
             for year in years_in_data:
                 output_columns.append(f"All-{year}")
         if "awards" in options:
@@ -318,6 +334,8 @@ class ScoutMap:
                 if name in self.ons_data.BOUNDARIES.keys():
                     self.ons_to_district_mapping(name)
                     awards_mapping = self.district_mapping.get(name)
+        if "waiting list total" in options:
+            output_columns.append("Waiting List")
 
         output_data = pd.DataFrame(columns=output_columns)
         self.logger.debug(f"Report contains the following data:\n{output_columns}")
@@ -354,7 +372,7 @@ class ScoutMap:
                         group_string += "\n"
                 boundary_data["Groups"] = group_string
 
-            if ("Section numbers" in options) or ("6 to 17 numbers" in options):
+            if ("Section numbers" in options) or ("6 to 17 numbers" in options) or ("Waiting List" in options):
                 for year in years_in_data:
                     year_records = records_in_boundary.loc[records_in_boundary[CensusData.column_labels['YEAR']] == year]
                     # beaver_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Beavers"]]
@@ -364,10 +382,9 @@ class ScoutMap:
                     #
                     # group_records = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_GROUP]
                     # explorer_waiting = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_DISTRICT]
-                    # boundary_data["Waiting List"] = 0
-                    # for section in CensusData.column_labels['sections'].keys():
-                    #    boundary_data["Waiting List"] += group_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
-                    # boundary_data["Waiting List"] += explorer_waiting[CensusData.column_labels['sections']["Explorers"]["waiting_list"]].sum()
+                    boundary_data["Waiting List"] = 0
+                    for section in [section for section in CensusData.column_labels['sections'].keys() if CensusData.column_labels['sections'][section].get("waiting_list")]:
+                        boundary_data["Waiting List"] += year_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
 
                     boundary_data[f"All-{year}"] = 0
                     for section in CensusData.column_labels['sections'].keys():
@@ -447,17 +464,22 @@ class ScoutMap:
 
         age_profile_path = self.boundary_dict.get("age_profile").get("path")
         if age_profile_path:
-            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, encoding='latin-1')
+            data_types = {str(key): "Int16" for key in range(5,26)}
+            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, dtype=data_types, encoding='latin-1')
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
-        for section in ScoutMap.SECTIONS.keys():
-            boundary_report['Pop_' + section] = np.NaN
-        boundary_report['Pop_All'] = np.NaN
+        min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
+        years_in_data = range(min_year, max_year + 1)
 
         for section in ScoutMap.SECTIONS.keys():
-            boundary_report['%-' + section] = np.NaN
-        boundary_report['%-All'] = np.NaN
+            boundary_report[f'Pop_{section}'] = np.NaN
+        boundary_report['Pop_All'] = np.NaN
+
+        for year in years_in_data:
+            for section in ScoutMap.SECTIONS.keys():
+                boundary_report[f'%-{section}-{year}'] = np.NaN
+            boundary_report[f'%-All-{year}'] = np.NaN
 
         for area_row in range(len(boundary_report.index)):
             boundary_row = boundary_report.iloc[area_row]
@@ -468,44 +490,47 @@ class ScoutMap:
                     section_total = 0
                     for age in ScoutMap.SECTIONS[section]["ages"]:
                         section_total += area_pop.iloc[0][str(age[0])] * age[1]
-                    boundary_row.at['Pop_' + section] = section_total
-                    if section_total > 0:
-                        boundary_row.at['%-' + section] = (boundary_row.at[section] / section_total) * 100
-                    else:
-                        if boundary_row.at[section] == 0:
-                            # No Scouts and no eligible population in the geographic area
-                            boundary_row.at['%-' + section] = np.NaN
+                    boundary_row.at[f'Pop_{section}'] = section_total
+                    for year in years_in_data:
+                        if section_total > 0:
+                            boundary_row.at[f'%-{section}-{year}'] = (boundary_row.at[f"{section}-{year}"] / section_total) * 100
                         else:
-                            # There are Scouts but no eligible population in the geographic area
-                            boundary_row.at['%-' + section] = 100
+                            if boundary_row.at[section] == 0:
+                                # No Scouts and no eligible population in the geographic area
+                                boundary_row.at[f'%-{section}-{year}'] = np.NaN
+                            else:
+                                # There are Scouts but no eligible population in the geographic area
+                                boundary_row.at[f'%-{section}-{year}'] = 100
 
                 section_total = 0
                 for age in range(6, 18):
                     section_total += area_pop.iloc[0][str(age)]
                 boundary_row.at['Pop_All'] = section_total
-                if section_total > 0:
-                    boundary_row.at['%-All'] = (boundary_row.at['All'] / section_total) * 100
-                else:
-                    if boundary_row.at['All'] == 0:
-                        # No Scouts and no eligible population in the geographic area
-                        boundary_row.at['%-All'] = np.NaN
+                for year in years_in_data:
+                    if section_total > 0:
+                        boundary_row.at[f'%-All-{year}'] = (boundary_row.at[f"All-{year}"] / section_total) * 100
                     else:
-                        # There are Scouts but no eligible population in the geographic area
-                        boundary_row.at['%-All'] = 100
+                        if boundary_row.at[f'%-All-{year}'] == 0:
+                            # No Scouts and no eligible population in the geographic area
+                            boundary_row.at[f'%-All-{year}'] = np.NaN
+                        else:
+                            # There are Scouts but no eligible population in the geographic area
+                            boundary_row.at[f'%-All-{year}'] = 100
 
             else:
                 for section in ScoutMap.SECTIONS.keys():
                     boundary_row.at[f"%-{section}"] = np.NaN
-                boundary_row.at['%-All'] = np.NaN
+                boundary_row.at[f'%-All-{section}'] = np.NaN
 
             boundary_report.iloc[area_row] = boundary_row
 
         for section in ScoutMap.SECTIONS.keys():
-            col_name = f"%-{section}"
-            max_value = boundary_report[col_name].quantile(0.975)
-            boundary_report[col_name].clip(upper=max_value, inplace=True)
-        max_value = boundary_report["%-All"].quantile(0.975)
-        boundary_report["%-All"].clip(upper=max_value, inplace=True)
+            for year in years_in_data:
+                col_name = f"%-{section}-{year}"
+                max_value = boundary_report[col_name].quantile(0.975)
+                boundary_report[col_name].clip(upper=max_value, inplace=True)
+        max_value = boundary_report[f"%-All-{year}"].quantile(0.975)
+        boundary_report[f"%-All-{year}"].clip(upper=max_value, inplace=True)
 
         return boundary_report
 

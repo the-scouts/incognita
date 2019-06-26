@@ -8,3 +8,6 @@ output/*
 output/archive/*
 src/error_file.txt
 src/logs/*.log
+src/scripts/logs/*.log
+src/scripts/error_file.txt
+*egg-info*

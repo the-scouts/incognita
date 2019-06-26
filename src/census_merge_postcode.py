@@ -30,7 +30,7 @@ class CensusMergePostcode:
         # RegExp to remove whitespace, non-alphanumeric (keep shifted numbers)
         regex_clean = re.compile(r'[\s+]|[^a-zA-Z\d!"£$%^&*()]')
 
-        # If length of postcode is 6 or 5 then inert 1 or 2 spaces.
+        # If length of postcode is 6 or 5 then insert 1 or 2 spaces.
         # 6 first as more common to speed up execution
         def pad_to_seven(single_postcode):  # r'(.*?(?=.{3}$))(.{3}$)' (potential regex)
             if single_postcode == single_postcode:  # filters out NaNs
@@ -63,7 +63,7 @@ class CensusMergePostcode:
         """
 
         valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
-        
+
         self.logger.info("Cleaning postcodes")
         census_data[valid_postcode_label], census_data[census_index_column] = CensusMergePostcode.postcode_cleaner(census_data[census_index_column])
         self.logger.info("Merging data")

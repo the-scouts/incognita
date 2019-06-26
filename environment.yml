@@ -127,4 +127,3 @@ dependencies:
   - pip:
     - colorama==0.4.1
     - sphinx-rtd-theme==0.4.3
-prefix: C:\Users\tyems\AppData\Local\conda\conda\envs\scout_maps

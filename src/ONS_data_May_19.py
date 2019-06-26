@@ -21,7 +21,7 @@ class ONSDataMay19(ONSData):
     }  # capitalise Int as of Optional Integer NA Support pandas 24 # Int capitalised as this ignores NaNs
 
     # Date of ONS postcode directory
-    PUBLICATION_DATE = "May 2018"
+    PUBLICATION_DATE = "May 2019"
 
     # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017
     IMD_MAX = {"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890}
@@ -64,8 +64,8 @@ class ONSDataMay19(ONSData):
             "pcon": {
                 "name": "pcon",
                 "codes": {"path": "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv", "key": "PCON14CD", "name": "PCON14NM"},
-                "boundary": {"shapefiles": PCON_SHAPEFILE, "key": 'pcon17cd', "name": None,},
-                "age_profile": {"path": None, "key": None},
+                "boundary": {"shapefiles": PCON_SHAPEFILE, "key": 'pcon17cd', "name": "pcon17nm",},
+                "age_profile": {"path": "pcon_by_age.csv", "key": "PCON11CD"},
             },
             "lsoa": {
                 "name": "lsoa11",
