@@ -133,16 +133,12 @@ class ScoutMap:
                 sections = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == section_type]
                 counted_members = sections[section_dict["male"]].sum() + sections[section_dict["female"]].sum()
 
-<<<<<<< HEAD
                 original_members = counted_members + excluded_members
 
                 if original_members > 0:
-                    self.logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}% of total)")
+                    self.logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
                 else:
                     self.logger.info(f"There are no {section} members present in data")
-=======
-                self.logger.info(f"{excluded_members} {section} records were removed ({excluded_members / counted_members * 100}%) of total")
->>>>>>> 47e13463653b0f8859f68d2c499ea17a647f5b6d
 
     def set_boundary(self, geography_name):
         """Sets the boundary_dict and boundary_regions_data members
