@@ -29,8 +29,8 @@ class ONSDataMay18(ONSData):
     COUNTRY_CODES = {"E92000001": "England", "W92000004": "Wales", "S92000003": "Scotland", "N92000002": "Northern Ireland", }
     # "L93000001": "Channel Islands", "M83000003": "Isle of Man"
 
-    def __init__(self, csv_data, load_data=True):
-        ONSData.__init__(self, csv_data, load_data, ONSDataMay18.index_column, ONSDataMay18.fields, ONSDataMay18.data_types)
+    def __init__(self, ons_pd_csv_path, load_data=True):
+        ONSData.__init__(self, ons_pd_csv_path, load_data, ONSDataMay18.index_column, ONSDataMay18.fields, ONSDataMay18.data_types)
 
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
         LAD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp"]
