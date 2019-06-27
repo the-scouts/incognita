@@ -29,7 +29,7 @@ class CensusMergePostcode:
         """Cleans postcode to ONS postcode directory format.
 
         :param postcode: pandas series of postcodes
-        :return: boolean signifying validity, cleaned postcode
+        :return: cleaned postcode
         """
 
         # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
