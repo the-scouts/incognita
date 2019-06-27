@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import re
 from src.census_data import CensusData
 import src.log_util as log_util
@@ -28,11 +29,9 @@ class CensusMergePostcode:
         """Cleans postcode to ONS postcode directory format.
 
         :param postcode: pandas series of postcodes
-        :return: boolean signifying validity, cleaned postcode
+        :return: cleaned postcode
         """
 
-        # Regular expression to determine a valid postcode
-        regex_uk_postcode = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]? {0,2}\d[A-Z]{2}$")
         # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
         regex_clean = re.compile(r'[\s+]|[^a-zA-Z\d!"£$%^&*()]')
 
@@ -53,11 +52,34 @@ class CensusMergePostcode:
             .str.upper() \
             .apply(lambda single_postcode: pad_to_seven(single_postcode))
 
-        # Checks validity against regex, returns truthy/falsy as int (1 or 0)
-        m = postcode \
-            .str.match(regex_uk_postcode, na=False) \
-            .astype(int)
-        return m, postcode
+        return postcode
+
+    def clean_and_verify_postcode(self, census_data, postcode_column):
+        """Cleans postcode data and inserts clean postcodes and validity check
+
+        Cleans postcode data from passed table and index
+        Gets index of postcode column, and inserts new columns after postcode column
+
+        :param census_data: table of data with a postcode column
+        :param str postcode_column: heading of the postcode column in the table
+        :return: None
+        """
+        # Gets the index of the postcode column, and increments as insertion is from the left.
+        # Columns must be inserted in number order otherwise it wont't make sense
+        postcode_column_index = census_data.columns.get_loc(postcode_column)  # CensusData.column_labels["POSTCODE"]
+        cleaned_postcode_index = postcode_column_index + 1
+        valid_postcode_index = postcode_column_index + 2
+
+        # Sets the labels for the columns to be inserted
+        cleaned_postcode_label = "clean_postcode"
+        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
+
+        self.logger.info("Cleaning postcodes")
+        cleaned_postcode_column = CensusMergePostcode.postcode_cleaner(census_data[postcode_column])
+
+        self.logger.info("Inserting columns")
+        census_data.insert(cleaned_postcode_index, cleaned_postcode_label, cleaned_postcode_column)
+        census_data.insert(valid_postcode_index, valid_postcode_label, np.NaN)
 
     def merge_and_output(self, census_data, data_to_merge, census_index_column, fields_data_types):
         """Merge census data and input data on key and index. Save merged data to csv file.
@@ -71,10 +93,11 @@ class CensusMergePostcode:
 
         valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
 
-        self.logger.info("Cleaning postcodes")
-        census_data[valid_postcode_label], census_data[census_index_column] = CensusMergePostcode.postcode_cleaner(census_data[census_index_column])
         self.logger.info("Merging data")
         census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
+
+        # Checks whether ONS data exists for each row and stores in a column
+        census_data[valid_postcode_label] = (~census_data['ctry'].isnull()).astype(int)
 
         for field in fields_data_types['categorical']:
             census_data.loc[census_data[valid_postcode_label] == 0, field] = CensusData.DEFAULT_VALUE

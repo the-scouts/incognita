@@ -69,11 +69,14 @@ class ScoutMap:
             self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",
         )
 
+        self.logger.info("Cleaning the postcodes")
+        merge.clean_and_verify_postcode(self.census_data.data, CensusData.column_labels['POSTCODE'])
+
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
         merge.merge_and_output(
             self.census_data.data,
             ONS_postcode_directory.data,
-            CensusData.column_labels['POSTCODE'],
+            "clean_postcode",
             ons_fields_data_types
         )
 
