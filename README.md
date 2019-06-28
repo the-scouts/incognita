@@ -1,7 +1,7 @@
 # geo_mapping
 Mapping Scouts data to UK administrative regions.
 
-## Prerequisites: 
+## Prerequisites:
 This is written and tested in Python 3.7.2.
 
 There are several python packages that are required to be installed, including:
@@ -11,9 +11,9 @@ There are several python packages that are required to be installed, including:
     * branca
  * geopandas
     * shapely
- 
 
-## Getting Started: 
+
+## Getting Started:
 You will need to obtain the latest version of the ONS Postcode Directory. Note
 that this has some open licences attached to it.
 
@@ -31,32 +31,38 @@ To install geopandas using pip on windows, follow the following steps:
 * Install any prerequisites (e.g. C++ redistributables)
 * pip install the wheels in the following order (preferably in a VirtualEnv)
     1. GDAL
-    2. Fiona 
-    3. pyproj 
-    4. Rtree 
+    2. Fiona
+    3. pyproj
+    4. Rtree
     5. Shapely
 * pip install geopandas
 
-## Resources: 
+## Resources:
 ### Postcode Directory:
  * Latest ONS Postcode Directory ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory))
 
-### Shapefiles: 
-#### Administrative/Electoral Geographies: 
-*Use the same boundary resolution for each of the following (BFE, BFC, BGC, BUC)* 
+### Shapefiles:
+#### Administrative/Electoral Geographies:
+*Use the same boundary resolution for each of the following (BFE, BFC, BGC, BUC)*
  * Local Authority Districts Boundaries UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=bdy_lad))
  * Counties and Unitary Authorities Boundaries UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_CTYUA))
  * Wards Generalised Clipped Boundaries UK ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_WD))
  * Westminster Parliamentary Constituencies UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_PCON))
- 
-#### Census Geographies: 
+
+#### Census Geographies:
 ##### England and Wales:
  * Lower Layer Super Output Areas ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_LSOA%2CDEC_2011))
  * Middle Layer Super Output Areas ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_MSOA))
-##### Scotland: 
+##### Scotland:
  * Data Zones
  * Intermediate Geographies ([link](https://data.gov.uk/dataset/133d4983-c57d-4ded-bc59-390c962ea280/intermediate-zone-boundaries-2011))
 ##### Northern Ireland:
+
+### Single year of age profiles:
+#### Westminster Parliamentary Constituencies:
+ * England and Wales ([link] https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/parliamentaryconstituencymidyearpopulationestimates)
+ * Northern Ireland ([link] https://www.nisra.gov.uk/publications/2018-mid-year-population-estimates-northern-ireland)
+ * Scotland ([link] https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/population/population-estimates/2011-based-special-area-population-estimates/ukpc-population-estimates)
 
 ### Guide:
 The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk/search?collection=Document&sort=name&tags=DOC_BGG)) can be useful as an introduction for those new to GIS.
@@ -66,7 +72,7 @@ The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk
     * ONS_PD_*DATE*
     * Scout Census Data
         * Census Extract Files
-* docs 
+* docs
     * Documentation Files
 * src
     * scripts
@@ -81,7 +87,7 @@ the code will only work out of the box with data structured as an extract of
 the Scout Census.
 
 The documentation and commenting are imperfect and being improved, and can be
-found here: 
+found here:
 
 I would welcome any support, comments or guidance on my code.
 
