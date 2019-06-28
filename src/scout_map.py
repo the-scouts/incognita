@@ -611,7 +611,17 @@ class ScoutMap:
             self.map.plot(legend_label + " (static)", show=False, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap_static)
 
     def add_all_sections_to_map(self, colour, marker_data):
-        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
+        """Adds sections from latest year of data as markers on map
+
+        Plots all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
+        who have returned in the latest year of the dataset.
+
+        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for marker popup
+        """
+        min_year, max_year = self.years_of_return(self.census_data.data)
+        latest_year_records = self.census_data.data.loc[self.census_data.data["Year"] == max_year]
+        self.add_sections_to_map(latest_year_records.loc[latest_year_records[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
 
     def add_single_section_to_map(self, section, colour, marker_data):
         self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]], colour, marker_data)
