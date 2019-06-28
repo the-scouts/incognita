@@ -7,7 +7,8 @@ if __name__ == "__main__":
     script_handler = ScriptHandler(csv_has_ons_data=True, load_ons_data=True)
     script_handler.run(ScoutMap.set_boundary,["lsoa"])
     script_handler.run(ScoutMap.filter_records,["Year",[2015, 2016, 2017, 2018, 2019]])
-    la_list = script_handler.run(ScoutMap.ons_from_scout_area,["oslaua" , "C_ID", [10000111]])
+    script_handler.run(ScoutMap.set_region_of_color,["C_ID", [10000111]])
+    la_list = script_handler.run(ScoutMap.ons_from_scout_area,["oslaua" , "C_ID", [10000111, 10000119]])
     script_handler.run(ScoutMap.filter_records,["oslaua", la_list])
     script_handler.run(ScoutMap.filter_boundaries,["oslaua", la_list])
     script_handler.run(ScoutMap.create_boundary_report,["Section numbers", True],"shropshire_by_lsoa")  # TODO: before postcode filtering
