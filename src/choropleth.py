@@ -138,6 +138,9 @@ class ChoroplethMapPlotter:
         ).add_to(self.map)
         # ).add_to(self.marker_cluster)
 
+    def set_bounds(self, bounds):
+        self.map.fit_bounds(bounds)
+
     def save(self):
         """Saves the folium map to a HTML file """
         # Add layer control to map

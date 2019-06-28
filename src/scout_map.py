@@ -562,10 +562,8 @@ class ScoutMap:
         self.save_map()
 
     def district_color_mapping(self):
-        colors = cycle(['red', 'blue', 'green', 'purple', 'orange', 'darkred',
-                        'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
-                        'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
-                        'gray', 'black', 'lightgray'])
+        colors = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple', 'lightgrayblack',
+                'orange', 'pink', 'white', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
         district_ids = self.census_data.data[CensusData.column_labels['id']["DISTRICT"]].unique()
         mapping = {}
         for district_id in district_ids:
@@ -620,6 +618,9 @@ class ScoutMap:
     def add_sections_to_map(self, sections, colour, marker_data):
         self.logger.info("Adding section markers to map")
         # sections = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[CensusData.column_labels['UNIT_TYPE']] == section]
+        self.map.set_bounds([[self.census_data.data["lat"].min(), self.census_data.data["long"].min()],
+                              [self.census_data.data["lat"].max(), self.census_data.data["long"].max()]])
+
         postcodes = sections[CensusData.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
         if "nan" in postcodes:
@@ -706,6 +707,10 @@ class ScoutMap:
             else:
                 marker_colour = colour
 
+            if self.region_of_color:
+                if colocated_sections.iloc[0][self.region_of_color["column"]] not in self.region_of_color["value_list"]:
+                    marker_colour = 'gray'
+
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
             self.map.add_marker(lat, long, popup, marker_colour)
 
@@ -727,8 +732,8 @@ class ScoutMap:
     def filter_records_by_boundary(self):
         self.filter_records(self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]])
 
-    def set_region_of_interest(self, column, value_list):
-        self.region_of_interest = {"column": column, "value_list": value_list}
+    def set_region_of_color(self, column, value_list):
+        self.region_of_color = {"column": column, "value_list": value_list}
 
     def save_map(self):
         self.map.save()
