@@ -157,12 +157,12 @@ class ScoutMap:
 
         if geography_name in self.ons_data.BOUNDARIES.keys():
             self.boundary_dict = self.ons_data.BOUNDARIES[geography_name]
-            names_and_codes_file_path = self.boundary_dict["codes"]["path"]
+            names_and_codes_file_path = self.boundary_dict["codes"].get("path")
             self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path)  # TODO: datatypes
-        elif geography_name == "district":
-            self.boundary_dict = self.settings["Scout Mappings"]["District"]
-            district_codes_path = self.boundary_dict["codes"]
-            self.boundary_regions_data = pd.read_csv(district_codes_path)  # TODO: datatypes
+        elif geography_name in self.settings["Scout Mappings"].keys():
+            self.boundary_dict = self.settings["Scout Mappings"][geography_name]
+            names_and_codes_file_path = self.boundary_dict["codes"].get("path")
+            self.boundary_regions_data = pd.read_csv(names_and_codes_file_path)  # TODO: datatypes
         else:
             raise Exception("Invalid boundary supplied")
 
@@ -362,7 +362,7 @@ class ScoutMap:
                 name: self.boundary_regions_data.iloc[ii, 0]}
             code = boundary_data[name]  # == self.boundary_regions_data.iloc[ii, 0]
 
-            records_in_boundary = self.census_data.data.loc[self.census_data.data[name] == str(code)]
+            records_in_boundary = self.census_data.data.loc[self.census_data.data[name] == code]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
 
             # list_of_groups = records_in_boundary[CensusData.column_labels['id']["GROUP"]].unique()
