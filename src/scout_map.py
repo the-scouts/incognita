@@ -186,8 +186,8 @@ class ScoutMap:
         codes_key = self.boundary_dict["codes"]["key"]
 
         self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
-        # Filters census data table if field column is in value_list. Returns ndarray of unique area codes
-        boundary_subset = self.census_data.data.loc[self.census_data.data[field].isin(value_list)][name].unique()
+        # Filters ons data table if field column is in value_list. Returns ndarray of unique area codes
+        boundary_subset = self.ons_data.ons_field_mapping(field, value_list, name)
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
         # Filters the boundary names and codes table by areas within the boundary_subset list
@@ -215,6 +215,7 @@ class ScoutMap:
         ons_codes = records[ons_code].unique().tolist()
         if CensusData.DEFAULT_VALUE in ons_codes:
             ons_codes.remove(CensusData.DEFAULT_VALUE)
+        ons_codes = [code for code in ons_codes if (isinstance(code, str) or not np.isnan(code))]
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
@@ -327,8 +328,7 @@ class ScoutMap:
                 self.logger.error(f"Historical option not selected, but multiple years of data selected ({years_in_data})")
 
         output_columns = ["Name", self.boundary_dict["name"]]
-        if name == "lsoa11":
-            output_columns.append("imd_decile")
+
         if "Groups" in options:
             output_columns.append("Groups")
         if "Section numbers" in options:
@@ -367,12 +367,6 @@ class ScoutMap:
 
             # list_of_groups = records_in_boundary[CensusData.column_labels['id']["GROUP"]].unique()
             # list_of_districts = records_in_boundary[CensusData.column_labels['id']["DISTRICT"]].unique()
-
-            if name == "lsoa11":
-                lsoa11_data = self.census_data.data.loc[self.census_data.data[name] == code]
-                imd_rank = lsoa11_data["imd"].unique()[0]
-                country = lsoa11_data["ctry"].unique()[0]
-                boundary_data["imd_decile"] = self.calc_imd_decile(int(imd_rank), country)
 
             if "Groups" in options:
                 # Used to list the groups that operate within the boundary
@@ -448,6 +442,13 @@ class ScoutMap:
         if "awards" in options:
             max_value = output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].quantile(0.95)
             output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].clip(upper=max_value, inplace=True)
+
+        if name == "lsoa11":
+            self.logger.debug(f"Output_data so far:\n{output_data}")
+            data_to_merge = self.ons_data.data[["lsoa11", "imd"]].drop_duplicates("lsoa11")
+            self.logger.debug(f"Merging with\n{data_to_merge}")
+            output_data = pd.merge(left=output_data, right=data_to_merge , how="left", on="lsoa11", validate="1:1")
+            output_data = self.country_add_IMD_decile(output_data, "E92000001")
 
         output_data.reset_index(drop=True, inplace=True)
         self.boundary_report[self.boundary_dict["name"]] = output_data
@@ -1140,9 +1141,25 @@ class ScoutMap:
         self.logger.info("Adding Index of Multiple Deprivation Decile")
 
         self.census_data.data["imd_decile"] = self.census_data.data.apply(lambda row:
-                                                                                                          self.calc_imd_decile(int(row["imd"]), row["ctry"]) if row["imd"] != "error" else "error", axis=1)
+            self.calc_imd_decile(int(row["imd"]), row["ctry"]) if row["imd"] != "error" else "error", axis=1)
 
         return self.census_data.data
+
+    def country_add_IMD_decile(self, data, country):
+        """Used to add IMD data to DataFrames that aren't the core census data
+
+        For example used to add IMD deciles to Lower Super Output Area boundary
+        reports.
+
+        All boundaries must be from the same country.
+
+        :param DataFrame data: Data to add IMD decile to. Must have 'imd' column
+        :param str country: Country code
+
+        :returns DataFrame: Original DataFrame with extra imd_decile column
+        """
+        data["imd_decile"] = data.apply(lambda row: self.calc_imd_decile(int(row["imd"]), country) if row["imd"] != "error" else "error", axis=1)
+        return data
 
     def calc_imd_decile(self, rank, ctry):
         country = self.ons_data.COUNTRY_CODES.get(ctry)

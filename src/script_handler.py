@@ -7,7 +7,7 @@ import src.log_util as log_util
 
 
 class ScriptHandler:
-    def __init__(self, csv_has_ons_data=True):
+    def __init__(self, csv_has_ons_data=True, load_ons_data=False):
         """Acts to manage all functions, providing setup, logging and timing.
 
         :param bool csv_has_ons_data: Whether ONS Postcode Directory has data been added to the census csv
@@ -26,13 +26,14 @@ class ScriptHandler:
 
         if csv_has_ons_data:
             self.logger.info("Loading ONS data")
+            start_time = time.time()
 
             if self.map.has_ons_data():
-                self.map.ons_data = ONSDataMay19(None, load_data=False)
+                self.map.ons_data = ONSDataMay19(self.settings["ONS PD location"], load_data=load_ons_data)
             else:
                 raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {CensusData.column_labels['VALID_POSTCODE']} column")
 
-            self.logger.info(f"Finished loading ONS data from {self.map.ons_data.PUBLICATION_DATE}, {log_util.duration(self.start_time)} seconds elapsed")
+            self.logger.info(f"Finished loading ONS data from {self.map.ons_data.PUBLICATION_DATE}, {log_util.duration(start_time)} seconds elapsed")
 
     def close(self):
         """Outputs the duration of the programme """
@@ -57,4 +58,3 @@ class ScriptHandler:
 
         self.logger.info(f"{function.__name__} took {log_util.duration(start_time)} seconds")
         return output
-
