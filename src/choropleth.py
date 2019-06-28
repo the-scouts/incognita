@@ -1,6 +1,7 @@
 import pandas as pd
 import folium
 from folium.plugins import MarkerCluster
+from folium.map import FeatureGroup
 import geopandas
 import webbrowser
 import os
@@ -25,7 +26,7 @@ class ChoroplethMapPlotter:
     :var self.map: holds the folium map object
     """
 
-    def __init__(self, shape_files_dict, data_info, out_file):
+    def __init__(self, shape_files_dict, data_info, out_file, cluster_markers=False):
         # Facilitates logging
         self.logger = log_util.create_logger(__name__,)
 
@@ -40,7 +41,11 @@ class ChoroplethMapPlotter:
         # Create folium map
         self.map = folium.Map(location=[53.5, -1.49], zoom_start=6)
 
-        # self.marker_cluster = MarkerCluster(name='Sections').add_to(self.map)
+        if cluster_markers:
+            self.marker_cluster = MarkerCluster(name='Sections').add_to(self.map)
+        else:
+            self.marker_cluster = FeatureGroup(name='Sections').add_to(self.map)
+
         self.shape_file_paths = shape_files_dict["shapefiles"]
         self.geo_data = None
 
@@ -135,8 +140,7 @@ class ChoroplethMapPlotter:
             location=[lat, long],
             popup=popup,
             icon=folium.Icon(color=color)
-        ).add_to(self.map)
-        # ).add_to(self.marker_cluster)
+        ).add_to(self.marker_cluster)
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)

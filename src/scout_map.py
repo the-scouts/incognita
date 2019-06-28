@@ -571,7 +571,7 @@ class ScoutMap:
         colour_mapping = {"census_column": CensusData.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping
 
-    def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None):
+    def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None, cluster_markers=False):
         self.logger.info(f"Creating map from {score_col} with name {name}")
 
         data_codes = {
@@ -583,7 +583,8 @@ class ScoutMap:
 
         self.map = ChoroplethMapPlotter(self.boundary_dict["boundary"],
                                         data_codes,
-                                        self.settings["Output folder"] + name)
+                                        self.settings["Output folder"] + name,
+                                        cluster_markers)
 
         non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
         non_zero_score_col.dropna(inplace=True)
