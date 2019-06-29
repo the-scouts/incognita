@@ -66,18 +66,27 @@ class ScoutMap:
         self.logger.debug("Initialising merge object")
         merge = CensusMergePostcode(
             self.census_data,
-            self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",
+            self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields errors filled.csv",
         )
 
         self.logger.info("Cleaning the postcodes")
         merge.clean_and_verify_postcode(self.census_data.data, CensusData.column_labels['POSTCODE'])
 
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
-        merge.merge_and_output(
+        self.census_data.data = merge.merge_data(
             self.census_data.data,
             ONS_postcode_directory.data,
             "clean_postcode",
-            ons_fields_data_types
+        )
+        self.logger.info("filling unmerged rows")
+        self.census_data.data = merge.fill_unmerged_rows(
+            self.census_data.data,
+            CensusData.column_labels['VALID_POSTCODE'],
+            ons_fields_data_types,
+        )
+        merge.output_data(
+            self.census_data.data,
+            "clean_postcode",
         )
 
     def has_ons_data(self):
