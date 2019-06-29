@@ -12,14 +12,20 @@
       "District":
       {
         "name": "D_ID",
-        "codes": "../../data/Scout Census Data/district_id_mapping.csv",
-        "code_col_name": "D_ID",
+        "codes": {"path": "../../data/Scout Census Data/district_id_mapping.csv", "key": "D_ID", "name": "D_name"},
         "boundary":
           {
             "shapefiles": ["../../src/scripts/districts_buffered.geojson"], "key": "id", "name": "name"
           },
         "age_profile": null,
         "age_profile_code_col": null
+      },
+      "imd_decile":
+      {
+          "name": "imd_decile",
+          "codes": {"path": "../../data/Scout Census Data/imd_names_and_codes.csv", "key": "IMD Decile", "name": "Name"},
+          "boundary": null,
+          "age_profile": null
       }
     }
   }
