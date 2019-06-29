@@ -23,6 +23,8 @@ class CensusData:
         'VALID_POSTCODE': "postcode_is_valid",
         'YEAR': "Year",
         'id': {
+            'OBJECT': 'Object_ID',
+            'COMPASS': 'compass',
             'GROUP': 'G_ID',
             'DISTRICT': 'D_ID',
             'COUNTY': 'C_ID',
