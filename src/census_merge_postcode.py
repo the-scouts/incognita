@@ -52,6 +52,20 @@ class CensusMergePostcode:
             .str.upper() \
             .apply(lambda single_postcode: pad_to_seven(single_postcode))
 
+        # Replaces shifted numbers with their number equivalents
+        postcode = postcode\
+            .str.replace('!', "1", regex=False)\
+            .str.replace('"', "2", regex=False)\
+            .str.replace('£', "3", regex=False)\
+            .str.replace('$', "4", regex=False)\
+            .str.replace('%', "5", regex=False)\
+            .str.replace('^', "6", regex=False)\
+            .str.replace('&', "7", regex=False)\
+            .str.replace('*', "8", regex=False)\
+            .str.replace('(', "9", regex=False)\
+            .str.replace(')', "0", regex=False)
+        # TODO: add macOS shift -> numbers conversion
+
         return postcode
 
     def clean_and_verify_postcode(self, census_data, postcode_column):
