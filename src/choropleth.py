@@ -16,8 +16,9 @@ class ChoroplethMapPlotter:
     """This class enables easy plotting of maps with a shape file.
 
     :param dict shape_files_dict: dictionary of properties about the needed shapefiles
-    :param data_info: dictionary of information about ???
+    :param data_info: dictionary of information about the data and colourings on the map
     :param str out_file: path to save the map to
+    :param bool sections_clustered: If True, section markers cluster on the map.
 
     :var dictionary self.map_data: contains shapefile paths, and labels for region codes and names
     :var str self.CODE_COL: holds the name of the region class, e.g. oslaua, pcon
@@ -26,7 +27,7 @@ class ChoroplethMapPlotter:
     :var self.map: holds the folium map object
     """
 
-    def __init__(self, shape_files_dict, data_info, out_file, cluster_markers=False):
+    def __init__(self, shape_files_dict, data_info, out_file, sections_clustered=False):
         # Facilitates logging
         self.logger = log_util.create_logger(__name__,)
 
@@ -41,10 +42,10 @@ class ChoroplethMapPlotter:
         # Create folium map
         self.map = folium.Map(location=[53.5, -1.49], zoom_start=6)
 
-        if cluster_markers:
-            self.marker_cluster = MarkerCluster(name='Sections').add_to(self.map)
+        if sections_clustered:
+            self.section_layer = MarkerCluster(name='Sections').add_to(self.map)
         else:
-            self.marker_cluster = FeatureGroup(name='Sections').add_to(self.map)
+            self.section_layer = FeatureGroup(name='Sections').add_to(self.map)
 
         self.shape_file_paths = shape_files_dict["shapefiles"]
         self.geo_data = None
@@ -140,7 +141,7 @@ class ChoroplethMapPlotter:
             location=[lat, long],
             popup=popup,
             icon=folium.Icon(color=color)
-        ).add_to(self.marker_cluster)
+        ).add_to(self.section_layer)
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)
