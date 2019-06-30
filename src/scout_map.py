@@ -617,18 +617,39 @@ class ScoutMap:
         who have returned in the latest year of the dataset.
 
         :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-        :param list marker_data: List of strings which determines content for marker popup
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
         """
         min_year, max_year = self.years_of_return(self.census_data.data)
         latest_year_records = self.census_data.data.loc[self.census_data.data["Year"] == max_year]
         self.add_sections_to_map(latest_year_records.loc[latest_year_records[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
 
     def add_single_section_to_map(self, section, colour, marker_data):
+        """Plots the section specified by section onto the map, in markers of
+        colour identified by colour, with data indicated by marker_data.
+
+        :param str section: One of Beavers, Cubs, Scouts, Explorers, Network
+        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
+        """
         self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]], colour, marker_data)
 
     def add_sections_to_map(self, sections, colour, marker_data):
+        """Adds the sections provided as markers to map with the colour, and data
+        indicated by marker_data.
+
+        :param DataFrame sections: Census records relating to Sections with lat and long Columns
+        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
+        """
         self.logger.info("Adding section markers to map")
-        # sections = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[CensusData.column_labels['UNIT_TYPE']] == section]
+
+        # Sets the map so it opens in the right area
         self.map.set_bounds([[self.census_data.data["lat"].min(), self.census_data.data["long"].min()],
                               [self.census_data.data["lat"].max(), self.census_data.data["long"].max()]])
 
@@ -648,13 +669,16 @@ class ScoutMap:
             count += 1
 
             self.logger.debug(postcode)
-
+            # Find all the sections with the same postcode
             colocated_sections = sections.loc[sections[CensusData.column_labels['POSTCODE']] == postcode]
             colocated_district_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('District'))]
             colocated_group_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
+
+            # Construct the html to form the marker popup
+            # District sections first followed by Group sections
             html = ""
 
             districts = colocated_district_sections[CensusData.column_labels['id']["DISTRICT"]].unique()
@@ -703,6 +727,7 @@ class ScoutMap:
 
                 html += "</p>"
 
+            # Fixes physical size of popup
             if len(groups) == 1:
                 height = 120
             else:
@@ -718,6 +743,7 @@ class ScoutMap:
             else:
                 marker_colour = colour
 
+            # Areas outside the region_of_color have markers coloured grey
             if self.region_of_color:
                 if colocated_sections.iloc[0][self.region_of_color["column"]] not in self.region_of_color["value_list"]:
                     marker_colour = 'gray'
@@ -737,10 +763,18 @@ class ScoutMap:
         self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[self.boundary_dict["codes"]["key"]].isin(boundaries_in_scout_area)]
 
     def filter_boundaries_by_scout_area(self, boundary, column, value_list):
+        """Filters the boundaries, to include only those boundaries which have
+        Sections that satisfy the requirement that the column is in the value_list.
+
+        :param str boundary: ONS boundary to filter on
+        :param str column: Scout boundary (e.g. C_ID)
+        :param list value_list: List of values in the Scout boundary
+        """
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
         self.filter_boundaries(boundary, ons_value_list)
 
     def filter_records_by_boundary(self):
+        """Selects the records that are with the boundary specified"""
         self.filter_records(self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]])
 
     def set_region_of_color(self, column, value_list):
