@@ -99,7 +99,7 @@ class ChoroplethMapPlotter:
             data=merged_data.to_json(),
             name=name,
             style_function=lambda x: {
-               'fillColor': self.my_colormap(x['properties'], colormap),
+               'fillColor': self.map_colormap(x['properties'], colormap),
                'color': 'black',
                'fillOpacity': 0.4,
                'weight': 0.2
@@ -113,7 +113,7 @@ class ChoroplethMapPlotter:
         ).add_to(self.map)
         colormap.add_to(self.map)
 
-    def my_colormap(self, properties, colormap):
+    def map_colormap(self, properties, colormap):
         """Returns colour from colour map function and value
 
         :param properties: dictionary of properties
