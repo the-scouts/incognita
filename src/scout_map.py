@@ -41,6 +41,9 @@ class ScoutMap:
         self.boundary_dict = None
         self.boundary_regions_data = None
 
+        # Can be set by set_region_of_color
+        self.region_of_color = None
+
         # Load the settings file
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
@@ -246,12 +249,8 @@ class ScoutMap:
         self.logger.debug(f"Found raw {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
         if CensusData.DEFAULT_VALUE in ons_codes:
             ons_codes.remove(CensusData.DEFAULT_VALUE)
-<<<<<<< HEAD
-        ons_codes = [code for code in ons_codes if (isinstance(code, str) or not np.isnan(code))]
-=======
         ons_codes = [code for code in ons_codes if (isinstance(code, str) or (isinstance(code, np.int32) and not np.isnan(code)))]
         self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
->>>>>>> District Boundaries
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
@@ -685,9 +684,11 @@ class ScoutMap:
         """
         self.logger.info("Adding section markers to map")
 
+        valid_points = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
+
         # Sets the map so it opens in the right area
-        self.map.set_bounds([[self.census_data.data["lat"].min(), self.census_data.data["long"].min()],
-                              [self.census_data.data["lat"].max(), self.census_data.data["long"].max()]])
+        self.map.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
+                              [valid_points["lat"].max(), valid_points["long"].max()]])
 
         postcodes = sections[CensusData.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
