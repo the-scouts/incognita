@@ -66,19 +66,41 @@ class ScoutMap:
         self.logger.debug("Initialising merge object")
         merge = CensusMergePostcode(
             self.census_data,
-            self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv",
-        )
+            self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv", )
 
         self.logger.info("Cleaning the postcodes")
         merge.clean_and_verify_postcode(self.census_data.data, CensusData.column_labels['POSTCODE'])
 
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
-        merge.merge_and_output(
+
+        # initially merge just Country column to test what postcodes can match
+        self.census_data.data = merge.merge_data(
+            self.census_data.data,
+            ONS_postcode_directory.data['ctry'],
+            "clean_postcode", )
+
+        # attempt to fix invalid postcodes
+        self.census_data.data = merge.try_fix_invalid_postcodes(
+            self.census_data.data,
+            ONS_postcode_directory.data['ctry'], )
+
+        # fully merge the data
+        self.census_data.data = merge.merge_data(
             self.census_data.data,
             ONS_postcode_directory.data,
-            "clean_postcode",
-            ons_fields_data_types
-        )
+            "clean_postcode", )
+
+        # fill unmerged rows with default values
+        self.logger.info("filling unmerged rows")
+        self.census_data.data = merge.fill_unmerged_rows(
+            self.census_data.data,
+            CensusData.column_labels['VALID_POSTCODE'],
+            ons_fields_data_types, )
+
+        # save the data to CSV and save invalid postcodes to an error file
+        merge.output_data(
+            self.census_data.data,
+            "clean_postcode", )
 
     def has_ons_data(self):
         """Finds whether ONS data has been added
