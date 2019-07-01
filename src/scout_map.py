@@ -186,8 +186,8 @@ class ScoutMap:
         codes_key = self.boundary_dict["codes"]["key"]
 
         self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
-        # Filters census data table if field column is in value_list. Returns ndarray of unique area codes
-        boundary_subset = self.census_data.data.loc[self.census_data.data[field].isin(value_list)][name].unique()
+        # Filters ons data table if field column is in value_list. Returns ndarray of unique area codes
+        boundary_subset = self.ons_data.ons_field_mapping(field, value_list, name)
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
         # Filters the boundary names and codes table by areas within the boundary_subset list
@@ -215,6 +215,7 @@ class ScoutMap:
         ons_codes = records[ons_code].unique().tolist()
         if CensusData.DEFAULT_VALUE in ons_codes:
             ons_codes.remove(CensusData.DEFAULT_VALUE)
+        ons_codes = [code for code in ons_codes if (isinstance(code, str) or not np.isnan(code))]
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
@@ -327,8 +328,7 @@ class ScoutMap:
                 self.logger.error(f"Historical option not selected, but multiple years of data selected ({years_in_data})")
 
         output_columns = ["Name", self.boundary_dict["name"]]
-        if name == "lsoa11":
-            output_columns.append("imd_decile")
+
         if "Groups" in options:
             output_columns.append("Groups")
         if "Section numbers" in options:
@@ -367,12 +367,6 @@ class ScoutMap:
 
             # list_of_groups = records_in_boundary[CensusData.column_labels['id']["GROUP"]].unique()
             # list_of_districts = records_in_boundary[CensusData.column_labels['id']["DISTRICT"]].unique()
-
-            if name == "lsoa11":
-                lsoa11_data = self.census_data.data.loc[self.census_data.data[name] == code]
-                imd_rank = lsoa11_data["imd"].unique()[0]
-                country = lsoa11_data["ctry"].unique()[0]
-                boundary_data["imd_decile"] = self.calc_imd_decile(int(imd_rank), country)
 
             if "Groups" in options:
                 # Used to list the groups that operate within the boundary
@@ -448,6 +442,13 @@ class ScoutMap:
         if "awards" in options:
             max_value = output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].quantile(0.95)
             output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].clip(upper=max_value, inplace=True)
+
+        if name == "lsoa11":
+            self.logger.debug(f"Output_data so far:\n{output_data}")
+            data_to_merge = self.ons_data.data[["lsoa11", "imd"]].drop_duplicates("lsoa11")
+            self.logger.debug(f"Merging with\n{data_to_merge}")
+            output_data = pd.merge(left=output_data, right=data_to_merge , how="left", on="lsoa11", validate="1:1")
+            output_data = self.country_add_IMD_decile(output_data, "E92000001")
 
         output_data.reset_index(drop=True, inplace=True)
         self.boundary_report[self.boundary_dict["name"]] = output_data
@@ -561,10 +562,8 @@ class ScoutMap:
         self.save_map()
 
     def district_color_mapping(self):
-        colors = cycle(['red', 'blue', 'green', 'purple', 'orange', 'darkred',
-                        'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
-                        'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
-                        'gray', 'black', 'lightgray'])
+        colors = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple', 'lightgrayblack',
+                'orange', 'pink', 'white', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
         district_ids = self.census_data.data[CensusData.column_labels['id']["DISTRICT"]].unique()
         mapping = {}
         for district_id in district_ids:
@@ -572,7 +571,7 @@ class ScoutMap:
         colour_mapping = {"census_column": CensusData.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping
 
-    def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None):
+    def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None, cluster_markers=False):
         self.logger.info(f"Creating map from {score_col} with name {name}")
 
         data_codes = {
@@ -584,7 +583,8 @@ class ScoutMap:
 
         self.map = ChoroplethMapPlotter(self.boundary_dict["boundary"],
                                         data_codes,
-                                        self.settings["Output folder"] + name)
+                                        self.settings["Output folder"] + name,
+                                        cluster_markers)
 
         non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
         non_zero_score_col.dropna(inplace=True)
@@ -611,14 +611,48 @@ class ScoutMap:
             self.map.plot(legend_label + " (static)", show=False, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap_static)
 
     def add_all_sections_to_map(self, colour, marker_data):
-        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
+        """Adds sections from latest year of data as markers on map
+
+        Plots all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
+        who have returned in the latest year of the dataset.
+
+        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
+        """
+        min_year, max_year = self.years_of_return(self.census_data.data)
+        latest_year_records = self.census_data.data.loc[self.census_data.data["Year"] == max_year]
+        self.add_sections_to_map(latest_year_records.loc[latest_year_records[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
 
     def add_single_section_to_map(self, section, colour, marker_data):
+        """Plots the section specified by section onto the map, in markers of
+        colour identified by colour, with data indicated by marker_data.
+
+        :param str section: One of Beavers, Cubs, Scouts, Explorers, Network
+        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
+        """
         self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]], colour, marker_data)
 
     def add_sections_to_map(self, sections, colour, marker_data):
+        """Adds the sections provided as markers to map with the colour, and data
+        indicated by marker_data.
+
+        :param DataFrame sections: Census records relating to Sections with lat and long Columns
+        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
+        """
         self.logger.info("Adding section markers to map")
-        # sections = self.census_data.census_postcode_data.loc[self.census_data.census_postcode_data[CensusData.column_labels['UNIT_TYPE']] == section]
+
+        # Sets the map so it opens in the right area
+        self.map.set_bounds([[self.census_data.data["lat"].min(), self.census_data.data["long"].min()],
+                              [self.census_data.data["lat"].max(), self.census_data.data["long"].max()]])
+
         postcodes = sections[CensusData.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
         if "nan" in postcodes:
@@ -635,13 +669,16 @@ class ScoutMap:
             count += 1
 
             self.logger.debug(postcode)
-
+            # Find all the sections with the same postcode
             colocated_sections = sections.loc[sections[CensusData.column_labels['POSTCODE']] == postcode]
             colocated_district_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('District'))]
             colocated_group_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
+
+            # Construct the html to form the marker popup
+            # District sections first followed by Group sections
             html = ""
 
             districts = colocated_district_sections[CensusData.column_labels['id']["DISTRICT"]].unique()
@@ -690,6 +727,7 @@ class ScoutMap:
 
                 html += "</p>"
 
+            # Fixes physical size of popup
             if len(groups) == 1:
                 height = 120
             else:
@@ -704,6 +742,11 @@ class ScoutMap:
                 marker_colour = colour_mapping[value]
             else:
                 marker_colour = colour
+
+            # Areas outside the region_of_color have markers coloured grey
+            if self.region_of_color:
+                if colocated_sections.iloc[0][self.region_of_color["column"]] not in self.region_of_color["value_list"]:
+                    marker_colour = 'gray'
 
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
             self.map.add_marker(lat, long, popup, marker_colour)
@@ -720,14 +763,22 @@ class ScoutMap:
         self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[self.boundary_dict["codes"]["key"]].isin(boundaries_in_scout_area)]
 
     def filter_boundaries_by_scout_area(self, boundary, column, value_list):
+        """Filters the boundaries, to include only those boundaries which have
+        Sections that satisfy the requirement that the column is in the value_list.
+
+        :param str boundary: ONS boundary to filter on
+        :param str column: Scout boundary (e.g. C_ID)
+        :param list value_list: List of values in the Scout boundary
+        """
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
         self.filter_boundaries(boundary, ons_value_list)
 
     def filter_records_by_boundary(self):
+        """Selects the records that are with the boundary specified"""
         self.filter_records(self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]])
 
-    def set_region_of_interest(self, column, value_list):
-        self.region_of_interest = {"column": column, "value_list": value_list}
+    def set_region_of_color(self, column, value_list):
+        self.region_of_color = {"column": column, "value_list": value_list}
 
     def save_map(self):
         self.map.save()
@@ -1140,9 +1191,25 @@ class ScoutMap:
         self.logger.info("Adding Index of Multiple Deprivation Decile")
 
         self.census_data.data["imd_decile"] = self.census_data.data.apply(lambda row:
-                                                                                                          self.calc_imd_decile(int(row["imd"]), row["ctry"]) if row["imd"] != "error" else "error", axis=1)
+            self.calc_imd_decile(int(row["imd"]), row["ctry"]) if row["imd"] != "error" else "error", axis=1)
 
         return self.census_data.data
+
+    def country_add_IMD_decile(self, data, country):
+        """Used to add IMD data to DataFrames that aren't the core census data
+
+        For example used to add IMD deciles to Lower Super Output Area boundary
+        reports.
+
+        All boundaries must be from the same country.
+
+        :param DataFrame data: Data to add IMD decile to. Must have 'imd' column
+        :param str country: Country code
+
+        :returns DataFrame: Original DataFrame with extra imd_decile column
+        """
+        data["imd_decile"] = data.apply(lambda row: self.calc_imd_decile(int(row["imd"]), country) if row["imd"] != "error" else "error", axis=1)
+        return data
 
     def calc_imd_decile(self, rank, ctry):
         country = self.ons_data.COUNTRY_CODES.get(ctry)
