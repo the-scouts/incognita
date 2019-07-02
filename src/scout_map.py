@@ -41,6 +41,8 @@ class ScoutMap:
         self.boundary_dict = None
         self.boundary_regions_data = None
 
+        self.region_of_color = None
+
         # Load the settings file
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
@@ -1532,3 +1534,47 @@ class ScoutMap:
         new_long = long + arctan((1/0.99664719)*arccos(distance*180/(pi*6378137)))
 
         new_long = long + 0.015
+
+    def add_custom_data(self, csv_file_path, name, location_type="Postcodes", location_cols=None, markers_clustered=False, marker_data=None):
+        """Function to add custom data as markers on map
+
+        Note that the create_map function must have been called first, to
+        populate self.map object.
+
+        :param str csv_file_path: file path to open csv file
+        :param str name: Name of layer that the markers will be added to
+        :param str location_type: Either "Postcodes" or "Co-ordinates"
+        :param str/dict location_cols: If "Co-ordinates" requires a dict {"crs": , "x": , "y": }
+                                   If "Postcodes" the column name of the Postcode columm
+        :param bool markers_clustered: Whether to cluster the markers or not
+        :param list marker_data: list of strings for values in data that should be in popup
+        """
+
+        data = pd.read_csv(csv_file_path)
+
+        if location_type == "Postcodes":
+            # Merge with ONS Postcode Directory to obtain dataframe with lat/long
+            data = pd.merge(data, self.ons_data.data, how='left', left_on=location_cols, right_index=True, sort=False)
+            location_cols = {"crs": '4326', "x": "long", "y": "lat"}
+
+        # Create geo data frame with points generated from lat/long or OS
+        data = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data[location_cols["x"]], data[location_cols["y"]]))
+
+        # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
+        data.crs = {'init': f"epsg:{location_cols['crs']}"}
+        data = data.to_crs({'init': 'epsg:4326'})
+
+        self.map.add_layer(name, markers_clustered)
+
+        # For each point plot marker, and include marker_data in the popup
+        for index, row in data.iterrows():
+            if marker_data:
+                html = ""
+                for data in marker_data:
+                    html += f"<p align=\"center\">{row[data]}<p align=\"center\">"
+                iframe = folium.IFrame(html=html, width=350, height=100)
+                popup = folium.Popup(iframe, max_width=2650)
+            else:
+                popup = None
+            if not np.isnan(row.geometry.x):
+                self.map.add_marker(row.geometry.y, row.geometry.x, popup, 'green', name)

@@ -132,7 +132,7 @@ class ChoroplethMapPlotter:
         else:
             return colormap(area_score)
 
-    def add_marker(self, lat, long, popup, color):
+    def add_marker(self, lat, long, popup, color, name='Sections'):
         """Adds a leaflet marker to the map using given values
 
         :param float lat: latitude of the marker
@@ -145,7 +145,7 @@ class ChoroplethMapPlotter:
             location=[lat, long],
             popup=popup,
             icon=folium.Icon(color=color)
-        ).add_to(self.section_layer)
+        ).add_to(self.layers[name])
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)

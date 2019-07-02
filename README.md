@@ -64,6 +64,9 @@ To install geopandas using pip on windows, follow the following steps:
  * Northern Ireland ([link] https://www.nisra.gov.uk/publications/2018-mid-year-population-estimates-northern-ireland)
  * Scotland ([link] https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/population/population-estimates/2011-based-special-area-population-estimates/ukpc-population-estimates)
 
+### Other useful data sources
+ * School locations: https://get-information-schools.service.gov.uk/
+
 ### Guide:
 The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk/search?collection=Document&sort=name&tags=DOC_BGG)) can be useful as an introduction for those new to GIS.
 
