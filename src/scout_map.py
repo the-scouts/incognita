@@ -183,11 +183,19 @@ class ScoutMap:
         if geography_name in self.ons_data.BOUNDARIES.keys():
             self.boundary_dict = self.ons_data.BOUNDARIES[geography_name]
             names_and_codes_file_path = self.boundary_dict["codes"].get("path")
-            self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path)  # TODO: datatypes
+            self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path,
+                                                     dtype={
+                                                        self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
+                                                        self.boundary_dict["codes"]["name"]: "object"
+                                                        })
         elif geography_name in self.settings["Scout Mappings"].keys():
             self.boundary_dict = self.settings["Scout Mappings"][geography_name]
             names_and_codes_file_path = self.boundary_dict["codes"].get("path")
-            self.boundary_regions_data = pd.read_csv(names_and_codes_file_path)  # TODO: datatypes
+            self.boundary_regions_data = pd.read_csv(names_and_codes_file_path,
+                                                     dtype={
+                                                        self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
+                                                        self.boundary_dict["codes"]["name"]: "object"
+                                                        })
         else:
             raise Exception("Invalid boundary supplied")
 
@@ -237,10 +245,12 @@ class ScoutMap:
         self.logger.debug(f"Finding the ons areas that exist with {column} in {value_list}")
         records = self.census_data.data.loc[self.census_data.data[column].isin(value_list)]
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
-        ons_codes = records[ons_code].unique().tolist()
+        ons_codes = records[ons_code].unique()
+        self.logger.debug(f"Found raw {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
         if CensusData.DEFAULT_VALUE in ons_codes:
             ons_codes.remove(CensusData.DEFAULT_VALUE)
-        ons_codes = [code for code in ons_codes if (isinstance(code, str) or not np.isnan(code))]
+        ons_codes = [code for code in ons_codes if (isinstance(code, str) or (isinstance(code, np.int32) and not np.isnan(code)))]
+        self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
@@ -374,7 +384,8 @@ class ScoutMap:
                     self.ons_to_district_mapping(name)
                     awards_mapping = self.district_mapping.get(name)
         if "waiting list total" in options:
-            output_columns.append("Waiting List")
+            for year in years_in_data:
+                output_columns.append(f"Waiting List-{year}")
 
         output_data = pd.DataFrame(columns=output_columns)
         self.logger.debug(f"Report contains the following data:\n{output_columns}")
@@ -405,7 +416,8 @@ class ScoutMap:
                         group_string += "\n"
                 boundary_data["Groups"] = group_string
 
-            if ("Section numbers" in options) or ("6 to 17 numbers" in options) or ("Waiting List" in options):
+            if ("Section numbers" in options) or ("6 to 17 numbers" in options) or ("waiting list total" in options):
+                self.logger.debug(f"Obtaining Section numbers and waiting list for {year}")
                 for year in years_in_data:
                     year_records = records_in_boundary.loc[records_in_boundary[CensusData.column_labels['YEAR']] == year]
                     # beaver_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Beavers"]]
@@ -415,9 +427,9 @@ class ScoutMap:
                     #
                     # group_records = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_GROUP]
                     # explorer_waiting = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_DISTRICT]
-                    boundary_data["Waiting List"] = 0
+                    boundary_data[f"Waiting List-{year}"] = 0
                     for section in [section for section in CensusData.column_labels['sections'].keys() if CensusData.column_labels['sections'][section].get("waiting_list")]:
-                        boundary_data["Waiting List"] += year_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
+                        boundary_data[f"Waiting List-{year}"] += year_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
 
                     boundary_data[f"All-{year}"] = 0
                     for section in CensusData.column_labels['sections'].keys():
@@ -461,6 +473,7 @@ class ScoutMap:
                 else:
                     boundary_data["%-QSA"] = np.NaN
 
+            self.logger.debug(f"Adding data from {code}\n{boundary_data}")
             boundary_data_df = pd.DataFrame([boundary_data], columns=output_columns)
             output_data = pd.concat([output_data, boundary_data_df], axis=0, sort=False)
 
@@ -674,9 +687,11 @@ class ScoutMap:
         """
         self.logger.info("Adding section markers to map")
 
+        valid_points = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
+
         # Sets the map so it opens in the right area
-        self.map.set_bounds([[self.census_data.data["lat"].min(), self.census_data.data["long"].min()],
-                              [self.census_data.data["lat"].max(), self.census_data.data["long"].max()]])
+        self.map.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
+                              [valid_points["lat"].max(), valid_points["long"].max()]])
 
         postcodes = sections[CensusData.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
@@ -1283,36 +1298,63 @@ class ScoutMap:
         return output_pd
 
     def create_district_boundaries(self):
+        """
+        Creates a GeoJSON file for the District Boundaries of the Scout Census.
+
+        Aims to create a circular boundary around every section of maximal size
+        that doesn't overlap or leave gaps between Districts.
+        """
+
         if not self.has_ons_data():
             raise Exception("Must have ons data added before creating district boundaries")
-        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['type']["DISTRICT"]]].drop_duplicates()
 
-        valid_locations = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == "1"]
+        # Find all the District IDs and names
+        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['name']["DISTRICT"]]].drop_duplicates()
+
+        # Finds all the records with valid postcodes in the Scout Census
+        valid_locations = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
+
+        # Creates a new dataframe with a subset of columns resulting in
+        # each location being a distinct row
         all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long"])
-        all_locations[["D_ID", "D_name", "Object_ID"]] = valid_locations[["D_ID", "D_name", "Object_ID"]]
-        all_locations[["lat", "long"]] = valid_locations[["lat", "long"]].apply(pd.to_numeric, errors='coerce')
+        all_locations[["D_name", "Object_ID"]] = valid_locations[["D_name", "Object_ID"]]
+        all_locations[["D_ID", "lat", "long"]] = valid_locations[["D_ID", "lat", "long"]].apply(pd.to_numeric, errors='coerce')
         all_locations.drop_duplicates(subset=["lat", "long"], inplace=True)
+
+        # Uses the lat and long co-ords from above to create a GeoDataFrame
         all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat))
         all_points.crs = {'init': 'epsg:4326'}
+
+        # Converts the co-ordinate reference system into OS36 which uses
+        # (x-y) coordinates in metres, rather than (long, lat) coordinates.
         all_points = all_points.to_crs({'init': 'epsg:27700'})
         all_points.reset_index(inplace=True)
 
+        self.logger.info(f"Found {len(all_points.index)} different Section points")
+
+        # Calculates all the other points within twice the distance of the
+        # closest point from a neighbouring district
         all_points["nearest_points"] = all_points.apply(lambda row: self.nearest_other_points(row, all_points.loc[all_points["D_ID"] != row["D_ID"]]), axis=1)
         all_points["buffer_distance"] = 0
+
+        # Initial calcuation of the buffer distances
         self.logger.info("Calculating buffer distances of " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " points")
-        all_points["buffer_distance"] = all_points.apply(lambda row: self.second_buffer_distance(row, all_points), axis=1)
+        all_points["buffer_distance"] = all_points.apply(lambda row: self.buffer_distance(row, all_points), axis=1)
         self.logger.info("On first pass " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " missing buffer distance")
 
         old_number = all_points["buffer_distance"].value_counts().iloc[0]
         new_number = 0
+        # The algorithm is iterative, so stop when no more points have their
+        # buffers identified
         while new_number < old_number:
             old_number = all_points["buffer_distance"].value_counts().iloc[0]
-            all_points["buffer_distance"] = all_points.apply(lambda row: self.second_buffer_distance(row, all_points), axis=1)
+            all_points["buffer_distance"] = all_points.apply(lambda row: self.buffer_distance(row, all_points), axis=1)
             new_number = all_points["buffer_distance"].value_counts().iloc[0]
             self.logger.info(f"On next pass {new_number} missing buffer distance")
             _ = all_points.loc[all_points["buffer_distance"] == 0]
             self.logger.debug(f"The following points do not have buffer distances defined:\n{_}")
 
+        # Create the GeoDataFrame that will form the GeoJSON
         output_columns = ["id", "name"]
         output_gpd = gpd.GeoDataFrame(columns=output_columns)
         district_nu = 0
@@ -1323,107 +1365,34 @@ class ScoutMap:
                     "id": [district["D_ID"]],
                     "name": [district["D_name"]]
                 }
-                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of " + str(district["D_name"]))
+                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
 
-                # valid_district_records = district_records.loc[district_records[CensusData.column_labels['VALID_POSTCODE']] == "1"]
-                # self.logger.debug(f"Found {len(valid_district_records.index)} sections with postcodes in {district_name}")
-                #
-                # district_locations = pd.DataFrame(columns=["lat","long"])
-                # district_locations[["lat","long"]] = valid_district_records[["lat","long"]].apply(pd.to_numeric, errors='coerce')
-                #
-                # district_locations.drop_duplicates(inplace=True)
-                #
-                # if len(district_locations.index) >= 1:
-                #     district_points = gpd.GeoDataFrame(district_locations, geometry=gpd.points_from_xy(district_locations.long, district_locations.lat))
-                #     district_points.crs = {'init' :'epsg:4326'}
-                #     district_points = district_points.to_crs({'init':'epsg:27700'})
-                #     self.logger.debug(f"District exists at following points\n{district_points}")
-                #
-                #     District boundary defined by Group Points
-                #     district_polygon_corners = district_points.convex_hull
-                #     district_polygon = shapely.geometry.MultiPoint([[p.x, p.y] for p in district_polygon_corners])
-                #     district_polygon = district_polygon.convex_hull
-                #     district_polygon = district_polygon.buffer(1000)
-                #
-                #     District polygon defined by Group catchment
-                #     district_points = [district_point.buffer(1000) for district_point in district_points.geometry]
-                #     district_polygon = shapely.ops.unary_union(district_points)
-                #
-                #     District polygon defined by Group catchment defined by average distance between points
-                #     district_point_list = [district_point for district_point in district_points.geometry]
-                #     total_distance = 0
-                #     for initial_point in district_point_list:
-                #        other_points = [district_point for district_point in district_point_list if initial_point != district_point]
-                #        for district_point in other_points:
-                #            total_distance += initial_point.distance(district_point)
-                #            self.logger.debug(f"Total distance now is {total_distance}")
-                #     self.logger.debug(f"Total distance between sections in district is {total_distance}")
-                #     average_distance = total_distance / ((len(district_point_list)-1)*len(district_point_list))
-                #     self.logger.debug(f"A total of {(len(district_point_list)-1)*len(district_point_list)} distances calculated, means average is {average_distance}")
-                #
-                #     district_points = [district_point.buffer(average_distance/2) for district_point in district_points.geometry]
-                #     district_polygon = shapely.ops.unary_union(district_points)
-                #
-                #     District polygon defined by Group catchment defined by half the distance to the nearest non-district section
-                #     non_district_points = all_points.loc[all_points["D_ID"] != district]
-                #     self.logger.debug(f"After removing points from {district} there are {len(non_district_points.index)} points not in district")
-                #     non_district_points = shapely.geometry.MultiPoint([p for p in non_district_points.geometry])
-                #
-                #     district_points_object = shapely.geometry.MultiPoint([p for p in district_points.geometry])
-                #     buffered_points = []
-                #     for district_point in district_points.geometry:
-                #         self.logger.debug(f"Finding buffer distance for {district_point.wkt}")
-                #         nearest_other_section = shapely.ops.nearest_points(non_district_points, district_point)
-                #         self.logger.debug(f"Nearest point not in district is {nearest_other_section[0].wkt}")
-                #         nearest_district_section = shapely.ops.nearest_points(district_points_object, nearest_other_section[0])
-                #         self.logger.debug(f"Nearest point in the district to other point is {nearest_district_section[0].wkt}")
-                #         distance_to_district = nearest_district_section[0].distance(nearest_other_section[0])
-                #         self.logger.debug(f"Buffer distance for {nearest_other_section[0].wkt} is {distance_to_district/2}")
-                #         self.logger.debug(f"So buffer distance for {district_point.wkt} is {district_point.distance(non_district_points)-distance_to_district/2}")
-                #         distance = min(100000, district_point.distance(non_district_points)-distance_to_district/2)
-                #
-                #         distance = self.buffer_distance(district_point, all_points, district, "D_ID")
-                #
-                # self.logger.info(all_points)
-                # self.logger.info(data["id"][0])
-                district_points = all_points.loc[all_points["D_ID"] == str(district["D_ID"])]
+                district_points = all_points.loc[all_points["D_ID"] == district["D_ID"]]
+
+                # For each of the points in the district, produces a polygon to
+                # represent the buffered point from the buffer distances
+                # calculated above
                 buffered_points = district_points.apply(lambda row: row["geometry"].buffer(row["buffer_distance"]), axis=1)
 
-                # district_polygon = shapely.geometry.MultiPoint([[p.x, p.y] for p in buffered_points])
+                # Unifies the polygons created from each point in the District
+                # into one polygon for the District.
                 district_polygon = shapely.ops.unary_union(buffered_points)
-
-                # District polygon defined by 1km Group catchment followed by convex hull?
-                # district_points = [district_point.buffer(1000) for district_point in district_points.geometry]
-                # district_polygon = shapely.geometry.MultiPolygon([[p.x, p.y] for p in district_points])
-                # district_polygon = district_polygon.convex_hull
 
                 data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon])
                 output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
-                # else:
-                #     self.logger.warning(f"Ignoring {district_name} as {len(district_locations.index)} valid postcodes")
 
         output_gpd.crs = {'init': 'epsg:27700'}
+
+        # Convert co-ordinates back to WGS84, which uses latitude and longditude
         output_gpd = output_gpd.to_crs({'init': 'epsg:4326'})
         output_gpd.reset_index(drop=True, inplace=True)
+
+        self.logger.debug(f"output gpd\n{output_gpd}")
+        output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors='coerce')
         self.logger.debug(f"output gpd\n{output_gpd}")
         output_gpd.to_file("districts_buffered.geojson", driver='GeoJSON')
 
-    @staticmethod
-    def simple_buffer_distance(point_details, all_points):
-        nearest_point = point_details["nearest_points"][0]["Point"]
-        nearest_point_details = all_points.loc[all_points["geometry"] == nearest_point]
-
-        if not nearest_point_details.empty:
-            if point_details["geometry"] == nearest_point_details["nearest_points"].iloc[0][0]["Point"]:
-                distance = point_details["nearest_points"][0]["Distance"] / 2
-            else:
-                distance = 0
-        else:
-            distance = 0
-
-        return distance
-
-    def second_buffer_distance(self, point_details, all_points):
+    def buffer_distance(self, point_details, all_points):
         obj_id = point_details["Object_ID"]
         self.logger.debug(f"Finding buffer distance of {point_details.index} with object ID {obj_id}")
         distance = 0
@@ -1469,16 +1438,34 @@ class ScoutMap:
             if not valid:
                 distance = 0
         else:
-            distance = point_details["buffer_distance"]
+            distance = 0
         return distance
 
     @staticmethod
     def buffer_distance_from_point(point, all_points):
+        """
+        Find the distance recorded using the point as the key
+
+        :param shapely.Point point: Point interested in
+        :param GeoDataFrame all_points: DataFrame containing 'buffer_distance' column
+
+        :returns float: Distance recorded as buffer from point
+        """
         point_details = all_points.loc[all_points["geometry"] == point]
         buffer = point_details["buffer_distance"].iloc[0]
         return buffer
 
     def nearest_other_points(self, row, other_data):
+        """
+        Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
+        the points and corresponding distances for all points with twice
+        the minimum distance from the row to the subset.
+
+        :param DataSeries row: Row of a GeoDataFrame
+        :param DataFrame other_data: Other rows of a GeoDataFrame
+
+        :returns list: Sorted list of dictionaries containing points and distances
+        """
         point = row["geometry"]
         self.logger.debug("nearest_other_points:" + str(row.index))
         other_points = shapely.geometry.MultiPoint(other_data["geometry"].tolist())
@@ -1488,7 +1475,11 @@ class ScoutMap:
         self.logger.debug(points)
         return points
 
-    def buffer_distance(self, point, data, id, id_col):
+    def old_buffer_distance(self, point, data, id, id_col):
+        """
+        Legacy function to be removed
+        """
+        self.logger.error("old_buffer_distance is obselete function")
         self.logger.debug(f"Finding buffer distance of {point.wkt} in {id}")
         data_not_in_area = data.loc[data[id_col] != id]
         points_not_in_area = shapely.geometry.MultiPoint([p for p in data_not_in_area.geometry])
@@ -1507,7 +1498,7 @@ class ScoutMap:
             new_id_record.reset_index(inplace=True)
             new_id = new_id_record.at[0, id_col]
             self.logger.info(f"To find buffer distance of {point.wkt} in {id} need to find it for {nearest_other_point.wkt} in {new_id}")
-            buffer_distance = point.distance(nearest_other_point) - self.buffer_distance(nearest_other_point, data, new_id, id_col)
+            buffer_distance = point.distance(nearest_other_point) - self.old_buffer_distance(nearest_other_point, data, new_id, id_col)
 
             points_not_in_area_or_nearest = shapely.geometry.MultiPoint([p for p in points_not_in_area if p != nearest_in_area_point])
             next_nearest_other_point = shapely.ops.nearest_points(points_not_in_area_or_nearest, point)[0]
@@ -1526,15 +1517,6 @@ class ScoutMap:
         increments = [numeric_list[ii + 1] - numeric_list[ii] for ii in range(len(numeric_list) - 1)]
         max_increment = max(increments)
         return max_increment > 0
-
-    @staticmethod
-    def point_moved_by_km(lat, long, distance, direction):
-        """Function skeleton"""
-        # Source: https://en.wikipedia.org/wiki/Geographic_coordinate_system#Length_of_a_degree
-        new_lat = lat + arccos(distance*180/(pi*367449))
-        new_long = long + arctan((1/0.99664719)*arccos(distance*180/(pi*6378137)))
-
-        new_long = long + 0.015
 
     def add_custom_data(self, csv_file_path, name, location_type="Postcodes", location_cols=None, markers_clustered=False, marker_data=None):
         """Function to add custom data as markers on map

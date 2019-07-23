@@ -33,7 +33,7 @@ class ChoroplethMapPlotter:
 
         self.out_file = out_file + ".html"
         self.code_name = shape_files_dict["key"]
-
+        self.logger.info(f"Creating map of {data_info['code_col']}s against {data_info['score_col']} using the following data\n{data_info['data']}")
         self.map_data = data_info['data']
         self.CODE_COL = data_info['code_col']
         self.SCORE_COL = data_info['score_col']
@@ -82,7 +82,7 @@ class ChoroplethMapPlotter:
 
         original_number_of_shapes = len(all_shapes.index)
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
-        # self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
+        self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
 
         list_codes = [str(code) for code in self.map_data[self.CODE_COL].tolist()]
         all_shapes = all_shapes[all_shapes[self.code_name].isin(list_codes)]
@@ -101,9 +101,12 @@ class ChoroplethMapPlotter:
         :param colormap: branca colour map object
         :return: None
         """
-        # self.logger.debug(f"Merging geo_json on {self.code_name} with {self.CODE_COL} from boundary report")
+        self.logger.debug(f"Merging geo_json on {self.code_name} with {self.CODE_COL} from boundary report")
         merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL)
-        # self.logger.debug(f"Merged_data\n{merged_data}")
+        self.logger.debug(f"Merged_data\n{merged_data}")
+        if len(merged_data.index) == 0:
+            self.logger.error("Data unsuccesfully merged resulting in zero records")
+            raise Exception("Data unsuccesfully merged resulting in zero records")
 
         folium.GeoJson(
             data=merged_data.to_json(),

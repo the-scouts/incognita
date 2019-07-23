@@ -12,7 +12,7 @@
       "District":
       {
         "name": "D_ID",
-        "codes": {"path": "../../data/Scout Census Data/district_id_mapping.csv", "key": "D_ID", "name": "D_name"},
+        "codes": {"path": "../../data/Scout Census Data/district_id_mapping.csv", "key": "D_ID", "key_type": "Int32", "name": "D_name"},
         "boundary":
           {
             "shapefiles": ["../../src/scripts/districts_buffered.geojson"], "key": "id", "name": "name"
