@@ -1443,11 +1443,29 @@ class ScoutMap:
 
     @staticmethod
     def buffer_distance_from_point(point, all_points):
+        """
+        Find the distance recorded using the point as the key
+
+        :param shapely.Point point: Point interested in
+        :param GeoDataFrame all_points: DataFrame containing 'buffer_distance' column
+
+        :returns float: Distance recorded as buffer from point
+        """
         point_details = all_points.loc[all_points["geometry"] == point]
         buffer = point_details["buffer_distance"].iloc[0]
         return buffer
 
     def nearest_other_points(self, row, other_data):
+        """
+        Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
+        the points and corresponding distances for all points with twice
+        the minimum distance from the row to the subset.
+
+        :param DataSeries row: Row of a GeoDataFrame
+        :param DataFrame other_data: Other rows of a GeoDataFrame
+
+        :returns list: Sorted list of dictionaries containing points and distances
+        """
         point = row["geometry"]
         self.logger.debug("nearest_other_points:" + str(row.index))
         other_points = shapely.geometry.MultiPoint(other_data["geometry"].tolist())
@@ -1457,7 +1475,11 @@ class ScoutMap:
         self.logger.debug(points)
         return points
 
-    def buffer_distance(self, point, data, id, id_col):
+    def old_buffer_distance(self, point, data, id, id_col):
+        """
+        Legacy function to be removed
+        """
+        self.logger.error("old_buffer_distance is obselete function")
         self.logger.debug(f"Finding buffer distance of {point.wkt} in {id}")
         data_not_in_area = data.loc[data[id_col] != id]
         points_not_in_area = shapely.geometry.MultiPoint([p for p in data_not_in_area.geometry])
@@ -1476,7 +1498,7 @@ class ScoutMap:
             new_id_record.reset_index(inplace=True)
             new_id = new_id_record.at[0, id_col]
             self.logger.info(f"To find buffer distance of {point.wkt} in {id} need to find it for {nearest_other_point.wkt} in {new_id}")
-            buffer_distance = point.distance(nearest_other_point) - self.buffer_distance(nearest_other_point, data, new_id, id_col)
+            buffer_distance = point.distance(nearest_other_point) - self.old_buffer_distance(nearest_other_point, data, new_id, id_col)
 
             points_not_in_area_or_nearest = shapely.geometry.MultiPoint([p for p in points_not_in_area if p != nearest_in_area_point])
             next_nearest_other_point = shapely.ops.nearest_points(points_not_in_area_or_nearest, point)[0]
@@ -1495,12 +1517,3 @@ class ScoutMap:
         increments = [numeric_list[ii + 1] - numeric_list[ii] for ii in range(len(numeric_list) - 1)]
         max_increment = max(increments)
         return max_increment > 0
-
-    @staticmethod
-    def point_moved_by_km(lat, long, distance, direction):
-        """Function skeleton"""
-        # Source: https://en.wikipedia.org/wiki/Geographic_coordinate_system#Length_of_a_degree
-        new_lat = lat + arccos(distance*180/(pi*367449))
-        new_long = long + arctan((1/0.99664719)*arccos(distance*180/(pi*6378137)))
-
-        new_long = long + 0.015
