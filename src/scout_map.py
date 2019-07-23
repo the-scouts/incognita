@@ -1345,82 +1345,12 @@ class ScoutMap:
                 }
                 self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
 
-                # valid_district_records = district_records.loc[district_records[CensusData.column_labels['VALID_POSTCODE']] == "1"]
-                # self.logger.debug(f"Found {len(valid_district_records.index)} sections with postcodes in {district_name}")
-                #
-                # district_locations = pd.DataFrame(columns=["lat","long"])
-                # district_locations[["lat","long"]] = valid_district_records[["lat","long"]].apply(pd.to_numeric, errors='coerce')
-                #
-                # district_locations.drop_duplicates(inplace=True)
-                #
-                # if len(district_locations.index) >= 1:
-                #     district_points = gpd.GeoDataFrame(district_locations, geometry=gpd.points_from_xy(district_locations.long, district_locations.lat))
-                #     district_points.crs = {'init' :'epsg:4326'}
-                #     district_points = district_points.to_crs({'init':'epsg:27700'})
-                #     self.logger.debug(f"District exists at following points\n{district_points}")
-                #
-                #     District boundary defined by Group Points
-                #     district_polygon_corners = district_points.convex_hull
-                #     district_polygon = shapely.geometry.MultiPoint([[p.x, p.y] for p in district_polygon_corners])
-                #     district_polygon = district_polygon.convex_hull
-                #     district_polygon = district_polygon.buffer(1000)
-                #
-                #     District polygon defined by Group catchment
-                #     district_points = [district_point.buffer(1000) for district_point in district_points.geometry]
-                #     district_polygon = shapely.ops.unary_union(district_points)
-                #
-                #     District polygon defined by Group catchment defined by average distance between points
-                #     district_point_list = [district_point for district_point in district_points.geometry]
-                #     total_distance = 0
-                #     for initial_point in district_point_list:
-                #        other_points = [district_point for district_point in district_point_list if initial_point != district_point]
-                #        for district_point in other_points:
-                #            total_distance += initial_point.distance(district_point)
-                #            self.logger.debug(f"Total distance now is {total_distance}")
-                #     self.logger.debug(f"Total distance between sections in district is {total_distance}")
-                #     average_distance = total_distance / ((len(district_point_list)-1)*len(district_point_list))
-                #     self.logger.debug(f"A total of {(len(district_point_list)-1)*len(district_point_list)} distances calculated, means average is {average_distance}")
-                #
-                #     district_points = [district_point.buffer(average_distance/2) for district_point in district_points.geometry]
-                #     district_polygon = shapely.ops.unary_union(district_points)
-                #
-                #     District polygon defined by Group catchment defined by half the distance to the nearest non-district section
-                #     non_district_points = all_points.loc[all_points["D_ID"] != district]
-                #     self.logger.debug(f"After removing points from {district} there are {len(non_district_points.index)} points not in district")
-                #     non_district_points = shapely.geometry.MultiPoint([p for p in non_district_points.geometry])
-                #
-                #     district_points_object = shapely.geometry.MultiPoint([p for p in district_points.geometry])
-                #     buffered_points = []
-                #     for district_point in district_points.geometry:
-                #         self.logger.debug(f"Finding buffer distance for {district_point.wkt}")
-                #         nearest_other_section = shapely.ops.nearest_points(non_district_points, district_point)
-                #         self.logger.debug(f"Nearest point not in district is {nearest_other_section[0].wkt}")
-                #         nearest_district_section = shapely.ops.nearest_points(district_points_object, nearest_other_section[0])
-                #         self.logger.debug(f"Nearest point in the district to other point is {nearest_district_section[0].wkt}")
-                #         distance_to_district = nearest_district_section[0].distance(nearest_other_section[0])
-                #         self.logger.debug(f"Buffer distance for {nearest_other_section[0].wkt} is {distance_to_district/2}")
-                #         self.logger.debug(f"So buffer distance for {district_point.wkt} is {district_point.distance(non_district_points)-distance_to_district/2}")
-                #         distance = min(100000, district_point.distance(non_district_points)-distance_to_district/2)
-                #
-                #         distance = self.buffer_distance(district_point, all_points, district, "D_ID")
-                #
-                # self.logger.info(all_points)
-                # self.logger.info(data["id"][0])
                 district_points = all_points.loc[all_points["D_ID"] == district["D_ID"]]
                 buffered_points = district_points.apply(lambda row: row["geometry"].buffer(row["buffer_distance"]), axis=1)
-
-                # district_polygon = shapely.geometry.MultiPoint([[p.x, p.y] for p in buffered_points])
                 district_polygon = shapely.ops.unary_union(buffered_points)
-
-                # District polygon defined by 1km Group catchment followed by convex hull?
-                # district_points = [district_point.buffer(1000) for district_point in district_points.geometry]
-                # district_polygon = shapely.geometry.MultiPolygon([[p.x, p.y] for p in district_points])
-                # district_polygon = district_polygon.convex_hull
 
                 data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon])
                 output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
-                # else:
-                #     self.logger.warning(f"Ignoring {district_name} as {len(district_locations.index)} valid postcodes")
 
         output_gpd.crs = {'init': 'epsg:27700'}
         output_gpd = output_gpd.to_crs({'init': 'epsg:4326'})
