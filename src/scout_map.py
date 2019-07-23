@@ -371,7 +371,8 @@ class ScoutMap:
                     self.ons_to_district_mapping(name)
                     awards_mapping = self.district_mapping.get(name)
         if "waiting list total" in options:
-            output_columns.append("Waiting List")
+            for year in years_in_data:
+                output_columns.append(f"Waiting List-{year}")
 
         output_data = pd.DataFrame(columns=output_columns)
         self.logger.debug(f"Report contains the following data:\n{output_columns}")
@@ -402,7 +403,8 @@ class ScoutMap:
                         group_string += "\n"
                 boundary_data["Groups"] = group_string
 
-            if ("Section numbers" in options) or ("6 to 17 numbers" in options) or ("Waiting List" in options):
+            if ("Section numbers" in options) or ("6 to 17 numbers" in options) or ("waiting list total" in options):
+                self.logger.debug(f"Obtaining Section numbers and waiting list for {year}")
                 for year in years_in_data:
                     year_records = records_in_boundary.loc[records_in_boundary[CensusData.column_labels['YEAR']] == year]
                     # beaver_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Beavers"]]
@@ -412,9 +414,9 @@ class ScoutMap:
                     #
                     # group_records = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_GROUP]
                     # explorer_waiting = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_DISTRICT]
-                    boundary_data["Waiting List"] = 0
+                    boundary_data[f"Waiting List-{year}"] = 0
                     for section in [section for section in CensusData.column_labels['sections'].keys() if CensusData.column_labels['sections'][section].get("waiting_list")]:
-                        boundary_data["Waiting List"] += year_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
+                        boundary_data[f"Waiting List-{year}"] += year_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
 
                     boundary_data[f"All-{year}"] = 0
                     for section in CensusData.column_labels['sections'].keys():
@@ -458,6 +460,7 @@ class ScoutMap:
                 else:
                     boundary_data["%-QSA"] = np.NaN
 
+            self.logger.debug(f"Adding data from {code}\n{boundary_data}")
             boundary_data_df = pd.DataFrame([boundary_data], columns=output_columns)
             output_data = pd.concat([output_data, boundary_data_df], axis=0, sort=False)
 
