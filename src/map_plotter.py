@@ -51,6 +51,12 @@ class ChoroplethMapPlotter:
         self.filter_shape_file(self.shape_file_paths)
 
     def add_layer(self, name, markers_clustered):
+        """
+        Adds a maker layer to the map
+
+        :param str name: The name of the layer - appears in LayerControl on Map
+        :param bool markers_clustered: Whether the markers should cluster or not
+        """
         if markers_clustered:
             self.layers[name] = MarkerCluster(name=name).add_to(self.map)
         else:
