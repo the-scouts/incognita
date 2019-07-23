@@ -49,7 +49,8 @@ class ScoutMap:
         self.OUTPUT = self.settings["Output folder"]
 
         # Facilitates logging
-        self.logger = log_util.create_logger(__name__,)
+        self.logging = log_util.LogUtil(__name__, )
+        self.logger = self.logging.get_logger()
 
     def merge_ons_postcode_directory(self, ONS_postcode_directory):
         """Merges CensusData object with ONSData object and outputs to csv
@@ -1323,7 +1324,7 @@ class ScoutMap:
                     "id": [district["D_ID"]],
                     "name": [district["D_name"]]
                 }
-                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of " + str(district["D_name"]))
+                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
 
                 # valid_district_records = district_records.loc[district_records[CensusData.column_labels['VALID_POSTCODE']] == "1"]
                 # self.logger.debug(f"Found {len(valid_district_records.index)} sections with postcodes in {district_name}")
