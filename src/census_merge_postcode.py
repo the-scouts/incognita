@@ -22,7 +22,7 @@ class CensusMergePostcode:
         self.ERROR_FILE = "error_file.txt"
 
         # Facilitates logging
-        self.logger = log_util.create_logger(__name__, )
+        self.logger = log_util.LogUtil(__name__, ).get_logger()
 
     @staticmethod
     def postcode_cleaner(postcode):

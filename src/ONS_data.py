@@ -23,7 +23,7 @@ class ONSData:
 
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
         self.fields = fields
-        self.logger = log_util.create_logger(__name__,)
+        self.logger = log_util.LogUtil(__name__, ).get_logger()
 
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]

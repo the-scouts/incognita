@@ -29,7 +29,7 @@ class ChoroplethMapPlotter:
 
     def __init__(self, shape_files_dict, data_info, out_file, sections_clustered=False):
         # Facilitates logging
-        self.logger = log_util.create_logger(__name__,)
+        self.logger = log_util.LogUtil(__name__, ).get_logger()
 
         self.out_file = out_file + ".html"
         self.code_name = shape_files_dict["key"]
