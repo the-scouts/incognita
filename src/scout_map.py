@@ -518,27 +518,32 @@ class ScoutMap:
         age_profile_path = self.boundary_dict.get("age_profile").get("path")
         if age_profile_path:
             data_types = {str(key): "Int16" for key in range(5,26)}
-            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, dtype=data_types, encoding='latin-1')
+            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, dtype=data_types)
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
         min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
         years_in_data = range(min_year, max_year + 1)
 
+        start_default_val = np.NaN
+        empty_val = np.NaN
+
         for section in ScoutMap.SECTIONS.keys():
-            boundary_report[f'Pop_{section}'] = np.NaN
-        boundary_report['Pop_All'] = np.NaN
+            boundary_report[f'Pop_{section}'] = start_default_val
+        boundary_report['Pop_All'] = start_default_val
 
         for year in years_in_data:
             for section in ScoutMap.SECTIONS.keys():
-                boundary_report[f'%-{section}-{year}'] = np.NaN
-            boundary_report[f'%-All-{year}'] = np.NaN
+                boundary_report[f'%-{section}-{year}'] = start_default_val
+            boundary_report[f'%-All-{year}'] = start_default_val
 
         for area_row in range(len(boundary_report.index)):
             boundary_row = boundary_report.iloc[area_row]
+
             area_code = boundary_row.at[boundary]
             area_pop = age_profile_pd.loc[age_profile_pd[self.boundary_dict["age_profile"]["key"]] == area_code]
-            if area_pop.size > 0:
+
+            if not area_pop.empty:
                 for section in ScoutMap.SECTIONS.keys():
                     section_total = 0
                     for age in ScoutMap.SECTIONS[section]["ages"]:
@@ -548,9 +553,9 @@ class ScoutMap:
                         if section_total > 0:
                             boundary_row.at[f'%-{section}-{year}'] = (boundary_row.at[f"{section}-{year}"] / section_total) * 100
                         else:
-                            if boundary_row.at[section] == 0:
+                            if boundary_row.at[f'{section}-{year}'] == 0:
                                 # No Scouts and no eligible population in the geographic area
-                                boundary_row.at[f'%-{section}-{year}'] = np.NaN
+                                boundary_row.at[f'%-{section}-{year}'] = empty_val
                             else:
                                 # There are Scouts but no eligible population in the geographic area
                                 boundary_row.at[f'%-{section}-{year}'] = 100
@@ -565,15 +570,15 @@ class ScoutMap:
                     else:
                         if boundary_row.at[f'%-All-{year}'] == 0:
                             # No Scouts and no eligible population in the geographic area
-                            boundary_row.at[f'%-All-{year}'] = np.NaN
+                            boundary_row.at[f'%-All-{year}'] = empty_val
                         else:
                             # There are Scouts but no eligible population in the geographic area
                             boundary_row.at[f'%-All-{year}'] = 100
 
             else:
                 for section in ScoutMap.SECTIONS.keys():
-                    boundary_row.at[f"%-{section}"] = np.NaN
-                boundary_row.at[f'%-All-{section}'] = np.NaN
+                    boundary_row.at[f"%-{section}"] = empty_val
+                boundary_row.at[f'%-All-{section}'] = empty_val
 
             boundary_report.iloc[area_row] = boundary_row
 
