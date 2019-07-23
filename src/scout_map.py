@@ -186,7 +186,7 @@ class ScoutMap:
             self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path,
                                                      dtype={
                                                         self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
-                                                        self.boundary_dict["codes"]["name"]: "category"
+                                                        self.boundary_dict["codes"]["name"]: "object"
                                                         })
         elif geography_name in self.settings["Scout Mappings"].keys():
             self.boundary_dict = self.settings["Scout Mappings"][geography_name]
@@ -194,7 +194,7 @@ class ScoutMap:
             self.boundary_regions_data = pd.read_csv(names_and_codes_file_path,
                                                      dtype={
                                                         self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
-                                                        self.boundary_dict["codes"]["name"]: "category"
+                                                        self.boundary_dict["codes"]["name"]: "object"
                                                         })
         else:
             raise Exception("Invalid boundary supplied")
