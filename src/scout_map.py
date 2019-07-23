@@ -41,6 +41,9 @@ class ScoutMap:
         self.boundary_dict = None
         self.boundary_regions_data = None
 
+        # Can be set by set_region_of_color
+        self.region_of_color = None
+
         # Load the settings file
         with open("settings.json", "r") as read_file:
             self.settings = json.load(read_file)["settings"]
@@ -180,11 +183,19 @@ class ScoutMap:
         if geography_name in self.ons_data.BOUNDARIES.keys():
             self.boundary_dict = self.ons_data.BOUNDARIES[geography_name]
             names_and_codes_file_path = self.boundary_dict["codes"].get("path")
-            self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path)  # TODO: datatypes
+            self.boundary_regions_data = pd.read_csv(self.ons_data.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path,
+                                                     dtype={
+                                                        self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
+                                                        self.boundary_dict["codes"]["name"]: "category"
+                                                        })
         elif geography_name in self.settings["Scout Mappings"].keys():
             self.boundary_dict = self.settings["Scout Mappings"][geography_name]
             names_and_codes_file_path = self.boundary_dict["codes"].get("path")
-            self.boundary_regions_data = pd.read_csv(names_and_codes_file_path)  # TODO: datatypes
+            self.boundary_regions_data = pd.read_csv(names_and_codes_file_path,
+                                                     dtype={
+                                                        self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
+                                                        self.boundary_dict["codes"]["name"]: "category"
+                                                        })
         else:
             raise Exception("Invalid boundary supplied")
 
@@ -234,10 +245,12 @@ class ScoutMap:
         self.logger.debug(f"Finding the ons areas that exist with {column} in {value_list}")
         records = self.census_data.data.loc[self.census_data.data[column].isin(value_list)]
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
-        ons_codes = records[ons_code].unique().tolist()
+        ons_codes = records[ons_code].unique()
+        self.logger.debug(f"Found raw {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
         if CensusData.DEFAULT_VALUE in ons_codes:
             ons_codes.remove(CensusData.DEFAULT_VALUE)
-        ons_codes = [code for code in ons_codes if (isinstance(code, str) or not np.isnan(code))]
+        ons_codes = [code for code in ons_codes if (isinstance(code, str) or (isinstance(code, np.int32) and not np.isnan(code)))]
+        self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
         return ons_codes
 
     def districts_from_ons(self, ons_code, ons_codes):
@@ -674,9 +687,11 @@ class ScoutMap:
         """
         self.logger.info("Adding section markers to map")
 
+        valid_points = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
+
         # Sets the map so it opens in the right area
-        self.map.set_bounds([[self.census_data.data["lat"].min(), self.census_data.data["long"].min()],
-                              [self.census_data.data["lat"].max(), self.census_data.data["long"].max()]])
+        self.map.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
+                              [valid_points["lat"].max(), valid_points["long"].max()]])
 
         postcodes = sections[CensusData.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
@@ -1285,18 +1300,23 @@ class ScoutMap:
     def create_district_boundaries(self):
         if not self.has_ons_data():
             raise Exception("Must have ons data added before creating district boundaries")
-        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['type']["DISTRICT"]]].drop_duplicates()
+        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['name']["DISTRICT"]]].drop_duplicates()
 
-        valid_locations = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == "1"]
+        valid_locations = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
         all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long"])
-        all_locations[["D_ID", "D_name", "Object_ID"]] = valid_locations[["D_ID", "D_name", "Object_ID"]]
-        all_locations[["lat", "long"]] = valid_locations[["lat", "long"]].apply(pd.to_numeric, errors='coerce')
+        all_locations[["D_name", "Object_ID"]] = valid_locations[["D_name", "Object_ID"]]
+        all_locations[["D_ID", "lat", "long"]] = valid_locations[["D_ID", "lat", "long"]].apply(pd.to_numeric, errors='coerce')
         all_locations.drop_duplicates(subset=["lat", "long"], inplace=True)
         all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat))
         all_points.crs = {'init': 'epsg:4326'}
         all_points = all_points.to_crs({'init': 'epsg:27700'})
         all_points.reset_index(inplace=True)
 
+        self.logger.info(f"Found {len(all_points.index)} different Section points")
+
+        #row = all_points.iloc[0]
+        #test_point = self.nearest_other_points(row, all_points.loc[all_points["D_ID"] != row["D_ID"]])
+        #self.logger.debug(f"Found nearest points as\n{test_point}")
         all_points["nearest_points"] = all_points.apply(lambda row: self.nearest_other_points(row, all_points.loc[all_points["D_ID"] != row["D_ID"]]), axis=1)
         all_points["buffer_distance"] = 0
         self.logger.info("Calculating buffer distances of " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " points")
@@ -1323,7 +1343,7 @@ class ScoutMap:
                     "id": [district["D_ID"]],
                     "name": [district["D_name"]]
                 }
-                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of " + str(district["D_name"]))
+                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
 
                 # valid_district_records = district_records.loc[district_records[CensusData.column_labels['VALID_POSTCODE']] == "1"]
                 # self.logger.debug(f"Found {len(valid_district_records.index)} sections with postcodes in {district_name}")
@@ -1386,7 +1406,7 @@ class ScoutMap:
                 #
                 # self.logger.info(all_points)
                 # self.logger.info(data["id"][0])
-                district_points = all_points.loc[all_points["D_ID"] == str(district["D_ID"])]
+                district_points = all_points.loc[all_points["D_ID"] == district["D_ID"]]
                 buffered_points = district_points.apply(lambda row: row["geometry"].buffer(row["buffer_distance"]), axis=1)
 
                 # district_polygon = shapely.geometry.MultiPoint([[p.x, p.y] for p in buffered_points])
@@ -1405,6 +1425,8 @@ class ScoutMap:
         output_gpd.crs = {'init': 'epsg:27700'}
         output_gpd = output_gpd.to_crs({'init': 'epsg:4326'})
         output_gpd.reset_index(drop=True, inplace=True)
+        self.logger.debug(f"output gpd\n{output_gpd}")
+        output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors='coerce')
         self.logger.debug(f"output gpd\n{output_gpd}")
         output_gpd.to_file("districts_buffered.geojson", driver='GeoJSON')
 
