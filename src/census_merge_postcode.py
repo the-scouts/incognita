@@ -297,9 +297,12 @@ class CensusMergePostcode:
         """
         # Column heading denoting a valid postcode in the row
         valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
+        original_postcode_label = CensusData.column_labels['POSTCODE']
+        compass_id_label = CensusData.column_labels['id']["COMPASS"]
 
         # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
         self.logger.info("Writing merged data")
-        census_data.loc[census_data[valid_postcode_label] == 0, postcode_merge_column].dropna().to_csv('error_file.txt', index=False, header=False)
+        error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", ]
+        census_data.loc[census_data[valid_postcode_label] == 0, error_output_fields].to_csv('error_file.csv', index=False, encoding='utf-8-sig')
         # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
         census_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig')
