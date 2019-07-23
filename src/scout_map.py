@@ -41,6 +41,7 @@ class ScoutMap:
         self.boundary_dict = None
         self.boundary_regions_data = None
 
+        # Can be set by set_region_of_color
         self.region_of_color = None
 
         # Load the settings file
