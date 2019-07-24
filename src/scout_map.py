@@ -1438,7 +1438,7 @@ class ScoutMap:
             if not valid:
                 distance = 0
         else:
-            distance = all_points["buffer_distance"]
+            distance = point_details["buffer_distance"]
         return distance
 
     @staticmethod
