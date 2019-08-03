@@ -86,13 +86,13 @@ class MapPlotter(Base):
         self.geo_data = all_shapes.to_crs({'init': f"epsg:{WGS_84}"})
         # self.logger.debug(f"geo_data\n{self.geo_data}")
 
-    def add_areas(self, name, show, boundary_name, colormap):
+    def add_areas(self, name, show, boundary_name, colourmap):
         """Adds features from self.geo_data to map
 
         :param str name: the name of the Layer, as it will appear in the layer controls
         :param bool show: whether to show the layer by default
         :param str boundary_name: column heading for human-readable region name
-        :param colormap: branca colour map object
+        :param colourmap: branca colour map object
         :return: None
         """
         self.logger.debug(f"Merging geo_json on {self.code_name} with {self.CODE_COL} from boundary report")
@@ -106,7 +106,7 @@ class MapPlotter(Base):
             data=merged_data.to_json(),
             name=name,
             style_function=lambda x: {
-               'fillColor': self.map_colormap(x['properties'], colormap),
+               'fillColor': self.map_colourmap(x['properties'], colourmap),
                'color': 'black',
                'fillOpacity': 0.4,
                'weight': 0.2
@@ -118,13 +118,13 @@ class MapPlotter(Base):
             ),
             show=show
         ).add_to(self.map)
-        colormap.add_to(self.map)
+        colourmap.add_to(self.map)
 
-    def map_colormap(self, properties, colormap):
+    def map_colourmap(self, properties, colourmap):
         """Returns colour from colour map function and value
 
         :param properties: dictionary of properties
-        :param colormap: a Branca Colormap object to calculate the region's colour
+        :param colourmap: a Branca Colormap object to calculate the region's colour
         :return str: hexadecimal colour value "#RRGGBB"
         """
         area_score = properties[self.SCORE_COL]
@@ -133,7 +133,7 @@ class MapPlotter(Base):
         elif float(area_score) == 0:
             return '#555555'
         else:
-            return colormap(area_score)
+            return colourmap(area_score)
 
     def add_marker(self, lat, long, popup, colour, layer_name='Sections'):
         """Adds a leaflet marker to the map using given values

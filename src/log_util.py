@@ -1,6 +1,7 @@
 import logging
 import time
 
+FINISHED_LEVEL_NUM = logging.INFO + 5
 
 def create_logger(name, file_path=None):
     """Creates and returns a logger with preset options
@@ -33,3 +34,16 @@ def get_logger(name):
 def duration(start_time):
     """Returns elapsed time since given start time"""
     return time.time() - start_time
+
+
+def finished_message(self, message, *args, **kwargs):
+    if self.isEnabledFor(FINISHED_LEVEL_NUM):
+        name = kwargs.pop("name") if kwargs.get("name") else None
+        start_time = kwargs.pop("start_time")
+        ending = f" in {name}." if name else "."
+        self._log(FINISHED_LEVEL_NUM, f"{message} finished, {duration(start_time):.2f} seconds elapsed{ending}", args, **kwargs)
+
+
+logging.FINISHED_MESSAGE = FINISHED_LEVEL_NUM  # Create Finished log level
+logging.addLevelName(FINISHED_LEVEL_NUM, "INFO")  # Set what will show up as the level in the logs
+logging.Logger.finished = finished_message  # set the custom function
