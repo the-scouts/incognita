@@ -197,7 +197,7 @@ class ScoutMap:
                                                         self.boundary_dict["codes"]["name"]: "object"
                                                         })
         else:
-            raise Exception("Invalid boundary supplied")
+            raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {self.ons_data.BOUNDARIES.keys() + self.settings['Scout Mapping'].keys()}")
 
     def filter_boundaries(self, field, value_list):
         """Filters the boundary_regions_data table by if the area code is within both value_list and the census_data table.
@@ -498,7 +498,7 @@ class ScoutMap:
         :returns: Nothing
         :rtype: None
         """
-        self.boundary_report[self.boundary_dict["name"]] = pd.read_csv(self.settings["Output folder"] + boundary_report_csv_path)
+        self.boundary_report[self.boundary_dict["name"]] = pd.read_csv(f"{self.settings['Output folder']}{boundary_report_csv_path}.csv")
 
     def create_uptake_report(self):
         """Creates an report by the boundary that has been set, requires
@@ -587,15 +587,30 @@ class ScoutMap:
 
         return boundary_report
 
-    def create_section_maps(self, output_file_name, static_scale):
+    def create_section_maps(self, output_file_name, static_scale, value_type="Percentages", cluster_markers=False):
+        min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
+        if min_year != max_year:
+            self.logger.warning(f"Only using latest year {max_year} to create map")
+
         for section_label in ScoutMap.SECTIONS.keys():
             section = ScoutMap.SECTIONS[section_label]
-            self.create_map(section["field_name"], section["field_name"], output_file_name + "_" + section_label, section["field_name"], static_scale)
+            if value_type == "Numbers":
+                self.create_map(f"{section_label}-{max_year}", section_label, output_file_name + "_" + section_label, f"Number of {section_label} in {max_year}", static_scale, cluster_markers)
+            elif value_type == "Percentages":
+                self.create_map(f"%-{section_label}-{max_year}", section_label, output_file_name + "_" + section_label, f"% uptake of {section_label} in {max_year}", static_scale, cluster_markers)
             self.add_single_section_to_map(section_label, self.district_color_mapping(), ["youth membership"])
             self.save_map()
 
-    def create_6_to_17_map(self, output_file_name, static_scale):
-        self.create_map("%-All", "% 6-17 Uptake", output_file_name, "% 6-17 Uptake", static_scale)
+    def create_6_to_17_map(self, output_file_name, static_scale, value_type="Percentages"):
+        min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
+        if min_year != max_year:
+            self.logger.warning(f"Only using latest year {max_year} to create map")
+
+        if value_type == "Percentages":
+            self.create_map(f"%-All-{max_year}", "% 6-17 Uptake", output_file_name, "% 6-17 Uptake", static_scale)
+        elif value_type == "Numbers":
+            self.create_map(f"All-{max_year}", "Under 18s", output_file_name, "Number of Scouts aged 6 to 17", static_scale)
+
         self.add_all_sections_to_map(self.district_color_mapping(), ["youth membership"])
         self.save_map()
 
@@ -618,6 +633,9 @@ class ScoutMap:
             "score_col": score_col,
             "score_col_label": display_score_col
         }
+
+        if not (score_col in list(data_codes["data"].columns)):
+            raise Exception(f"The column {score_col} does not exist in data.\nValid columns are {list(data_codes['data'].columns)}")
 
         self.map = ChoroplethMapPlotter(self.boundary_dict["boundary"],
                                         data_codes,
