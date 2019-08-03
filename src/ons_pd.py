@@ -1,7 +1,7 @@
 import pandas as pd
 
 from src.base import Base
-from src.census_data import CensusData
+from src.scout_census import ScoutCensus
 
 
 class ONSPostcodeDirectory(Base):
@@ -32,7 +32,7 @@ class ONSPostcodeDirectory(Base):
 
             for field in data_types:
                 if data_types[field] == 'category':
-                    self.data[field] = self.data[field].cat.add_categories([CensusData.DEFAULT_VALUE])
+                    self.data[field] = self.data[field].cat.add_categories([ScoutCensus.DEFAULT_VALUE])
 
     def ons_field_mapping(self, start_geography, start_values, target_geography):
         """Used to convert between ONS geographies.

@@ -3,11 +3,11 @@ import pandas as pd
 import re
 
 from src.base import Base
-from src.census_data import CensusData
+from src.scout_census import ScoutCensus
 
 
 class CensusMergeData(Base):
-    """Merges input data with CensusData data on a given key
+    """Merges input data with ScoutCensus data on a given key
 
         Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
         The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
@@ -31,7 +31,7 @@ class CensusMergeData(Base):
         :return: Dataframe with merged data, and an indicator in each row signifying merge success
         """
         # Column heading denoting a valid postcode in the row
-        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
+        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
 
         self.logger.info("Merging data")
         census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
@@ -51,9 +51,9 @@ class CensusMergeData(Base):
         :return: None
         """
         # Column heading denoting a valid postcode in the row
-        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
-        original_postcode_label = CensusData.column_labels['POSTCODE']
-        compass_id_label = CensusData.column_labels['id']["COMPASS"]
+        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
+        original_postcode_label = ScoutCensus.column_labels['POSTCODE']
+        compass_id_label = ScoutCensus.column_labels['id']["COMPASS"]
 
         # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
         self.logger.info("Writing merged data")
@@ -111,7 +111,7 @@ class CensusMergeData(Base):
         """Fills rows that have not merged with default values
 
         Fills all passed fields in rows where there has been no data merged
-        Fills categorical fields with CensusData.DEFAULT_VALUE and numerical fields with 0
+        Fills categorical fields with ScoutCensus.DEFAULT_VALUE and numerical fields with 0
 
         :param census_data: pandas DataFrame with census data
         :param str row_has_merged: column label for column with booleans of if the merge was successful
@@ -119,7 +119,7 @@ class CensusMergeData(Base):
         :return: dataframe with filled values
         """
         for field in fields_data_types['categorical']:
-            census_data.loc[census_data[row_has_merged] == 0, field] = CensusData.DEFAULT_VALUE
+            census_data.loc[census_data[row_has_merged] == 0, field] = ScoutCensus.DEFAULT_VALUE
         for field in fields_data_types['int']:
             census_data.loc[census_data[row_has_merged] == 0, field] = 0
 
@@ -137,13 +137,13 @@ class CensusMergeData(Base):
         """
         # Gets the index of the postcode column, and increments as insertion is from the left.
         # Columns must be inserted in number order otherwise it wont't make sense
-        postcode_column_index = census_data.columns.get_loc(postcode_column)  # CensusData.column_labels["POSTCODE"]
+        postcode_column_index = census_data.columns.get_loc(postcode_column)  # ScoutCensus.column_labels["POSTCODE"]
         cleaned_postcode_index = postcode_column_index + 1
         valid_postcode_index = postcode_column_index + 2
 
         # Sets the labels for the columns to be inserted
         cleaned_postcode_label = "clean_postcode"
-        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
+        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
 
         self.logger.info("Cleaning postcodes")
         cleaned_postcode_column = CensusMergeData.postcode_cleaner(census_data[postcode_column])
@@ -172,19 +172,19 @@ class CensusMergeData(Base):
         self.logger.info("filling postcodes in sections with invalid postcodes")
 
         # Helper variables to store field headings for often used fields
-        entity_type_label = CensusData.column_labels['UNIT_TYPE']
-        section_id_label = CensusData.column_labels['id']["COMPASS"]
-        group_id_label = CensusData.column_labels['id']["GROUP"]
-        district_id_label = CensusData.column_labels['id']["DISTRICT"]
+        entity_type_label = ScoutCensus.column_labels['UNIT_TYPE']
+        section_id_label = ScoutCensus.column_labels['id']["COMPASS"]
+        group_id_label = ScoutCensus.column_labels['id']["GROUP"]
+        district_id_label = ScoutCensus.column_labels['id']["DISTRICT"]
         clean_postcode_label = "clean_postcode"
-        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
-        year_label = CensusData.column_labels['YEAR']
+        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
+        year_label = ScoutCensus.column_labels['YEAR']
         merge_test_column_label = 'ctry'
 
         # Lists of entity types to match against in constructing section records tables
-        section_types_list = CensusData.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT])
-        group_section_types_list = CensusData.get_section_type([CensusData.UNIT_LEVEL_GROUP])
-        district_section_types_list = CensusData.get_section_type([CensusData.UNIT_LEVEL_DISTRICT])
+        section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
+        group_section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP])
+        district_section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_DISTRICT])
         pre_2017_types_list = ["Group", "District"]
 
         # Columns to use in constructing the MultiIndex. Larger groups go first towards smaller

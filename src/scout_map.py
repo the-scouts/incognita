@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from src.map_plotter import ChoroplethMapPlotter
-from src.census_data import CensusData
+from src.scout_census import ScoutCensus
 from src.census_merge_data import CensusMergePostcode
 import src.log_util as log_util
 import folium
@@ -31,7 +31,7 @@ class ScoutMap:
     def __init__(self, census_csv_path):
 
         # Loads Scout Census Data
-        self.census_data = CensusData(census_csv_path)
+        self.census_data = ScoutCensus(census_csv_path)
 
         # Set by ScriptHandler as 'parent'
         self.ons_data = None
@@ -55,7 +55,7 @@ class ScoutMap:
         self.logger = log_util.create_logger(__name__,)
 
     def merge_ons_postcode_directory(self, ONS_postcode_directory):
-        """Merges CensusData object with ONSPostcodeDirectory object and outputs to csv
+        """Merges ScoutCensus object with ONSPostcodeDirectory object and outputs to csv
 
         :param ONS_postcode_directory: Refers to the ONS Postcode Directory
         :type ONS_postcode_directory: ONSPostcodeDirectory object
@@ -72,7 +72,7 @@ class ScoutMap:
             self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv", )
 
         self.logger.info("Cleaning the postcodes")
-        merge.clean_and_verify_postcode(self.census_data.data, CensusData.column_labels['POSTCODE'])
+        merge.clean_and_verify_postcode(self.census_data.data, ScoutCensus.column_labels['POSTCODE'])
 
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
 
@@ -97,7 +97,7 @@ class ScoutMap:
         self.logger.info("filling unmerged rows")
         self.census_data.data = merge.fill_unmerged_rows(
             self.census_data.data,
-            CensusData.column_labels['VALID_POSTCODE'],
+            ScoutCensus.column_labels['VALID_POSTCODE'],
             ons_fields_data_types, )
 
         # save the data to CSV and save invalid postcodes to an error file
@@ -147,18 +147,18 @@ class ScoutMap:
             self.logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
             # Prints number of members and % of members filtered out for each section
-            for section in CensusData.column_labels['sections'].keys():
+            for section in ScoutCensus.column_labels['sections'].keys():
                 self.logger.debug(f"Analysis of {section} member exclusions")
-                section_type = CensusData.column_labels['sections'][section]["type"]
-                section_dict = CensusData.column_labels['sections'][section]
+                section_type = ScoutCensus.column_labels['sections'][section]["type"]
+                section_dict = ScoutCensus.column_labels['sections'][section]
 
-                excluded_sections = excluded_data.loc[excluded_data[CensusData.column_labels['UNIT_TYPE']] == section_type]
+                excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
                 self.logger.debug(f"Excluded sections\n{excluded_sections}")
                 self.logger.debug(f"Finding number of excluded {section} by summing {section_dict['male']} and {section_dict['female']}")
                 excluded_members = excluded_sections[section_dict["male"]].sum() + excluded_sections[section_dict["female"]].sum()
                 self.logger.debug(f"{excluded_members} {section} excluded")
 
-                sections = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == section_type]
+                sections = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
                 counted_members = sections[section_dict["male"]].sum() + sections[section_dict["female"]].sum()
 
                 original_members = counted_members + excluded_members
@@ -247,8 +247,8 @@ class ScoutMap:
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
         ons_codes = records[ons_code].unique()
         self.logger.debug(f"Found raw {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
-        if CensusData.DEFAULT_VALUE in ons_codes:
-            ons_codes.remove(CensusData.DEFAULT_VALUE)
+        if ScoutCensus.DEFAULT_VALUE in ons_codes:
+            ons_codes.remove(ScoutCensus.DEFAULT_VALUE)
         ons_codes = [code for code in ons_codes if (isinstance(code, str) or (isinstance(code, np.int32) and not np.isnan(code)))]
         self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
         return ons_codes
@@ -267,7 +267,7 @@ class ScoutMap:
         :rtype: list
         """
         oslaua_records = self.census_data.data.loc[self.census_data.data[ons_code].isin(ons_codes)]
-        district_ids = oslaua_records[CensusData.column_labels['id']["DISTRICT"]].unique()
+        district_ids = oslaua_records[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
         district_ids = [str(district_id) for district_id in district_ids]
         if "nan" in district_ids:
             district_ids.remove("nan")
@@ -287,7 +287,7 @@ class ScoutMap:
         codes_key = self.boundary_dict["codes"]["key"]
 
         region_type = ons_code  # Census column heading for the region geography type
-        district_id_column = CensusData.column_labels['id']["DISTRICT"]
+        district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
 
         region_ids = self.boundary_regions_data[codes_key].dropna().drop_duplicates()
 
@@ -295,7 +295,7 @@ class ScoutMap:
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
         region_ids_by_district = self.census_data.data.loc[self.census_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
-        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == CensusData.DEFAULT_VALUE)].dropna().drop_duplicates()
+        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == ScoutCensus.DEFAULT_VALUE)].dropna().drop_duplicates()
 
         count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})  # count of how many regions the district occupies
         count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column)
@@ -352,7 +352,7 @@ class ScoutMap:
         min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
         years_in_data = range(min_year, max_year + 1)
 
-        #years_in_data = self.census_data.data[CensusData.column_labels['YEAR']].unique().tolist()
+        #years_in_data = self.census_data.data[ScoutCensus.column_labels['YEAR']].unique().tolist()
         #years_in_data = [int(year) for year in years_in_data]
         #years_in_data.sort()
         #years_in_data = [str(year) for year in years_in_data]
@@ -375,7 +375,7 @@ class ScoutMap:
             for year in years_in_data:
                 output_columns.append(f"All-{year}")
         if "awards" in options:
-            output_columns.append("%-" + CensusData.column_labels['sections']["Beavers"]["top_award"])
+            output_columns.append("%-" + ScoutCensus.column_labels['sections']["Beavers"]["top_award"])
             output_columns.append("QSA")
             output_columns.append("%-QSA")
             awards_mapping = self.district_mapping.get(name)
@@ -390,7 +390,7 @@ class ScoutMap:
         output_data = pd.DataFrame(columns=output_columns)
         self.logger.debug(f"Report contains the following data:\n{output_columns}")
 
-        district_id_column = CensusData.column_labels['id']["DISTRICT"]
+        district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
         for ii in range(len(self.boundary_regions_data.index)):
             self.logger.debug(f"{ii+1} out of {len(self.boundary_regions_data.index)}")
             boundary_data = {
@@ -401,12 +401,12 @@ class ScoutMap:
             records_in_boundary = self.census_data.data.loc[self.census_data.data[name] == code]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
 
-            # list_of_groups = records_in_boundary[CensusData.column_labels['id']["GROUP"]].unique()
-            # list_of_districts = records_in_boundary[CensusData.column_labels['id']["DISTRICT"]].unique()
+            # list_of_groups = records_in_boundary[ScoutCensus.column_labels['id']["GROUP"]].unique()
+            # list_of_districts = records_in_boundary[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
 
             if "Groups" in options:
                 # Used to list the groups that operate within the boundary
-                group_names_in_boundary = [str(x).strip() for x in records_in_boundary[CensusData.column_labels['name']["GROUP"]].unique()]
+                group_names_in_boundary = [str(x).strip() for x in records_in_boundary[ScoutCensus.column_labels['name']["GROUP"]].unique()]
                 if "nan" in group_names_in_boundary:
                     group_names_in_boundary.remove("nan")
                 group_string = ""
@@ -419,31 +419,31 @@ class ScoutMap:
             if ("Section numbers" in options) or ("6 to 17 numbers" in options) or ("waiting list total" in options):
                 self.logger.debug(f"Obtaining Section numbers and waiting list for {year}")
                 for year in years_in_data:
-                    year_records = records_in_boundary.loc[records_in_boundary[CensusData.column_labels['YEAR']] == year]
-                    # beaver_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Beavers"]]
-                    # cub_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Cubs"]]
-                    # scout_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Scouts"]]
-                    # explorer_sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections']["Explorers"]]
+                    year_records = records_in_boundary.loc[records_in_boundary[ScoutCensus.column_labels['YEAR']] == year]
+                    # beaver_sections = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections']["Beavers"]]
+                    # cub_sections = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections']["Cubs"]]
+                    # scout_sections = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections']["Scouts"]]
+                    # explorer_sections = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections']["Explorers"]]
                     #
-                    # group_records = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_GROUP]
-                    # explorer_waiting = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_DISTRICT]
+                    # group_records = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_GROUP]
+                    # explorer_waiting = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.CENSUS_TYPE_DISTRICT]
                     boundary_data[f"Waiting List-{year}"] = 0
-                    for section in [section for section in CensusData.column_labels['sections'].keys() if CensusData.column_labels['sections'][section].get("waiting_list")]:
-                        boundary_data[f"Waiting List-{year}"] += year_records[CensusData.column_labels['sections'][section]["waiting_list"]].sum()
+                    for section in [section for section in ScoutCensus.column_labels['sections'].keys() if ScoutCensus.column_labels['sections'][section].get("waiting_list")]:
+                        boundary_data[f"Waiting List-{year}"] += year_records[ScoutCensus.column_labels['sections'][section]["waiting_list"]].sum()
 
                     boundary_data[f"All-{year}"] = 0
-                    for section in CensusData.column_labels['sections'].keys():
-                        # sections = year_records.loc[year_records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
-                        boundary_data[f"{section}-{year}"] = year_records[CensusData.column_labels['sections'][section]["male"]].sum() + year_records[CensusData.column_labels['sections'][section]["female"]].sum()
+                    for section in ScoutCensus.column_labels['sections'].keys():
+                        # sections = year_records.loc[year_records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
+                        boundary_data[f"{section}-{year}"] = year_records[ScoutCensus.column_labels['sections'][section]["male"]].sum() + year_records[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                         boundary_data[f"All-{year}"] += boundary_data[f"{section}-{year}"]
 
             if "awards" in options:
-                eligible = records_in_boundary[CensusData.column_labels['sections']["Beavers"]["top_award_eligible"]].sum()
-                awards = records_in_boundary[CensusData.column_labels['sections']["Beavers"]["top_award"]].sum()
+                eligible = records_in_boundary[ScoutCensus.column_labels['sections']["Beavers"]["top_award_eligible"]].sum()
+                awards = records_in_boundary[ScoutCensus.column_labels['sections']["Beavers"]["top_award"]].sum()
                 if eligible > 0:
-                    boundary_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]] = (awards * 100) / eligible
+                    boundary_data["%-" + ScoutCensus.column_labels['sections']["Beavers"]["top_award"]] = (awards * 100) / eligible
                 else:
-                    boundary_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]] = np.NaN
+                    boundary_data["%-" + ScoutCensus.column_labels['sections']["Beavers"]["top_award"]] = np.NaN
 
                 if name == "D_ID":
                     districts = {code: 1}
@@ -478,8 +478,8 @@ class ScoutMap:
             output_data = pd.concat([output_data, boundary_data_df], axis=0, sort=False)
 
         if "awards" in options:
-            max_value = output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].quantile(0.95)
-            output_data["%-" + CensusData.column_labels['sections']["Beavers"]["top_award"]].clip(upper=max_value, inplace=True)
+            max_value = output_data["%-" + ScoutCensus.column_labels['sections']["Beavers"]["top_award"]].quantile(0.95)
+            output_data["%-" + ScoutCensus.column_labels['sections']["Beavers"]["top_award"]].clip(upper=max_value, inplace=True)
 
         if name == "lsoa11":
             self.logger.debug(f"Output_data so far:\n{output_data}")
@@ -622,11 +622,11 @@ class ScoutMap:
     def district_color_mapping(self):
         colors = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple', 'lightgrayblack',
                 'orange', 'pink', 'white', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
-        district_ids = self.census_data.data[CensusData.column_labels['id']["DISTRICT"]].unique()
+        district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
         mapping = {}
         for district_id in district_ids:
             mapping[district_id] = next(colors)
-        colour_mapping = {"census_column": CensusData.column_labels['id']["DISTRICT"], "mapping": mapping}
+        colour_mapping = {"census_column": ScoutCensus.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping
 
     def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None, cluster_markers=False):
@@ -684,7 +684,7 @@ class ScoutMap:
         """
         min_year, max_year = self.years_of_return(self.census_data.data)
         latest_year_records = self.census_data.data.loc[self.census_data.data["Year"] == max_year]
-        self.add_sections_to_map(latest_year_records.loc[latest_year_records[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
+        self.add_sections_to_map(latest_year_records.loc[latest_year_records[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
 
     def add_single_section_to_map(self, section, colour, marker_data):
         """Plots the section specified by section onto the map, in markers of
@@ -696,7 +696,7 @@ class ScoutMap:
             - youth membership
             - awards
         """
-        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]], colour, marker_data)
+        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]], colour, marker_data)
 
     def add_sections_to_map(self, sections, colour, marker_data):
         """Adds the sections provided as markers to map with the colour, and data
@@ -710,13 +710,13 @@ class ScoutMap:
         """
         self.logger.info("Adding section markers to map")
 
-        valid_points = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
+        valid_points = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Sets the map so it opens in the right area
         self.map.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
                               [valid_points["lat"].max(), valid_points["long"].max()]])
 
-        postcodes = sections[CensusData.column_labels['POSTCODE']].unique()
+        postcodes = sections[ScoutCensus.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
         if "nan" in postcodes:
             postcodes.remove("nan")
@@ -733,9 +733,9 @@ class ScoutMap:
 
             self.logger.debug(postcode)
             # Find all the sections with the same postcode
-            colocated_sections = sections.loc[sections[CensusData.column_labels['POSTCODE']] == postcode]
-            colocated_district_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('District'))]
-            colocated_group_sections = colocated_sections.loc[colocated_sections[CensusData.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('Group'))]
+            colocated_sections = sections.loc[sections[ScoutCensus.column_labels['POSTCODE']] == postcode]
+            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('District'))]
+            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
@@ -744,47 +744,47 @@ class ScoutMap:
             # District sections first followed by Group sections
             html = ""
 
-            districts = colocated_district_sections[CensusData.column_labels['id']["DISTRICT"]].unique()
+            districts = colocated_district_sections[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
             for district in districts:
-                district_name = colocated_district_sections.iloc[0][CensusData.column_labels['name']["DISTRICT"]] + " District"
+                district_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels['name']["DISTRICT"]] + " District"
                 html += (f"<h3 align=\"center\">{district_name}</h3><p align=\"center\">"
                          f"<br>")
-                colocated_in_district = colocated_district_sections.loc[colocated_district_sections[CensusData.column_labels['id']["DISTRICT"]] == district]
+                colocated_in_district = colocated_district_sections.loc[colocated_district_sections[ScoutCensus.column_labels['id']["DISTRICT"]] == district]
                 for section_id in colocated_in_district.index:
-                    type = colocated_in_district.at[section_id, CensusData.column_labels['UNIT_TYPE']]
+                    type = colocated_in_district.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
                     name = colocated_in_district.at[section_id, 'name']
                     html += f"{name} : "
                     section = self.section_from_type(type)
                     if "youth membership" in marker_data:
-                        male_yp = int(colocated_in_district.at[section_id, CensusData.column_labels['sections'][section]["male"]])
-                        female_yp = int(colocated_in_district.at[section_id, CensusData.column_labels['sections'][section]["female"]])
+                        male_yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels['sections'][section]["male"]])
+                        female_yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels['sections'][section]["female"]])
                         yp = male_yp + female_yp
                         html += f"{yp} {section}<br>"
                 html += "</p>"
 
-            groups = colocated_group_sections[CensusData.column_labels['id']["GROUP"]].unique()
+            groups = colocated_group_sections[ScoutCensus.column_labels['id']["GROUP"]].unique()
             self.logger.debug(groups)
             for group in groups:
-                colocated_in_group = colocated_sections.loc[colocated_sections[CensusData.column_labels['id']["GROUP"]] == group]
-                group_name = colocated_in_group.iloc[0][CensusData.column_labels['name']["GROUP"]] + " Group"
+                colocated_in_group = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['id']["GROUP"]] == group]
+                group_name = colocated_in_group.iloc[0][ScoutCensus.column_labels['name']["GROUP"]] + " Group"
 
                 html += (f"<h3 align=\"center\">{group_name}</h3><p align=\"center\">"
                          f"<br>")
                 for section_id in colocated_in_group.index:
-                    type = colocated_in_group.at[section_id, CensusData.column_labels['UNIT_TYPE']]
+                    type = colocated_in_group.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
                     name = colocated_in_group.at[section_id, 'name']
                     section = self.section_from_type(type)
-                    district_id = colocated_in_group.at[section_id, CensusData.column_labels['id']["DISTRICT"]]
+                    district_id = colocated_in_group.at[section_id, ScoutCensus.column_labels['id']["DISTRICT"]]
 
                     html += f"{name} : "
                     if "youth membership" in marker_data:
-                        male_yp = int(colocated_in_group.at[section_id, CensusData.column_labels['sections'][section]["male"]])
-                        female_yp = int(colocated_in_group.at[section_id, CensusData.column_labels['sections'][section]["female"]])
+                        male_yp = int(colocated_in_group.at[section_id, ScoutCensus.column_labels['sections'][section]["male"]])
+                        female_yp = int(colocated_in_group.at[section_id, ScoutCensus.column_labels['sections'][section]["female"]])
                         yp = male_yp + female_yp
                         html += f"{yp} {section}<br>"
                     if "awards" in marker_data:
-                        awards = int(colocated_in_group.at[section_id, CensusData.column_labels['sections'][section]["top_award"]])
-                        eligible = int(colocated_in_group.at[section_id, CensusData.column_labels['sections'][section]["top_award_eligible"]])
+                        awards = int(colocated_in_group.at[section_id, ScoutCensus.column_labels['sections'][section]["top_award"]])
+                        eligible = int(colocated_in_group.at[section_id, ScoutCensus.column_labels['sections'][section]["top_award_eligible"]])
                         if section == "Beavers":
                             html += f"{awards} Bronze Awards of {eligible} eligible<br>"
 
@@ -816,8 +816,8 @@ class ScoutMap:
 
     @staticmethod
     def section_from_type(type):
-        for section in CensusData.column_labels['sections'].keys():
-            if type == CensusData.column_labels['sections'][section]["type"]:
+        for section in ScoutCensus.column_labels['sections'].keys():
+            if type == ScoutCensus.column_labels['sections'][section]["type"]:
                 return section
 
     def filter_set_boundaries_in_scout_area(self, column, value_list):
@@ -851,7 +851,7 @@ class ScoutMap:
 
     def group_history_summary(self, years):
         self.logger.info("Beginning group_history_summary")
-        return self.history_summary(years, "Group ID", CensusData.column_labels['id']["GROUP"])
+        return self.history_summary(years, "Group ID", ScoutCensus.column_labels['id']["GROUP"])
 
     def section_history_summary(self, years):
         # Works effectively for years after 2017
@@ -862,7 +862,7 @@ class ScoutMap:
         # Must have imd scores and deciles already in census_postcode_data.
         section_numbers = []
         for year in years:
-            for section in CensusData.column_labels['sections'].keys():
+            for section in ScoutCensus.column_labels['sections'].keys():
                 if section != "Explorers":
                     section_numbers.append(section + "-" + year)
             section_numbers.append("Adults-" + year)
@@ -898,11 +898,11 @@ class ScoutMap:
                 group_data["Last Year"] = str(last_year)
 
             group_data[id_name] = group
-            group_data["Type"] = group_records[CensusData.column_labels['UNIT_TYPE']].unique()[0]
-            group_data["Group"] = group_records[CensusData.column_labels['name']["GROUP"]].unique()[0]
+            group_data["Type"] = group_records[ScoutCensus.column_labels['UNIT_TYPE']].unique()[0]
+            group_data["Group"] = group_records[ScoutCensus.column_labels['name']["GROUP"]].unique()[0]
             # As district, region and county must be the same for all sections
             # in a Group - just get the first one.
-            group_data["District"] = group_records[CensusData.column_labels['name']["DISTRICT"]].unique()[0]
+            group_data["District"] = group_records[ScoutCensus.column_labels['name']["DISTRICT"]].unique()[0]
             group_data["County"] = group_records["C_name"].unique()[0]
             group_data["Region"] = group_records["R_name"].unique()[0]
             group_data["Scout Country"] = group_records["X_name"].unique()[0]
@@ -911,9 +911,9 @@ class ScoutMap:
             # Explorers deliberately omitted.
             for year in years:
                 group_records_year = group_records.loc[group_records["Year"] == year]
-                for section in CensusData.column_labels['sections'].keys():
+                for section in ScoutCensus.column_labels['sections'].keys():
                     if section != "Explorers":
-                        group_data[section + "-" + year] = group_records_year[CensusData.column_labels['sections'][section]["male"]].sum() + group_records_year[CensusData.column_labels['sections'][section]["female"]].sum()
+                        group_data[section + "-" + year] = group_records_year[ScoutCensus.column_labels['sections'][section]["male"]].sum() + group_records_year[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                 group_data["Adults-" + year] = group_records_year["Leaders"].sum() + group_records_year["SectAssistants"].sum() + group_records_year["OtherAdults"].sum()
 
             # To find the postcode and IMD for a range of Sections and Group
@@ -932,12 +932,12 @@ class ScoutMap:
                 if min_imd_records.empty:
                     min_imd_records = group_records
 
-            group_data["Postcode"] = min_imd_records[CensusData.column_labels['POSTCODE']].unique()[0]
+            group_data["Postcode"] = min_imd_records[ScoutCensus.column_labels['POSTCODE']].unique()[0]
             country = self.ons_data.COUNTRY_CODES.get(min_imd_records["ctry"].unique()[0])
             if country:
                 group_data["IMD Country"] = country
             else:
-                group_data["IMD Country"] = CensusData.DEFAULT_VALUE
+                group_data["IMD Country"] = ScoutCensus.DEFAULT_VALUE
             # add IMD rank and score and decile
             # group_data["IMD Score"] = min_imd_records["imd_score"].unique()[0]
             group_data["IMD Decile"] = min_imd_records["imd_decile"].unique()[0]
@@ -957,19 +957,19 @@ class ScoutMap:
 
         self.logger.info("Finding new Beaver, Cub and Scout Sections")
         # Iterate through Groups looking for new Sections
-        group_ids = self.census_data.data[CensusData.column_labels['id']["GROUP"]].unique()
+        group_ids = self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]].unique()
         group_ids = [str(x).strip() for x in group_ids]
         if "nan" in group_ids:
             group_ids.remove("nan")
 
         for group_id in group_ids:
-            group_records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["GROUP"]] == group_id]
+            group_records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]] == group_id]
 
             for section in self.census_data.get_section_names('Group'):
                 nu_sections = []
                 for year in years:
                     group_records_year = group_records.loc[group_records["Year"] == year]
-                    nu_sections.append(group_records_year[CensusData.column_labels['sections'][section]["unit_label"]].sum())
+                    nu_sections.append(group_records_year[ScoutCensus.column_labels['sections'][section]["unit_label"]].sum())
             #    if self.has_increase(nu_sections):
                 increments = [nu_sections[ii + 1] - nu_sections[ii] for ii in range(len(nu_sections) - 1)]
                 nu_sections_by_year = dict(zip(years, nu_sections))
@@ -1007,17 +1007,17 @@ class ScoutMap:
 
         self.logger.info("Finding new Explorer Sections")
         # Iterate through District looking for new Sections
-        district_ids = self.census_data.data[CensusData.column_labels['id']["DISTRICT"]].unique()
+        district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
         district_ids = [str(x).strip() for x in district_ids]
         if "nan" in district_ids:
             district_ids.remove("nan")
 
         for district_id in district_ids:
-            district_records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["DISTRICT"]] == district_id]
+            district_records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == district_id]
             nu_sections = []
             for year in years:
                 district_records_year = district_records.loc[district_records["Year"] == year]
-                nu_sections.append(district_records_year[CensusData.column_labels['sections']["Explorers"]["unit_label"]].sum())
+                nu_sections.append(district_records_year[ScoutCensus.column_labels['sections']["Explorers"]["unit_label"]].sum())
 
             increments = [nu_sections[ii + 1] - nu_sections[ii] for ii in range(len(nu_sections) - 1)]
             nu_sections_by_year = dict(zip(years, nu_sections))
@@ -1074,11 +1074,11 @@ class ScoutMap:
             section = new_sections_id["section"]
 
             if section in self.census_data.get_section_names('Group'):
-                records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["GROUP"]] == section_id]
-                section_data["Group_ID"] = records[CensusData.column_labels['id']["GROUP"]].unique()[0]
-                section_data["Group"] = records[CensusData.column_labels['name']["GROUP"]].unique()[0]
+                records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]] == section_id]
+                section_data["Group_ID"] = records[ScoutCensus.column_labels['id']["GROUP"]].unique()[0]
+                section_data["Group"] = records[ScoutCensus.column_labels['name']["GROUP"]].unique()[0]
             elif section in self.census_data.get_section_names('District'):
-                records = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['id']["DISTRICT"]] == section_id]
+                records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == section_id]
                 section_data["Group_ID"] = ""
                 section_data["Group"] = ""
             else:
@@ -1088,11 +1088,11 @@ class ScoutMap:
                 year_records = records.loc[records["Year"] == year]
                 if int(year) >= 2018:
                     compass_id = section_data.get("Object_ID")
-                    section_year_records = year_records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
+                    section_year_records = year_records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
 
                     if compass_id:
                         section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                        section_data[year + "_Members"] = section_record[CensusData.column_labels['sections'][section]["male"]].sum() + section_record[CensusData.column_labels['sections'][section]["female"]].sum()
+                        section_data[year + "_Members"] = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum() + section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                     else:
                         section_year_ids = section_year_records["Object_ID"].unique()
                         if int(open_years[0]) >= 2018:
@@ -1121,7 +1121,7 @@ class ScoutMap:
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
                             section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                            section_data[year + "_Members"] = section_record[CensusData.column_labels['sections'][section]["male"]].sum() + section_record[CensusData.column_labels['sections'][section]["female"]].sum()
+                            section_data[year + "_Members"] = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum() + section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                         else:
                             compass_id = max(section_year_ids)
                             if compass_id in used_compass_ids:
@@ -1133,8 +1133,8 @@ class ScoutMap:
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
                             section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                            male_members = section_record[CensusData.column_labels['sections'][section]["male"]].sum()
-                            female_members = section_record[CensusData.column_labels['sections'][section]["female"]].sum()
+                            male_members = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum()
+                            female_members = section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                             self.logger.debug(f"{section} in {section_id} in {year} found {male_members + female_members} members")
                             section_data[year + "_Members"] = male_members + female_members
                 else:
@@ -1143,12 +1143,12 @@ class ScoutMap:
 
                     number_of_new_sections = new_sections_id["nu_sections"][open_years[0]] - new_sections_id["nu_sections"][year_before_section_opened]
 
-                    old_male_members = year_before_records[CensusData.column_labels['sections'][section]["male"]].sum()
-                    old_female_members = year_before_records[CensusData.column_labels['sections'][section]["female"]].sum()
+                    old_male_members = year_before_records[ScoutCensus.column_labels['sections'][section]["male"]].sum()
+                    old_female_members = year_before_records[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                     old_members = old_male_members + old_female_members
 
-                    new_male_members = year_records[CensusData.column_labels['sections'][section]["male"]].sum()
-                    new_female_members = year_records[CensusData.column_labels['sections'][section]["female"]].sum()
+                    new_male_members = year_records[ScoutCensus.column_labels['sections'][section]["male"]].sum()
+                    new_female_members = year_records[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                     new_members = new_male_members + new_female_members
 
                     additional_members = (new_members - old_members) / number_of_new_sections
@@ -1173,17 +1173,17 @@ class ScoutMap:
             else:
                 if int(open_years[-1]) < 2017:
                     if section in self.census_data.get_section_names('Group'):
-                        section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
+                        section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
                     elif section in self.census_data.get_section_names('District'):
-                        section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_DISTRICT]
+                        section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_DISTRICT]
                 elif int(open_years[-1]) == 2017:
-                    section_records = records.loc[records[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
+                    section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
                 else:
                     raise Exception(f"Unable to find section records for {new_section_ids}")
 
             section_data["Section"] = section
-            section_data["District_ID"] = section_records[CensusData.column_labels['id']["DISTRICT"]].unique()[0]
-            section_data["District"] = section_records[CensusData.column_labels['name']["DISTRICT"]].unique()[0]
+            section_data["District_ID"] = section_records[ScoutCensus.column_labels['id']["DISTRICT"]].unique()[0]
+            section_data["District"] = section_records[ScoutCensus.column_labels['name']["DISTRICT"]].unique()[0]
             section_data["County"] = section_records["C_name"].unique()[0]
             section_data["Region"] = section_records["R_name"].unique()[0]
             section_data["Scout Country"] = section_records["X_name"].unique()[0]
@@ -1210,16 +1210,16 @@ class ScoutMap:
                     # In the event that the Object_IDs aren't consistent, pick a section in the group that's most recent
                     # is only applicable after 2017, so sections are assumed to exist.
                     self.logger.debug(f"There are {records.shape[0]} group records")
-                    group_sections = records.loc[records[CensusData.column_labels['id']["GROUP"]] == section_data["Group_ID"]]
+                    group_sections = records.loc[records[ScoutCensus.column_labels['id']["GROUP"]] == section_data["Group_ID"]]
                     self.logger.debug(f"There are {group_sections.shape[0]} group records")
-                    section_rec = group_sections.loc[group_sections[CensusData.column_labels['UNIT_TYPE']] == CensusData.column_labels['sections'][section]["type"]]
+                    section_rec = group_sections.loc[group_sections[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
                     self.logger.debug(f"There are {section_rec.shape[0]} group records in {section}")
                     most_recent_sec = section_rec.loc[section_rec["Year"] == most_recent_year]
                     self.logger.debug(f"There are {most_recent_sec.shape[0]} group records in {section} in {most_recent_year}")
                     most_recent = most_recent_sec.iloc[0]
                 elif section in self.census_data.get_section_names('District'):
-                    district_sections = records.loc[records[CensusData.column_labels['id']["DISTRICT"]] == section_data["District_ID"]]
-                    section_rec = district_sections.loc[district_sections[CensusData.column_labels['UNIT_TYPE']] == section]
+                    district_sections = records.loc[records[ScoutCensus.column_labels['id']["DISTRICT"]] == section_data["District_ID"]]
+                    section_rec = district_sections.loc[district_sections[ScoutCensus.column_labels['UNIT_TYPE']] == section]
                     most_recent = section_rec.loc[section_rec["Year"] == most_recent_year].iloc[0]
             else:
                 self.logger.warning("Multiple sections found, assigning a section")
@@ -1229,20 +1229,20 @@ class ScoutMap:
             # self.logger.debug(f"Identified:\n{most_recent} determined postcode valid:\n{postcode_valid}\n{postcode_valid == 1}\n{int(postcode_valid) == 1}")
             # add postcode
             if postcode_valid == "1":
-                self.logger.debug(f"Adding postcode {most_recent.at[CensusData.column_labels['POSTCODE']]}")
-                section_data["Postcode"] = most_recent.at[CensusData.column_labels['POSTCODE']]
+                self.logger.debug(f"Adding postcode {most_recent.at[ScoutCensus.column_labels['POSTCODE']]}")
+                section_data["Postcode"] = most_recent.at[ScoutCensus.column_labels['POSTCODE']]
                 country = self.ons_data.COUNTRY_CODES.get(most_recent.at["ctry"])
                 if country:
                     section_data["IMD Country"] = country
                 else:
-                    section_data["IMD Country"] = CensusData.DEFAULT_VALUE
+                    section_data["IMD Country"] = ScoutCensus.DEFAULT_VALUE
                 section_data["IMD Decile"] = most_recent.at["imd_decile"]
                 section_data["IMD Rank"] = most_recent.at["imd"]
             else:
-                section_data["Postcode"] = CensusData.DEFAULT_VALUE
-                section_data["IMD Country"] = CensusData.DEFAULT_VALUE
-                section_data["IMD Decile"] = CensusData.DEFAULT_VALUE
-                section_data["IMD Rank"] = CensusData.DEFAULT_VALUE
+                section_data["Postcode"] = ScoutCensus.DEFAULT_VALUE
+                section_data["IMD Country"] = ScoutCensus.DEFAULT_VALUE
+                section_data["IMD Decile"] = ScoutCensus.DEFAULT_VALUE
+                section_data["IMD Rank"] = ScoutCensus.DEFAULT_VALUE
 
             section_data_df = pd.DataFrame([section_data], columns=output_columns)
             output_data = pd.concat([output_data, section_data_df], axis=0)
@@ -1283,9 +1283,9 @@ class ScoutMap:
             return "error"
 
     def group_IDs_from_fields(self, group_details, census_cols):
-        groups = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
+        groups = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
         input_cols = list(group_details.columns.values)
-        output_columns = input_cols + [CensusData.column_labels['id']["GROUP"]] + census_cols
+        output_columns = input_cols + [ScoutCensus.column_labels['id']["GROUP"]] + census_cols
         output_pd = pd.DataFrame(columns=output_columns)
 
         paired_cols = list(zip(input_cols, census_cols))
@@ -1302,11 +1302,11 @@ class ScoutMap:
 
             for paired_columns in paired_cols:
                 group_record = groups.loc[groups[paired_columns[1]] == str(dict_group[paired_columns[0]]).strip()]
-                matching_group_ids = group_record[CensusData.column_labels['id']["GROUP"]].unique()
+                matching_group_ids = group_record[ScoutCensus.column_labels['id']["GROUP"]].unique()
                 self.logger.debug(f"Group matched: {matching_group_ids}")
                 if len(matching_group_ids) == 1:
                     self.logger.info(f"Matched group")
-                    group_data[CensusData.column_labels['id']["GROUP"]] = matching_group_ids[0]
+                    group_data[ScoutCensus.column_labels['id']["GROUP"]] = matching_group_ids[0]
                     for col in census_cols:
                         group_data[col] = group_record[col].unique()[0]
                 elif len(matching_group_ids) > 1:

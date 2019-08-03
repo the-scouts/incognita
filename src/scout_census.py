@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class CensusData:
+class ScoutCensus:
     """Holds and accesses census data from a given file.
 
     Data is read from passed path, and imported with specified data types.
@@ -11,10 +11,10 @@ class CensusData:
 
     :param str file_path_csv: path to input file with Census data.
 
-    :var column_labels: holds strings of all census csv column headings, structured to help access
-    :var DEFAULT_VALUE: holds value for NaN values
-    :var UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
-    :var UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+    :var ScoutCensus.column_labels: holds strings of all census csv column headings, structured to help access
+    :var ScoutCensus.DEFAULT_VALUE: holds value for NaN values
+    :var ScoutCensus.UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
+    :var ScoutCensus.UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
     """
 
     column_labels = {
@@ -80,29 +80,31 @@ class CensusData:
         self.sections_file_path = file_path_csv
         self.data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding='utf-8')
 
-    def get_section_names(self, level):
+    @staticmethod
+    def get_section_names(level):
         """Return list of section names that exist within a particular organisational level.
 
         :param level: Organisational level. Usually Group or District.
         :type level: str or list
         :return: List of section names.
         """
-        return [section_name for section_name, section_dict in self.column_labels['sections'].items() if section_dict["level"] in level]
+        return [section_name for section_name, section_dict in ScoutCensus.column_labels['sections'].items() if section_dict["level"] in level]
 
-    def get_section_type(self, level):
+    @staticmethod
+    def get_section_type(level):
         """Return list of section types that exist within a particular organisational level.
 
         :param level: Organisational level. Usually Group or District.
         :type level: str or list
         :return: List of section types
         """
-        section_names_list = self.get_section_names(level)
-        return [self.column_labels['sections'][section]["type"] for section in section_names_list]
+        section_names_list = ScoutCensus.get_section_names(level)
+        return [ScoutCensus.column_labels['sections'][section]["type"] for section in section_names_list]
         # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
 
-    def has_ons_data(self):
+    def has_ons_pd_data(self):
         """Finds whether ONS data has been added
 
         :return bool: Whether the Scout Census data has ONS data added
         """
-        return CensusData.column_labels['VALID_POSTCODE'] in list(self.data.columns.values)
+        return ScoutCensus.column_labels['VALID_POSTCODE'] in list(self.data.columns.values)

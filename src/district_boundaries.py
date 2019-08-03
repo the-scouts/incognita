@@ -3,7 +3,7 @@ import geopandas as gpd
 import shapely
 
 from src.base import Base
-from src.census_data import CensusData
+from src.scout_census import ScoutCensus
 
 
 class DistrictBoundaries(Base):
@@ -34,10 +34,10 @@ class DistrictBoundaries(Base):
             raise Exception("Must have ons data added before creating district boundaries")
 
         # Find all the District IDs and names
-        districts = self.census_data.data[[CensusData.column_labels['id']["DISTRICT"], CensusData.column_labels['name']["DISTRICT"]]].drop_duplicates()
+        districts = self.census_data.data[[ScoutCensus.column_labels['id']["DISTRICT"], ScoutCensus.column_labels['name']["DISTRICT"]]].drop_duplicates()
 
         # Finds all the records with valid postcodes in the Scout Census
-        valid_locations = self.census_data.data.loc[self.census_data.data[CensusData.column_labels['VALID_POSTCODE']] == 1]
+        valid_locations = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row
