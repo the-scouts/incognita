@@ -8,7 +8,7 @@ This script has no command line options.
 
 from src.script_handler import ScriptHandler
 from src.scout_map import ScoutMap
-from src.ONS_data_May_19 import ONSPostcodeDirectoryMay19
+from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import json
 
 if __name__ == "__main__":

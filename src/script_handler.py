@@ -1,6 +1,6 @@
 from src.scout_map import ScoutMap
 from src.census_data import CensusData
-from src.ONS_data_May_19 import ONSPostcodeDirectoryMay19
+from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import time
 import json
 import src.log_util as log_util
