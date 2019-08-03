@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from src.map_plotter import ChoroplethMapPlotter
 from src.census_data import CensusData
-from src.census_merge_postcode import CensusMergePostcode
+from src.census_merge_data import CensusMergePostcode
 import src.log_util as log_util
 import folium
 import branca

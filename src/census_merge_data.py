@@ -1,28 +1,66 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import re
+
+from src.base import Base
 from src.census_data import CensusData
-import src.log_util as log_util
 
 
-class CensusMergePostcode:
+class CensusMergeData(Base):
     """Merges input data with CensusData data on a given key
 
         Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
         The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
 
-        :param section_data: a CensusData object
-        :param output_csv_path: path to a csv where the output is stored.
+        :param output_csv_path: path to where output data is saved.
+        :param error_path: path to where errors are saved (this is for merge errors)
         """
 
-    def __init__(self, section_data, output_csv_path):
-        self.input = section_data
+    def __init__(self, output_csv_path, error_path="error_file.txt"):
+        super().__init__()
         self.output_file_path = output_csv_path
+        self.ERROR_FILE_PATH = error_path
 
-        self.ERROR_FILE = "error_file.txt"
+    def merge_data(self, census_data, data_to_merge, census_index_column):
+        """Merge census data and input data on key and index.
 
-        # Facilitates logging
-        self.logger = log_util.create_logger(__name__, )
+        :param census_data: pandas DataFrame with census data
+        :param data_to_merge: pandas DataFrame with index col as index to merge
+        :param str census_index_column: column label to merge on in census data
+
+        :return: Dataframe with merged data, and an indicator in each row signifying merge success
+        """
+        # Column heading denoting a valid postcode in the row
+        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
+
+        self.logger.info("Merging data")
+        census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
+
+        # Checks whether ONS data exists for each row and stores in a column
+        census_data[valid_postcode_label] = (~census_data['ctry'].isnull()).astype(int)
+
+        return census_data
+
+    def output_data(self, census_data, postcode_merge_column):
+        """Save passed dataframe to csv file.
+
+        Also output list of errors in the merge process to a text file
+
+        :param census_data: pandas DataFrame with census data
+        :param str postcode_merge_column: column that was used as the merge index, and will have invalid postcodes
+        :return: None
+        """
+        # Column heading denoting a valid postcode in the row
+        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
+        original_postcode_label = CensusData.column_labels['POSTCODE']
+        compass_id_label = CensusData.column_labels['id']["COMPASS"]
+
+        # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
+        self.logger.info("Writing merged data")
+        error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", ]
+        census_data.loc[census_data[valid_postcode_label] == 0, error_output_fields].to_csv('error_file.csv', index=False, encoding='utf-8-sig')
+        # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
+        census_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig')
 
     @staticmethod
     def postcode_cleaner(postcode):
@@ -108,7 +146,7 @@ class CensusMergePostcode:
         valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
 
         self.logger.info("Cleaning postcodes")
-        cleaned_postcode_column = CensusMergePostcode.postcode_cleaner(census_data[postcode_column])
+        cleaned_postcode_column = CensusMergeData.postcode_cleaner(census_data[postcode_column])
 
         self.logger.info("Inserting columns")
         census_data.insert(cleaned_postcode_index, cleaned_postcode_label, cleaned_postcode_column)
@@ -144,20 +182,21 @@ class CensusMergePostcode:
         merge_test_column_label = 'ctry'
 
         # Lists of entity types to match against in constructing section records tables
-        section_types_list = self.input.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT])
-        group_section_types_list = self.input.get_section_type([CensusData.UNIT_LEVEL_GROUP])
-        district_section_types_list = self.input.get_section_type([CensusData.UNIT_LEVEL_DISTRICT])
+        section_types_list = CensusData.get_section_type([CensusData.UNIT_LEVEL_GROUP, CensusData.UNIT_LEVEL_DISTRICT])
+        group_section_types_list = CensusData.get_section_type([CensusData.UNIT_LEVEL_GROUP])
+        district_section_types_list = CensusData.get_section_type([CensusData.UNIT_LEVEL_DISTRICT])
         pre_2017_types_list = ["Group", "District"]
 
         # Columns to use in constructing the MultiIndex. Larger groups go first towards smaller
         index_cols = [district_id_label, group_id_label, section_id_label, year_label]
 
         # Columns to return to the .apply function to reduce memory usage
-        fields_for_postcode_lookup = [valid_postcode_label, clean_postcode_label, year_label,
-                                      # Add to to items below if a new column is used in the fix process
-                                      section_id_label,
-                                      group_id_label,
-                                      district_id_label,
+        fields_for_postcode_lookup = [
+            valid_postcode_label, clean_postcode_label, year_label,
+            # Add to to items below if a new column is used in the fix process
+            section_id_label,
+            group_id_label,
+            district_id_label,
         ]
 
         # Sets a MultiIndex on the data table to enable fast searching and querying for data
@@ -265,44 +304,3 @@ class CensusMergePostcode:
             .reset_index(drop=True)\
             .drop(merge_test_column_label, axis=1)
         return census_data
-
-    def merge_data(self, census_data, data_to_merge, census_index_column):
-        """Merge census data and input data on key and index.
-
-        :param census_data: pandas DataFrame with census data
-        :param data_to_merge: pandas DataFrame with index col as index to merge
-        :param str census_index_column: column label to merge on in census data
-
-        :return: Dataframe with merged data, and an indicator in each row signifying merge success
-        """
-        # Column heading denoting a valid postcode in the row
-        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
-
-        self.logger.info("Merging data")
-        census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
-
-        # Checks whether ONS data exists for each row and stores in a column
-        census_data[valid_postcode_label] = (~census_data['ctry'].isnull()).astype(int)
-
-        return census_data
-
-    def output_data(self, census_data, postcode_merge_column):
-        """Save passed dataframe to csv file.
-
-        Also output list of errors in the merge process to a text file
-
-        :param census_data: pandas DataFrame with census data
-        :param str postcode_merge_column: column that was used as the merge index, and will have invalid postcodes
-        :return:
-        """
-        # Column heading denoting a valid postcode in the row
-        valid_postcode_label = CensusData.column_labels['VALID_POSTCODE']
-        original_postcode_label = CensusData.column_labels['POSTCODE']
-        compass_id_label = CensusData.column_labels['id']["COMPASS"]
-
-        # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
-        self.logger.info("Writing merged data")
-        error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", ]
-        census_data.loc[census_data[valid_postcode_label] == 0, error_output_fields].to_csv('error_file.csv', index=False, encoding='utf-8-sig')
-        # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
-        census_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig')
