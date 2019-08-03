@@ -42,15 +42,25 @@ class ChoroplethMapPlotter:
         # Create folium map
         self.map = folium.Map(location=[53.5, -1.49], zoom_start=6)
 
-        if sections_clustered:
-            self.section_layer = MarkerCluster(name='Sections').add_to(self.map)
-        else:
-            self.section_layer = FeatureGroup(name='Sections').add_to(self.map)
+        self.layers = {}
+        self.add_layer('Sections', sections_clustered)
 
         self.shape_file_paths = shape_files_dict["shapefiles"]
         self.geo_data = None
 
         self.filter_shape_file(self.shape_file_paths)
+
+    def add_layer(self, name, markers_clustered):
+        """
+        Adds a maker layer to the map
+
+        :param str name: The name of the layer - appears in LayerControl on Map
+        :param bool markers_clustered: Whether the markers should cluster or not
+        """
+        if markers_clustered:
+            self.layers[name] = MarkerCluster(name=name).add_to(self.map)
+        else:
+            self.layers[name] = FeatureGroup(name=name).add_to(self.map)
 
     def filter_shape_file(self, shape_file_paths):
         """Loads, filters and converts shapefiles for later use
@@ -131,7 +141,7 @@ class ChoroplethMapPlotter:
         else:
             return colormap(area_score)
 
-    def add_marker(self, lat, long, popup, color):
+    def add_marker(self, lat, long, popup, color, name='Sections'):
         """Adds a leaflet marker to the map using given values
 
         :param float lat: latitude of the marker
@@ -144,7 +154,7 @@ class ChoroplethMapPlotter:
             location=[lat, long],
             popup=popup,
             icon=folium.Icon(color=color)
-        ).add_to(self.section_layer)
+        ).add_to(self.layers[name])
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)
