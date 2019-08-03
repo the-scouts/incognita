@@ -16,7 +16,7 @@ def create_logger(name, file_path=None):
     # set up a log to the console
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    console.setFormatter(logging.Formatter(fmt="%(name)s - %(levelname)s - %(message)s"))
+    console.setFormatter(logging.Formatter(fmt="%(filename)s - %(levelname)s - %(message)s"))
 
     # creates the main logger
     logger = logging.getLogger(name)
@@ -24,6 +24,10 @@ def create_logger(name, file_path=None):
     logger.addHandler(console)
 
     return logger
+
+
+def get_logger(name):
+    return logging.getLogger(name)
 
 
 def duration(start_time):
