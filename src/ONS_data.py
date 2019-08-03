@@ -47,5 +47,7 @@ class ONSData:
 
         :return: DataSeries of codes in the target_geography
         """
-        postcode_records_in_start_geography = self.data.loc[self.data[start_geography].isin(start_values)]
-        return postcode_records_in_start_geography[target_geography].unique()
+
+        # Maps the start geography to target geography
+        areas_mapped = self.data.loc[self.data[start_geography].isin(start_values), target_geography].drop_duplicates()
+        return areas_mapped
