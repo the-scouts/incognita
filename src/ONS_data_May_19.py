@@ -1,18 +1,18 @@
-from src.ONS_data import ONSData
+from src.ONS_data import ONSPostcodeDirectory
 
 
-class ONSDataMay19(ONSData):
+class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     """Used for holding and accessing ONS Postcode Directory data
 
     :param str ons_pd_csv_path: path to the ONS Postcode Directory csv file
     :param bool load_data: whether to load data from the file
 
-    :var list ONSDataMay19.fields: columns to read from the csv file
-    :var str ONSDataMay19.index_column: column to use as the index. Must contain unique values
-    :var dict ONSDataMay19.data_types: pandas datatypes for the columns to load
-    :var str ONSDataMay19.PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
-    :var dict ONSDataMay19.IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
-    :var dict ONSDataMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
+    :var list ONSPostcodeDirectoryMay19.fields: columns to read from the csv file
+    :var str ONSPostcodeDirectoryMay19.index_column: column to use as the index. Must contain unique values
+    :var dict ONSPostcodeDirectoryMay19.data_types: pandas datatypes for the columns to load
+    :var str ONSPostcodeDirectoryMay19.PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
+    :var dict ONSPostcodeDirectoryMay19.IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
+    :var dict ONSPostcodeDirectoryMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
     """
     fields = ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'oseast1m', 'osnrth1m', 'lat', 'long', 'imd', 'ctry', 'rgn', 'pcd']
     index_column = 'pcd'
@@ -42,7 +42,7 @@ class ONSDataMay19(ONSData):
     # "L93000001": "Channel Islands", "M83000003": "Isle of Man"
 
     def __init__(self, ons_pd_csv_path, load_data=True):
-        ONSData.__init__(self, ons_pd_csv_path, load_data, ONSDataMay19.index_column, ONSDataMay19.fields, ONSDataMay19.data_types)
+        ONSPostcodeDirectory.__init__(self, ons_pd_csv_path, load_data, ONSPostcodeDirectoryMay19.index_column, ONSPostcodeDirectoryMay19.fields, ONSPostcodeDirectoryMay19.data_types)
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]

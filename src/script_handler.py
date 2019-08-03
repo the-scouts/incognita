@@ -1,6 +1,6 @@
 from src.scout_map import ScoutMap
 from src.census_data import CensusData
-from src.ONS_data_May_19 import ONSDataMay19
+from src.ONS_data_May_19 import ONSPostcodeDirectoryMay19
 import time
 import json
 import src.log_util as log_util
@@ -29,7 +29,7 @@ class ScriptHandler:
             start_time = time.time()
 
             if self.map.has_ons_data():
-                self.map.ons_data = ONSDataMay19(self.settings["ONS PD location"], load_data=load_ons_data)
+                self.map.ons_data = ONSPostcodeDirectoryMay19(self.settings["ONS PD location"], load_data=load_ons_data)
             else:
                 raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {CensusData.column_labels['VALID_POSTCODE']} column")
 

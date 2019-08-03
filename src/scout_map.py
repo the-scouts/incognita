@@ -55,10 +55,10 @@ class ScoutMap:
         self.logger = log_util.create_logger(__name__,)
 
     def merge_ons_postcode_directory(self, ONS_postcode_directory):
-        """Merges CensusData object with ONSData object and outputs to csv
+        """Merges CensusData object with ONSPostcodeDirectory object and outputs to csv
 
         :param ONS_postcode_directory: Refers to the ONS Postcode Directory
-        :type ONS_postcode_directory: ONSData object
+        :type ONS_postcode_directory: ONSPostcodeDirectory object
         """
         # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
@@ -171,7 +171,7 @@ class ScoutMap:
     def set_boundary(self, geography_name):
         """Sets the boundary_dict and boundary_regions_data members
 
-        :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSData.BOUNDARIES.
+        :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
 
         :var dict self.boundary_dict: information about the boundary type
         :var self.boundary_regions_data: table of region codes and human-readable names for those codes
