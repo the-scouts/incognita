@@ -48,57 +48,58 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
 
         # Paths to all shapefiles within the Boundaries folder
-        LAD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Local_Authority_Districts_April_2019_Boundaries_UK_BUC\Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp"]
-        CTY_SHAPEFILE = [self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp"]
-        WARD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp"]
-        PCON_SHAPEFILE = [self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp"]
-        LSOA_SHAPEFILE = [self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp"]
-        MSOA_SHAPEFILE = [self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp"]
-        IZ_SHAPEFILE = [self.settings["Boundaries folder"] + r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp"]
-
+        shapefile_paths = {
+            "LADs": self.settings["Boundaries folder"] + r"Local_Authority_Districts_April_2019_Boundaries_UK_BUC\Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
+            "City": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "Ward": self.settings["Boundaries folder"] + r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp",
+            "PCon": self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
+            "LSOA": self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp",
+            "MSOA": self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
+            "IZ": self.settings["Boundaries folder"] + r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp",
+        }
         # Dictionary holding dictionaries with information for each type of boundary
         self.BOUNDARIES = {
             "lad": {
                 # "friendly_name": "Local Authority District",
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "key_type": "object", "name": "LAD19NM"},
-                "boundary": {"shapefiles": LAD_SHAPEFILE, "key": 'lad19cd', "name": 'lad19nm',},
+                "boundary": {"shapefile": shapefile_paths["LADs"], "key": 'lad19cd', "name": 'lad19nm', },
                 "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
             },
             "cty": {
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "key_type": "object", "name": "LAD19NM"},
-                "boundary": {"shapefiles": CTY_SHAPEFILE, "key": 'ctyua17cd', "name": 'ctyua17nm',},
+                "boundary": {"shapefile": shapefile_paths["City"], "key": 'ctyua17cd', "name": 'ctyua17nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "osward": {
                 "name": "osward",
                 "codes": {"path": "Ward names and codes UK as at 05_19_NSPD.csv", "key": "WD19CD", "key_type": "object", "name": "WD19NM"},
-                "boundary": {"shapefiles": WARD_SHAPEFILE, "key": 'wd19cd', "name": 'wd19nm',},
+                "boundary": {"shapefile": shapefile_paths["Ward"], "key": 'wd19cd', "name": 'wd19nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "pcon": {
                 "name": "pcon",
                 "codes": {"path": "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv", "key": "PCON14CD", "key_type": "object", "name": "PCON14NM"},
-                "boundary": {"shapefiles": PCON_SHAPEFILE, "key": 'pcon17cd', "name": "pcon17nm",},
+                "boundary": {"shapefile": shapefile_paths["PCon"], "key": 'pcon17cd', "name": "pcon17nm", },
                 "age_profile": {"path": "pcon_by_age.csv", "key": "PCON11CD"},
             },
             "lsoa": {
                 "name": "lsoa11",
                 "codes": {"path": "LSOA (2011) names and codes UK as at 12_12.csv", "key": "LSOA11CD", "key_type": "object", "name": "LSOA11NM"},
-                "boundary": {"shapefiles": LSOA_SHAPEFILE, "key": 'lsoa11cd', "name": 'lsoa11nm',},
+                "boundary": {"shapefile": shapefile_paths["LSOA"], "key": 'lsoa11cd', "name": 'lsoa11nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "msoa": {
                 "name": "msoa",
-                "codes": {"path": "MSOA (2011) names and codes UK as at 12_12.csv", "key": "MSOA11CD", "key_type": "object","name": "MSOA11NM"},
-                "boundary": {"shapefiles": MSOA_SHAPEFILE, "key": 'msoa11cd', "name": None,},
+                "codes": {"path": "MSOA (2011) names and codes UK as at 12_12.csv", "key": "MSOA11CD", "key_type": "object", "name": "MSOA11NM"},
+                "boundary": {"shapefile": shapefile_paths["MSOA"], "key": 'msoa11cd', "name": None, },
                 "age_profile": {"path": None, "key": None},
             },
             "iz": {
                 "name": "iz",
                 "codes": {"path": None, "key": None, "key_type": "object", "name": None},
-                "boundary": {"shapefiles": IZ_SHAPEFILE, "key": 'InterZone', "name": None,},
+                "boundary": {"shapefile": shapefile_paths["IZ"], "key": 'InterZone', "name": None, },
                 "age_profile": {"path": None, "key": None},
             },
         }
