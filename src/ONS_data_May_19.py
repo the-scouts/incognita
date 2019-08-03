@@ -48,9 +48,9 @@ class ONSDataMay19(ONSData):
         self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
 
         # Paths to all shapefiles within the Boundaries folder
-        LAD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp"]
+        LAD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Local_Authority_Districts_April_2019_Boundaries_UK_BUC\Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp"]
         CTY_SHAPEFILE = [self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp"]
-        WARD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Wards_May_2018_Boundaries\Wards_May_2018_Boundaries.shp"]
+        WARD_SHAPEFILE = [self.settings["Boundaries folder"] + r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp"]
         PCON_SHAPEFILE = [self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp"]
         LSOA_SHAPEFILE = [self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp"]
         MSOA_SHAPEFILE = [self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp"]
@@ -62,7 +62,7 @@ class ONSDataMay19(ONSData):
                 # "friendly_name": "Local Authority District",
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "key_type": "object", "name": "LAD19NM"},
-                "boundary": {"shapefiles": LAD_SHAPEFILE, "key": 'lad18cd', "name": 'lad18nm',},
+                "boundary": {"shapefiles": LAD_SHAPEFILE, "key": 'lad19cd', "name": 'lad19nm',},
                 "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
             },
             "cty": {
@@ -74,7 +74,7 @@ class ONSDataMay19(ONSData):
             "osward": {
                 "name": "osward",
                 "codes": {"path": "Ward names and codes UK as at 05_19_NSPD.csv", "key": "WD19CD", "key_type": "object", "name": "WD19NM"},
-                "boundary": {"shapefiles": WARD_SHAPEFILE, "key": 'wd18cd', "name": 'wd18nm',},
+                "boundary": {"shapefiles": WARD_SHAPEFILE, "key": 'wd19cd', "name": 'wd19nm',},
                 "age_profile": {"path": None, "key": None},
             },
             "pcon": {
