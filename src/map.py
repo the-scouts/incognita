@@ -23,12 +23,34 @@ class Map(Base):
         self.census_data = scout_data_object.census_data
         self.ons_pd = scout_data_object.ons_pd
 
-    def create_map(self, score_col, display_score_col, name, legend_label, static_scale=None, cluster_markers=False):
-        self.logger.info(f"Creating map from {score_col} with name {name}")
+        self.create_map(dimension, map_name, boundary_object, kwargs)
+
+    def create_map(self, dimension, map_name, boundary_object, static_scale=None, cluster_markers=False):
+        """
+
+        :param dimension: dict of column of CensusData dataframe and labels for tooltip and key/legend
+        :param map_name:
+        :param boundary_object:
+        :param static_scale:
+        :param cluster_markers:
+        :return:
+        """
+        boundary_dict = boundary_object.boundary_dict
+        boundary_report = boundary_object.boundary_report
+
+        geography_name = boundary_dict["name"]
+        geography_info = boundary_dict["boundary"]
+        geography_area_names = boundary_dict["boundary"]["name"]
+
+        score_col = dimension["column"]
+        display_score_col = dimension["tooltip"]
+        legend_label = dimension["legend"]
+
+        self.logger.info(f"Creating map from {score_col} with name {map_name}")
 
         data_codes = {
-            "data": self.boundary_report[self.boundary_dict["name"]],
-            "code_col": self.boundary_dict["name"],
+            "data": boundary_report[geography_name],
+            "code_col": geography_name,
             "score_col": score_col,
             "score_col_label": display_score_col
         }
@@ -36,68 +58,42 @@ class Map(Base):
         if not (score_col in list(data_codes["data"].columns)):
             raise Exception(f"The column {score_col} does not exist in data.\nValid columns are {list(data_codes['data'].columns)}")
 
-        self.map = MapPlotter(self.boundary_dict["boundary"],
-                                        data_codes,
-                                        self.settings["Output folder"] + name,
-                                        cluster_markers)
+        self.map_plotter = MapPlotter(geography_info,
+                                      data_codes,
+                                      self.settings["Output folder"] + map_name,
+                                      cluster_markers)
 
         non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
         non_zero_score_col.dropna(inplace=True)
         min_value = data_codes["data"][score_col].min()
         max_value = data_codes["data"][score_col].max()
         self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
-        colormap = branca.colormap.LinearColormap(colors=['#ca0020', '#f4a582', '#92c5de', '#0571b0'],
+        colourmap = branca.colormap.LinearColormap(colors=['#ca0020', '#f4a582', '#92c5de', '#0571b0'],
                                                   index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
                                                   vmin=min_value,
                                                   vmax=max_value)
         non_zero_score_col.sort_values(axis=0, inplace=True)
-        colormap = colormap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+        colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
-        colormap.caption = legend_label
-        self.map.plot(legend_label, show=True, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap)
+        colourmap.caption = legend_label
+        self.map_plotter.add_areas(legend_label, show=True, boundary_name=geography_area_names, colourmap=colourmap)
 
         if static_scale:
-            colormap_static = branca.colormap.LinearColormap(colors=['#ca0020', '#f7f7f7', '#0571b0'],
+            colourmap_static = branca.colormap.LinearColormap(colors=['#ca0020', '#f7f7f7', '#0571b0'],
                                                              index=static_scale["index"],
                                                              vmin=static_scale["min"],
-                                                             vmax=static_scale["max"])\
+                                                             vmax=static_scale["max"]) \
                 .to_step(index=static_scale["boundaries"])
-            colormap_static.caption = legend_label + " (static)"
-            self.map.plot(legend_label + " (static)", show=False, boundary_name=self.boundary_dict["boundary"]["name"], colormap=colormap_static)
+            colourmap_static.caption = legend_label + " (static)"
+            self.map_plotter.add_areas(legend_label + " (static)", show=False, boundary_name=geography_area_names,
+                                       colourmap=colourmap_static)
 
-    def add_all_sections_to_map(self, colour, marker_data):
-        """Adds sections from latest year of data as markers on map
-
-        Plots all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
-        who have returned in the latest year of the dataset.
-
-        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-        :param list marker_data: List of strings which determines content for popup, including:
-            - youth membership
-            - awards
-        """
-        min_year, max_year = self.years_of_return(self.census_data.data)
-        latest_year_records = self.census_data.data.loc[self.census_data.data["Year"] == max_year]
-        self.add_sections_to_map(latest_year_records.loc[latest_year_records[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT]))], colour, marker_data)
-
-    def add_single_section_to_map(self, section, colour, marker_data):
-        """Plots the section specified by section onto the map, in markers of
-        colour identified by colour, with data indicated by marker_data.
-
-        :param str section: One of Beavers, Cubs, Scouts, Explorers, Network
-        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-        :param list marker_data: List of strings which determines content for popup, including:
-            - youth membership
-            - awards
-        """
-        self.add_sections_to_map(self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]], colour, marker_data)
-
-    def add_sections_to_map(self, sections, colour, marker_data):
+    def add_meeting_places_to_map(self, sections, colour, marker_data):
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
         :param DataFrame sections: Census records relating to Sections with lat and long Columns
-        :param str/dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param str or dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
         :param list marker_data: List of strings which determines content for popup, including:
             - youth membership
             - awards
@@ -107,8 +103,8 @@ class Map(Base):
         valid_points = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Sets the map so it opens in the right area
-        self.map.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
-                              [valid_points["lat"].max(), valid_points["long"].max()]])
+        self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
+                                     [valid_points["lat"].max(), valid_points["long"].max()]])
 
         postcodes = sections[ScoutCensus.column_labels['POSTCODE']].unique()
         postcodes = [str(postcode) for postcode in postcodes]
@@ -121,7 +117,7 @@ class Map(Base):
         for postcode in postcodes:
             new_percentage = round(count / increment)
             if new_percentage > old_percentage:
-                self.logger.info(f"% of sections added to map {new_percentage}")
+                self.logger.info(f"{new_percentage}% of sections added to map ")
                 old_percentage = new_percentage
             count += 1
 
@@ -145,10 +141,11 @@ class Map(Base):
                          f"<br>")
                 colocated_in_district = colocated_district_sections.loc[colocated_district_sections[ScoutCensus.column_labels['id']["DISTRICT"]] == district]
                 for section_id in colocated_in_district.index:
-                    type = colocated_in_district.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
+                    unit_type = colocated_in_district.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
+                    section = utility.section_from_type(unit_type)
                     name = colocated_in_district.at[section_id, 'name']
+
                     html += f"{name} : "
-                    section = self.section_from_type(type)
                     if "youth membership" in marker_data:
                         male_yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels['sections'][section]["male"]])
                         female_yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels['sections'][section]["female"]])
@@ -165,10 +162,10 @@ class Map(Base):
                 html += (f"<h3 align=\"center\">{group_name}</h3><p align=\"center\">"
                          f"<br>")
                 for section_id in colocated_in_group.index:
-                    type = colocated_in_group.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
+                    # district_id = colocated_in_group.at[section_id, CensusData.column_labels['id']["DISTRICT"]]
+                    unit_type = colocated_in_group.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
+                    section = utility.section_from_type(unit_type)
                     name = colocated_in_group.at[section_id, 'name']
-                    section = self.section_from_type(type)
-                    district_id = colocated_in_group.at[section_id, ScoutCensus.column_labels['id']["DISTRICT"]]
 
                     html += f"{name} : "
                     if "youth membership" in marker_data:
@@ -189,6 +186,7 @@ class Map(Base):
                 height = 120
             else:
                 height = 240
+            del height
             iframe = folium.IFrame(html=html, width=350, height=100)
             popup = folium.Popup(iframe, max_width=2650)
 
@@ -200,73 +198,105 @@ class Map(Base):
             else:
                 marker_colour = colour
 
-            # Areas outside the region_of_color have markers coloured grey
-            if self.region_of_color:
-                if colocated_sections.iloc[0][self.region_of_color["column"]] not in self.region_of_color["value_list"]:
+            # Areas outside the region_of_colour have markers coloured grey
+            if self.region_of_colour:
+                if colocated_sections.iloc[0][self.region_of_colour["column"]] not in self.region_of_colour["value_list"]:
                     marker_colour = 'gray'
 
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
-            self.map.add_marker(lat, long, popup, marker_colour)
+            self.map_plotter.add_marker(lat, long, popup, marker_colour)
 
-    def add_custom_data(self, csv_file_path, name, location_type="Postcodes", location_cols=None, markers_clustered=False, marker_data=None):
+    def add_sections_to_map(self, colour, marker_data, single_section=False):
+        """Filter sections and add to map.
+
+        If a single section is specified, plots that section onto the map in
+        markers of colour identified by colour, with data indicated by marker_data.
+
+        If else, all sections are plotted from the latest year of data. This
+        mesans all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
+        that have returned in the latest year of the dataset.
+
+        :param str or dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+        :param list marker_data: List of strings which determines content for popup, including:
+            - youth membership
+            - awards
+        :param str single_section: One of Beavers, Cubs, Scouts, Explorers, Network
+        """
+        data: pd.DataFrame = self.census_data.data
+        unit_type_label = ScoutCensus.column_labels['UNIT_TYPE']
+
+        if single_section:
+            filtered_data = data
+            section_type = ScoutCensus.column_labels['sections'][single_section]["type"]
+            section_types = [section_type]
+        else:
+            min_year, max_year = utility.years_of_return(data["Year"])
+            latest_year_records = data.loc[data["Year"] == max_year]
+
+            filtered_data = latest_year_records
+            section_types = self.census_data.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
+
+        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data)
+
+    def add_custom_data(self, csv_file_path, layer_name, location_cols, markers_clustered=False, marker_data=None):
         """Function to add custom data as markers on map
 
-        Note that the create_map function must have been called first, to
-        populate self.map object.
-
         :param str csv_file_path: file path to open csv file
-        :param str name: Name of layer that the markers will be added to
-        :param str location_type: Either "Postcodes" or "Co-ordinates"
-        :param str/dict location_cols: If "Co-ordinates" requires a dict {"crs": , "x": , "y": }
-                                   If "Postcodes" the column name of the Postcode columm
+        :param str layer_name: Name of layer that the markers will be added to
+        :param str or dict location_cols: Indicates whether adding data with postcodes or co-ordinates
+            - if postcodes, str "Postcodes"
+            - if co-ordinates, dict of co-ordinate data with keys ["crs", "x", "y"]
         :param bool markers_clustered: Whether to cluster the markers or not
         :param list marker_data: list of strings for values in data that should be in popup
         """
 
-        data = pd.read_csv(csv_file_path)
+        custom_data = pd.read_csv(csv_file_path)
 
-        if location_type == "Postcodes":
+        if location_cols == "Postcodes":
             # Merge with ONS Postcode Directory to obtain dataframe with lat/long
-            data = pd.merge(data, self.ons_data.data, how='left', left_on=location_cols, right_index=True, sort=False)
-            location_cols = {"crs": '4326', "x": "long", "y": "lat"}
+            custom_data = pd.merge(custom_data, self.ons_pd.data, how='left', left_on=location_cols, right_index=True, sort=False)
+            location_cols = {"crs": 4326, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
-        data = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data[location_cols["x"]], data[location_cols["y"]]))
+        custom_data = gpd.GeoDataFrame(
+            custom_data,
+            geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]])
+        )
 
         # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
-        data.crs = {'init': f"epsg:{location_cols['crs']}"}
-        data = data.to_crs({'init': 'epsg:4326'})
+        if location_cols['crs'] != 4326:
+            custom_data.crs = {'init': f"epsg:{location_cols['crs']}"}
+            custom_data = custom_data.to_crs({'init': 'epsg:4326'})
 
-        self.map.add_layer(name, markers_clustered)
+        self.map_plotter.add_layer(layer_name, markers_clustered)
 
-        # For each point plot marker, and include marker_data in the popup
-        for index, row in data.iterrows():
+        # Plot marker and include marker_data in the popup for every item in custom_data
+        def add_popup_data(row):
             if marker_data:
                 html = ""
-                for data in marker_data:
-                    html += f"<p align=\"center\">{row[data]}<p align=\"center\">"
+                for marker_col in marker_data:
+                    html += f'<p align="center">{row[marker_col]}</p>'
                 iframe = folium.IFrame(html=html, width=350, height=100)
                 popup = folium.Popup(iframe, max_width=2650)
             else:
                 popup = None
             if not np.isnan(row.geometry.x):
-                self.map.add_marker(row.geometry.y, row.geometry.x, popup, 'green', name)
+                self.map_plotter.add_marker(row.geometry.y, row.geometry.x, popup, colour='green', layer_name=layer_name)
+        custom_data.apply(add_popup_data, axis=1)
 
     def save_map(self):
-        self.map.save()
+        self.map_plotter.save()
 
     def show_map(self):
-        self.map.show()
+        self.map_plotter.show()
 
-    def set_region_of_color(self, column, value_list):
-        self.region_of_color = {"column": column, "value_list": value_list}
+    def set_region_of_colour(self, column, value_list):
+        self.region_of_colour = {"column": column, "value_list": value_list}
 
-    def district_color_mapping(self):
-        colors = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple', 'lightgrayblack',
-                'orange', 'pink', 'white', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
+    def district_colour_mapping(self):
+        colours = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple',
+                         'lightgrayblack', 'orange', 'pink', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
         district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
-        mapping = {}
-        for district_id in district_ids:
-            mapping[district_id] = next(colors)
+        mapping = {district_id: next(colours) for district_id in district_ids}
         colour_mapping = {"census_column": ScoutCensus.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping
