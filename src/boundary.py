@@ -12,7 +12,7 @@ np = pd.np
 class Boundary(Base):
     """
 
-    :var dict ScoutMap.SECTION_AGES: Holds information about scout sections
+    :var dict Boundary.SECTION_AGES: Holds information about scout sections
     """
 
     SECTION_AGES = {
@@ -25,7 +25,7 @@ class Boundary(Base):
     def __init__(self, geography_name, scout_data_object: ScoutData):
         super().__init__(settings=True)
 
-        self.census_data = scout_data_object.census_data
+        self.scout_census = scout_data_object.scout_census
         self.ons_pd = scout_data_object.ons_pd
 
         self.boundary_dict = None
@@ -83,7 +83,7 @@ class Boundary(Base):
         """
 
         if not self.boundary_dict:
-            raise Exception("boundary_dict has not been set, or there is no data in it")  # Has ScoutMap.set_boundary() been called?
+            raise Exception("boundary_dict has not been set, or there is no data in it")  # Has Boundary.set_boundary() been called?
 
         name = self.boundary_dict["name"]
         codes_key = self.boundary_dict["codes"]["key"]
@@ -115,10 +115,10 @@ class Boundary(Base):
 
         region_ids = self.boundary_regions_data[codes_key].dropna().drop_duplicates()
 
-        district_ids_by_region = self.census_data.data.loc[self.census_data.data[region_type].isin(region_ids), [region_type, district_id_column, ]].dropna().drop_duplicates()
+        district_ids_by_region = self.scout_census.data.loc[self.scout_census.data[region_type].isin(region_ids), [region_type, district_id_column, ]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
-        region_ids_by_district = self.census_data.data.loc[self.census_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
+        region_ids_by_district = self.scout_census.data.loc[self.scout_census.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
         region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == ScoutCensus.DEFAULT_VALUE)].dropna().drop_duplicates()
 
         count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})  # count of how many regions the district occupies
@@ -171,9 +171,9 @@ class Boundary(Base):
         if "waiting list total" in options:
             opt_waiting_list_totals = True
 
-        self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.census_data.data.index)} records")
+        self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.scout_census.data.index)} records")
 
-        min_year, max_year = utility.years_of_return(self.census_data.data["Year"])
+        min_year, max_year = utility.years_of_return(self.scout_census.data["Year"])
         years_in_data = range(min_year, max_year + 1)
         if len(years_in_data) > 1:
             if historical:
@@ -223,7 +223,7 @@ class Boundary(Base):
             }
             code = boundary_data[name]
 
-            records_in_boundary = self.census_data.data.loc[self.census_data.data[name] == code]
+            records_in_boundary = self.scout_census.data.loc[self.scout_census.data[name] == code]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
 
             if opt_groups:
@@ -281,7 +281,7 @@ class Boundary(Base):
                     number_of_ons_regions_district_is_in = districts[district_id]
                     self.logger.debug(f"{district_id} in {number_of_ons_regions_district_is_in} ons boundaries")
 
-                    district_records = self.census_data.data.loc[self.census_data.data[district_id_column] == district_id]  # Records for current district ID
+                    district_records = self.scout_census.data.loc[self.scout_census.data[district_id_column] == district_id]  # Records for current district ID
 
                     # QSAs achieved in district, divided by the number of regions the district is in
                     boundary_data["QSA"] += district_records["Queens_Scout_Awards"].sum() / number_of_ons_regions_district_is_in
@@ -345,7 +345,7 @@ class Boundary(Base):
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
-        min_year, max_year = utility.years_of_return(self.census_data.data["Year"])
+        min_year, max_year = utility.years_of_return(self.scout_census.data["Year"])
         years_in_data = range(min_year, max_year + 1)
 
         # setup population columns
@@ -419,13 +419,13 @@ class Boundary(Base):
         return uptake_report
 
     def filter_set_boundaries_in_scout_area(self, column, value_list):
-        records_in_scout_area = self.census_data.data.loc[self.census_data.data[column].isin(value_list)]
+        records_in_scout_area = self.scout_census.data.loc[self.scout_census.data[column].isin(value_list)]
         boundaries_in_scout_area = records_in_scout_area[self.boundary_dict["name"]].unique()
         self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[self.boundary_dict["codes"]["key"]].isin(boundaries_in_scout_area)]
 
     def filter_records_by_boundary(self):
         """Selects the records that are with the boundary specified"""
-        self.census_data.data = utility.filter_records(self.census_data.data, self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]], self.logger)
+        self.scout_census.data = utility.filter_records(self.scout_census.data, self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]], self.logger)
 
     def filter_boundaries_by_scout_area(self, boundary, column, value_list):
         """Filters the boundaries, to include only those boundaries which have
@@ -455,7 +455,7 @@ class Boundary(Base):
         """
         self.logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
 
-        records = self.census_data.data.loc[self.census_data.data[column].isin(value_list)]
+        records = self.scout_census.data.loc[self.scout_census.data[column].isin(value_list)]
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
 
         ons_codes = records[ons_code].drop_duplicates().dropna()

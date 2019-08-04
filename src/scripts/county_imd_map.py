@@ -3,7 +3,7 @@ from src.boundary import Boundary
 from src.map import Map
 
 if __name__ == "__main__":
-    scout_data = ScoutData(csv_has_ons_pd_data=True, load_ons_pd_data=True)
+    scout_data = ScoutData(load_ons_pd_data=True)
     scout_data.filter_records("Year", [2015, 2016, 2017, 2018, 2019])
     scout_data.filter_records("postcode_is_valid", [1])
     scout_data.add_imd_decile()

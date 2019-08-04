@@ -32,7 +32,7 @@ if __name__ == "__main__":
     map.save_map()
 
     # create_section_maps
-    for section_label in ScoutData.SECTION_AGES.keys():
+    for section_label in Boundary.SECTION_AGES.keys():
         dimension = {"column": f"%-{section_label}-{max_year}", "tooltip": section_label, "legend": f"{max_year} {section_label} uptake (%)"}
         section_map = Map(scout_data, boundary, dimension, map_name=f"pcon_uptake_report_{section_label}", static_scale=static_scale)
         section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)

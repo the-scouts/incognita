@@ -10,7 +10,7 @@ class DistrictBoundaries(Base):
     def __init__(self, scout_data_object):
         super().__init__()
 
-        self.census_data = scout_data_object.census_data
+        self.scout_census = scout_data_object.scout_census
         self.ons_pd = scout_data_object.ons_pd
 
     # utility method
@@ -20,7 +20,7 @@ class DistrictBoundaries(Base):
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return self.census_data.has_ons_pd_data()
+        return self.scout_census.has_ons_pd_data()
 
     def create_district_boundaries(self):
         """
@@ -34,10 +34,10 @@ class DistrictBoundaries(Base):
             raise Exception("Must have ons data added before creating district boundaries")
 
         # Find all the District IDs and names
-        districts = self.census_data.data[[ScoutCensus.column_labels['id']["DISTRICT"], ScoutCensus.column_labels['name']["DISTRICT"]]].drop_duplicates()
+        districts = self.scout_census.data[[ScoutCensus.column_labels['id']["DISTRICT"], ScoutCensus.column_labels['name']["DISTRICT"]]].drop_duplicates()
 
         # Finds all the records with valid postcodes in the Scout Census
-        valid_locations = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
+        valid_locations = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row

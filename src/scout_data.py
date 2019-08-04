@@ -1,4 +1,6 @@
+from datetime import datetime
 import time
+from typing import List
 import pandas as pd
 
 from src.base import Base
@@ -15,15 +17,15 @@ class ScoutData(Base):
 
     def __init__(self, csv_has_ons_pd_data=True, load_ons_pd_data=False):
         super().__init__(settings=True, log_path='logs/geo_mapping.log')
-        self.logger.info(f"Starting at {time.time()}")
+        self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
 
         self.logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
-        self.census_data = ScoutCensus(self.settings["Scout Census location"])
+        self.scout_census = ScoutCensus(self.settings["Scout Census location"])
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
-        self.min_year, self.max_year = utility.years_of_return(self.census_data.data)
+        self.min_year, self.max_year = utility.years_of_return(self.scout_census.data)
 
         if csv_has_ons_pd_data:
             self.logger.info("Loading ONS data")
@@ -32,12 +34,12 @@ class ScoutData(Base):
             if self.has_ons_pd_data():
                 self.ons_pd = ONSPostcodeDirectoryMay19(self.settings["ONS PD location"], load_data=load_ons_pd_data)
             else:
-                raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
+                raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
-            self.logger.info(f"Loading ONS data from {self.ons_pd.PUBLICATION_DATE}", start_time=start_time)
+            self.logger.finished(f"Loading ONS data from {self.ons_pd.PUBLICATION_DATE}", start_time=start_time)
 
     def merge_ons_postcode_directory(self, ons_postcode_directory):
-        """Merges CensusData object with ONSPostcodeDirectory object and outputs to csv
+        """Merges ScoutCensus object with ONSPostcodeDirectory object and outputs to csv
 
         :param ons_postcode_directory: Refers to the ONS Postcode Directory
         :type ons_postcode_directory: ONSPostcodeDirectory object
@@ -50,40 +52,40 @@ class ScoutData(Base):
 
         self.logger.debug("Initialising merge object")
         merge = CensusMergeData(
-            self.census_data.sections_file_path[:-4] + f" with {ons_postcode_directory.PUBLICATION_DATE} fields.csv", )
+            self.scout_census.sections_file_path[:-4] + f" with {ons_postcode_directory.PUBLICATION_DATE} fields.csv", )
 
         self.logger.info("Cleaning the postcodes")
-        merge.clean_and_verify_postcode(self.census_data.data, ScoutCensus.column_labels['POSTCODE'])
+        merge.clean_and_verify_postcode(self.scout_census.data, ScoutCensus.column_labels['POSTCODE'])
 
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
 
         # initially merge just Country column to test what postcodes can match
-        self.census_data.data = merge.merge_data(
-            self.census_data.data,
+        self.scout_census.data = merge.merge_data(
+            self.scout_census.data,
             ons_postcode_directory.data['ctry'],
             "clean_postcode", )
 
         # attempt to fix invalid postcodes
-        self.census_data.data = merge.try_fix_invalid_postcodes(
-            self.census_data.data,
+        self.scout_census.data = merge.try_fix_invalid_postcodes(
+            self.scout_census.data,
             ons_postcode_directory.data['ctry'], )
 
         # fully merge the data
-        self.census_data.data = merge.merge_data(
-            self.census_data.data,
+        self.scout_census.data = merge.merge_data(
+            self.scout_census.data,
             ons_postcode_directory.data,
             "clean_postcode", )
 
         # fill unmerged rows with default values
         self.logger.info("filling unmerged rows")
-        self.census_data.data = merge.fill_unmerged_rows(
-            self.census_data.data,
+        self.scout_census.data = merge.fill_unmerged_rows(
+            self.scout_census.data,
             ScoutCensus.column_labels['VALID_POSTCODE'],
             ons_fields_data_types, )
 
         # save the data to CSV and save invalid postcodes to an error file
         merge.output_data(
-            self.census_data.data,
+            self.scout_census.data,
             "clean_postcode", )
 
     def has_ons_pd_data(self):
@@ -92,7 +94,7 @@ class ScoutData(Base):
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return self.census_data.has_ons_pd_data()
+        return self.scout_census.has_ons_pd_data()
 
     def filter_records(self, field, value_list, mask=False, exclusion_analysis=False):
         """Filters the Census records by any field in ONS PD.
@@ -104,14 +106,14 @@ class ScoutData(Base):
 
         :returns None: Nothing
         """
-        data = self.census_data.data
-        self.census_data.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
-        self.min_year, self.max_year = utility.years_of_return(self.census_data.data)
+        data = self.scout_census.data
+        self.scout_census.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
+        self.min_year, self.max_year = utility.years_of_return(self.scout_census.data)
 
     def add_imd_decile(self):
         self.logger.info("Adding Index of Multiple Deprivation Decile")
-        self.census_data.data["imd_decile"] = utility.calc_imd_decile(self.census_data.data["imd"], self.census_data.data["ctry"], self.ons_pd)
-        return self.census_data.data
+        self.scout_census.data["imd_decile"] = utility.calc_imd_decile(self.scout_census.data["imd"], self.scout_census.data["ctry"], self.ons_pd)
+        return self.scout_census.data
 
     def group_history_summary(self, years, report_name=None):
         self.logger.info("Beginning group_history_summary")
@@ -133,7 +135,7 @@ class ScoutData(Base):
 
         # Must have imd scores and deciles already in census_postcode_data.
         self.logger.info(f"Grouping data by {census_col}")
-        data = self.census_data.data
+        data = self.scout_census.data
         grouped_data = data.groupby([census_col], sort=False)
 
         # create dataframe of all constant values, which happen to all be scout org hierachy related
@@ -235,11 +237,11 @@ class ScoutData(Base):
         # Given data on all sections, provides summary of all new sections, and
         # copes with the pre-2017 section reporting structure
         self.logger.info(f"Beginning new_section_history_summary for {years}")
-        new_section_ids = []
+        new_section_ids: List[dict] = []
 
         self.logger.info("Finding new Beaver, Cub and Scout Sections")
         # Iterate through Groups looking for new Sections
-        group_ids = self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]].drop_duplicates().dropna().to_list()
+        group_ids = self.scout_census.data[ScoutCensus.column_labels['id']["GROUP"]].drop_duplicates().dropna().to_list()
 
         # for each section in each group in the census
         # construct dict of {year: number of sections of that type open in that year}
@@ -247,16 +249,16 @@ class ScoutData(Base):
         # construct list of changes in number of sections per year
         # if there is an increase year on year
         # for each year from the second year calculate the change in the number of sections
-        # whatever happens with change
+        # hlt whatever happens with change
         # do the same for district sections (explorers)
         #
         #
-        #
+        # .
 
         for group_id in group_ids:
-            group_records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]] == group_id]
+            group_records = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['id']["GROUP"]] == group_id]
 
-            for section in self.census_data.get_section_names('Group'):
+            for section in self.scout_census.get_section_names('Group'):
                 units_by_year = {}
                 for year in years:
                     section_numbers_year = group_records.loc[group_records["Year"] == year, ScoutCensus.column_labels['sections'][section]["unit_label"]].sum()
@@ -297,10 +299,10 @@ class ScoutData(Base):
 
         self.logger.info("Finding new Explorer Sections")
         # Iterate through District looking for new Sections
-        district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].drop_duplicates().dropna().to_list()
+        district_ids = self.scout_census.data[ScoutCensus.column_labels['id']["DISTRICT"]].drop_duplicates().dropna().to_list()
 
         for district_id in district_ids:
-            district_records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == district_id]
+            district_records = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['id']["DISTRICT"]] == district_id]
             units_by_year = []
             for year in years:
                 district_records_year = district_records.loc[district_records["Year"] == year]
@@ -363,12 +365,12 @@ class ScoutData(Base):
             open_years = new_sections_id["years"]
             section = new_sections_id["section"]
 
-            if section in self.census_data.get_section_names('Group'):
-                records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]] == section_id]
+            if section in self.scout_census.get_section_names('Group'):
+                records = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['id']["GROUP"]] == section_id]
                 section_data["Group_ID"] = records[ScoutCensus.column_labels['id']["GROUP"]].unique()[0]
                 section_data["Group"] = records[ScoutCensus.column_labels['name']["GROUP"]].unique()[0]
-            elif section in self.census_data.get_section_names('District'):
-                records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == section_id]
+            elif section in self.scout_census.get_section_names('District'):
+                records = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['id']["DISTRICT"]] == section_id]
                 section_data["Group_ID"] = ""
                 section_data["Group"] = ""
             else:
@@ -450,10 +452,10 @@ class ScoutData(Base):
                 section_data["Section Name"] = section_records["name"].unique()[0]
             else:
                 if open_years[-1] < 2017:
-                    if section in self.census_data.get_section_names('Group'):
-                        section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
-                    elif section in self.census_data.get_section_names('District'):
-                        section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_DISTRICT]
+                    if section in self.scout_census.get_section_names('Group'):
+                        section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.scout_census.UNIT_LEVEL_GROUP]
+                    elif section in self.scout_census.get_section_names('District'):
+                        section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.scout_census.UNIT_LEVEL_DISTRICT]
                 elif open_years[-1] == 2017:
                     section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
                 else:
@@ -484,7 +486,7 @@ class ScoutData(Base):
                 most_recent = most_recent.iloc[0]
             elif most_recent.shape[0] == 0:
                 self.logger.warning("Inconsistent ids")
-                if section in self.census_data.get_section_names('Group'):
+                if section in self.scout_census.get_section_names('Group'):
                     # In the event that the Object_IDs aren't consistent, pick a section in the group that's most recent
                     # is only applicable after 2017, so sections are assumed to exist.
                     most_recent = records.loc[
@@ -492,7 +494,7 @@ class ScoutData(Base):
                         records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"] &
                         records["Year"] == most_recent_year
                         ].iloc[0]
-                elif section in self.census_data.get_section_names('District'):
+                elif section in self.scout_census.get_section_names('District'):
                     most_recent = records.loc[
                         records[ScoutCensus.column_labels['id']["DISTRICT"]] == section_data["District_ID"] &
                         records[ScoutCensus.column_labels['UNIT_TYPE']] == section &

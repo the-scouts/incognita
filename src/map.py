@@ -6,13 +6,14 @@ import geopandas as gpd
 import numpy as np
 
 import src.utility as utility
+from scout_data import ScoutData
 from src.base import Base
 from src.map_plotter import MapPlotter
 from src.scout_census import ScoutCensus
 
 
 class Map(Base):
-    def __init__(self, scout_data_object, boundary_object, dimension, map_name, **kwargs):
+    def __init__(self, scout_data_object: ScoutData, boundary_object, dimension, map_name, **kwargs):
         super().__init__(settings=True)
 
         self.map_plotter = None
@@ -20,7 +21,7 @@ class Map(Base):
         # Can be set by set_region_of_colour
         self.region_of_colour = None
 
-        self.census_data = scout_data_object.census_data
+        self.scout_census = scout_data_object.scout_census
         self.ons_pd = scout_data_object.ons_pd
 
         self.create_map(dimension, map_name, boundary_object, kwargs)
@@ -28,7 +29,7 @@ class Map(Base):
     def create_map(self, dimension, map_name, boundary_object, static_scale=None, cluster_markers=False):
         """
 
-        :param dimension: dict of column of CensusData dataframe and labels for tooltip and key/legend
+        :param dimension: dict of column of ScoutCensus dataframe and labels for tooltip and key/legend
         :param map_name:
         :param boundary_object:
         :param static_scale:
@@ -100,7 +101,7 @@ class Map(Base):
         """
         self.logger.info("Adding section markers to map")
 
-        valid_points = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
+        valid_points = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Sets the map so it opens in the right area
         self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
@@ -124,8 +125,8 @@ class Map(Base):
             self.logger.debug(postcode)
             # Find all the sections with the same postcode
             colocated_sections = sections.loc[sections[ScoutCensus.column_labels['POSTCODE']] == postcode]
-            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('District'))]
-            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.census_data.get_section_type('Group'))]
+            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.scout_census.get_section_type('District'))]
+            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.scout_census.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
@@ -162,7 +163,7 @@ class Map(Base):
                 html += (f"<h3 align=\"center\">{group_name}</h3><p align=\"center\">"
                          f"<br>")
                 for section_id in colocated_in_group.index:
-                    # district_id = colocated_in_group.at[section_id, CensusData.column_labels['id']["DISTRICT"]]
+                    # district_id = colocated_in_group.at[section_id, ScoutCensus.column_labels['id']["DISTRICT"]]
                     unit_type = colocated_in_group.at[section_id, ScoutCensus.column_labels['UNIT_TYPE']]
                     section = utility.section_from_type(unit_type)
                     name = colocated_in_group.at[section_id, 'name']
@@ -186,8 +187,8 @@ class Map(Base):
                 height = 120
             else:
                 height = 240
-            del height
-            iframe = folium.IFrame(html=html, width=350, height=100)
+            del height  # hlt only to get rid of warning re not used
+            iframe = folium.IFrame(html=html, width=350, height=100)  # hlt problem is here - height = 100
             popup = folium.Popup(iframe, max_width=2650)
 
             if isinstance(colour, dict):
@@ -222,7 +223,7 @@ class Map(Base):
             - awards
         :param str single_section: One of Beavers, Cubs, Scouts, Explorers, Network
         """
-        data: pd.DataFrame = self.census_data.data
+        data: pd.DataFrame = self.scout_census.data
         unit_type_label = ScoutCensus.column_labels['UNIT_TYPE']
 
         if single_section:
@@ -234,7 +235,7 @@ class Map(Base):
             latest_year_records = data.loc[data["Year"] == max_year]
 
             filtered_data = latest_year_records
-            section_types = self.census_data.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
+            section_types = self.scout_census.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
 
         self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data)
 
@@ -296,7 +297,7 @@ class Map(Base):
     def district_colour_mapping(self):
         colours = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple',
                          'lightgrayblack', 'orange', 'pink', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
-        district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
+        district_ids = self.scout_census.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
         mapping = {district_id: next(colours) for district_id in district_ids}
         colour_mapping = {"census_column": ScoutCensus.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping
