@@ -2,7 +2,7 @@ import json
 import time
 from types import FunctionType
 
-import log_util
+from src.log_util import duration, create_logger, get_logger
 from functools import wraps
 
 
@@ -19,7 +19,7 @@ def wrapper(method):
             output = method(self, *args, **kwargs)
 
             try:
-                self.logger.info(f"{method.__name__} took {log_util.duration(start_time):.2f} seconds")
+                self.logger.info(f"{method.__name__} took {duration(start_time):.2f} seconds")
             except AttributeError:
                 pass
 
@@ -57,9 +57,9 @@ class Base(metaclass=BaseMeta):
         # Facilitates logging
         if log_path:
             # if a logger already exists for script
-            self.logger = log_util.create_logger('log', log_path)
+            self.logger = create_logger('log', log_path)
         else:
-            self.logger = log_util.get_logger('log')
+            self.logger = get_logger('log')
 
     def close(self, start_time=None):
         """Outputs the duration of the programme """

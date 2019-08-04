@@ -6,7 +6,7 @@ import geopandas as gpd
 import numpy as np
 
 import src.utility as utility
-from scout_data import ScoutData
+from src.scout_data import ScoutData
 from src.base import Base
 from src.map_plotter import MapPlotter
 from src.scout_census import ScoutCensus
@@ -24,7 +24,7 @@ class Map(Base):
         self.scout_census = scout_data_object.scout_census
         self.ons_pd = scout_data_object.ons_pd
 
-        self.create_map(dimension, map_name, boundary_object, kwargs)
+        self.create_map(dimension, map_name, boundary_object, **kwargs)
 
     def create_map(self, dimension, map_name, boundary_object, static_scale=None, cluster_markers=False):
         """
@@ -207,7 +207,7 @@ class Map(Base):
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
             self.map_plotter.add_marker(lat, long, popup, marker_colour)
 
-    def add_sections_to_map(self, colour, marker_data, single_section=False):
+    def add_sections_to_map(self, colour, marker_data, single_section=None):
         """Filter sections and add to map.
 
         If a single section is specified, plots that section onto the map in
