@@ -13,7 +13,7 @@ from src.map import Map
 
 if __name__ == "__main__":
     scout_data = ScoutData()
-    # scout_data.filter_records("postcode_is_valid", ["1"])
+    # scout_data.filter_records("postcode_is_valid", [1])
     scout_data.filter_records("Year", [2019])
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
     scout_data.filter_records("D_ID", [10001886, 10001334, 10001332], mask=True)

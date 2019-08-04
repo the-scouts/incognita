@@ -249,7 +249,7 @@ class ScoutData(Base):
         # construct list of changes in number of sections per year
         # if there is an increase year on year
         # for each year from the second year calculate the change in the number of sections
-        # hlt whatever happens with change
+        # whatever happens with change
         # do the same for district sections (explorers)
         #
         #
@@ -443,7 +443,7 @@ class ScoutData(Base):
                 else:
                     section_data[f"{year}_Est_Members"] = 0
 
-            section_data[f"{years[0]}_sections"] = new_sections_id["nu_sections"][years[0]]  # hlt this
+            section_data[f"{years[0]}_sections"] = new_sections_id["nu_sections"][years[0]]
 
             section_records = None
 

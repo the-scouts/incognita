@@ -187,8 +187,8 @@ class Map(Base):
                 height = 120
             else:
                 height = 240
-            del height  # hlt only to get rid of warning re not used
-            iframe = folium.IFrame(html=html, width=350, height=100)  # hlt problem is here - height = 100
+            del height  # only to get rid of IDE warning re not used
+            iframe = folium.IFrame(html=html, width=350, height=100)
             popup = folium.Popup(iframe, max_width=2650)
 
             if isinstance(colour, dict):

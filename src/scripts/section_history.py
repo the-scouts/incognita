@@ -1,7 +1,6 @@
 from src.scout_data import ScoutData
 
 if __name__ == "__main__":
-    #hlt this doesn't make sense as sections only recorded posst 2016?
     years = [2014, 2015, 2016, 2017, 2018, 2019]
 
     scout_data = ScoutData()
