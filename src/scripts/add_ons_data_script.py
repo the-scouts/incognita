@@ -6,15 +6,14 @@ Directory published in May 2018.
 This script has no command line options.
 """
 
-from src.script_handler import ScriptHandler
-from src.scout_map import ScoutMap
-from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.scout_data import ScoutData
+from ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import json
 
 if __name__ == "__main__":
+    scout_data = ScoutData(csv_has_ons_pd_data=False)
 
-    script_handler = ScriptHandler(csv_has_ons_data=False)
     with open("settings.json", "r") as read_file:
         settings = json.load(read_file)["settings"]
-    ons_data = ONSPostcodeDirectoryMay19(settings["ONS PD location"])
-    script_handler.run(ScoutMap.merge_ons_postcode_directory, [ons_data])
+    ons_pd = ONSPostcodeDirectoryMay19(settings["ONS PD location"])
+    scout_data.merge_ons_postcode_directory(ons_pd)

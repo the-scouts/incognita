@@ -1,10 +1,9 @@
-from src.script_handler import ScriptHandler
-from src.scout_map import ScoutMap
+from src.scout_data import ScoutData
 
 if __name__ == "__main__":
+    scout_data = ScoutData()
 
-    script_handler = ScriptHandler()
-    script_handler.run(ScoutMap.filter_records, ["X_name",["England", "Scotland","Wales","Northern Ireland"]])
-    script_handler.run(ScoutMap.add_IMD_decile)
-    script_handler.run(ScoutMap.filter_records, ["Year", "2019"])
-    script_handler.close()
+    scout_data.filter_records("X_name", ["England", "Scotland", "Wales", "Northern Ireland"])
+    scout_data.filter_records("Year", [2019])
+    scout_data.add_imd_decile()
+    # scout_data.close()
