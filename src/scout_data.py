@@ -36,7 +36,7 @@ class ScoutData(Base):
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
-            self.logger.finished(f"Loading ONS data from {self.ons_pd.PUBLICATION_DATE}", start_time=start_time)
+            self.logger.finished(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data ", start_time=start_time)
 
     def merge_ons_postcode_directory(self, ons_postcode_directory):
         """Merges ScoutCensus object with ONSPostcodeDirectory object and outputs to csv
