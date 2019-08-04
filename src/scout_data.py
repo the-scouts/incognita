@@ -113,156 +113,125 @@ class ScoutData(Base):
         self.census_data.data["imd_decile"] = utility.calc_imd_decile(self.census_data.data["imd"], self.census_data.data["ctry"], self.ons_pd)
         return self.census_data.data
 
-                excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
-                self.logger.debug(f"Excluded sections\n{excluded_sections}")
-                self.logger.debug(f"Finding number of excluded {section} by summing {section_dict['male']} and {section_dict['female']}")
-                excluded_members = excluded_sections[section_dict["male"]].sum() + excluded_sections[section_dict["female"]].sum()
-                self.logger.debug(f"{excluded_members} {section} excluded")
-
-                sections = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
-                counted_members = sections[section_dict["male"]].sum() + sections[section_dict["female"]].sum()
-
-                original_members = counted_members + excluded_members
-
-                if original_members > 0:
-                    self.logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
-                else:
-                    self.logger.info(f"There are no {section} members present in data")
-
-    def create_section_maps(self, output_file_name, static_scale, value_type="Percentages", cluster_markers=False):
-        min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
-        if min_year != max_year:
-            self.logger.warning(f"Only using latest year {max_year} to create map")
-
-        for section_label in ScoutMap.SECTIONS.keys():
-            section = ScoutMap.SECTIONS[section_label]
-            if value_type == "Numbers":
-                self.create_map(f"{section_label}-{max_year}", section_label, output_file_name + "_" + section_label, f"Number of {section_label} in {max_year}", static_scale, cluster_markers)
-            elif value_type == "Percentages":
-                self.create_map(f"%-{section_label}-{max_year}", section_label, output_file_name + "_" + section_label, f"% uptake of {section_label} in {max_year}", static_scale, cluster_markers)
-            self.add_single_section_to_map(section_label, self.district_color_mapping(), ["youth membership"])
-            self.save_map()
-
-    def create_6_to_17_map(self, output_file_name, static_scale, value_type="Percentages"):
-        min_year, max_year = ScoutMap.years_of_return(self.census_data.data)
-        if min_year != max_year:
-            self.logger.warning(f"Only using latest year {max_year} to create map")
-
-        if value_type == "Percentages":
-            self.create_map(f"%-All-{max_year}", "% 6-17 Uptake", output_file_name, "% 6-17 Uptake", static_scale)
-        elif value_type == "Numbers":
-            self.create_map(f"All-{max_year}", "Under 18s", output_file_name, "Number of Scouts aged 6 to 17", static_scale)
-
-        self.add_all_sections_to_map(self.district_color_mapping(), ["youth membership"])
-        self.save_map()
-
-    @staticmethod
-    def section_from_type(type):
-        for section in ScoutCensus.column_labels['sections'].keys():
-            if type == ScoutCensus.column_labels['sections'][section]["type"]:
-                return section
-
-    def group_history_summary(self, years):
+    def group_history_summary(self, years, report_name=None):
         self.logger.info("Beginning group_history_summary")
-        return self.history_summary(years, "Group ID", ScoutCensus.column_labels['id']["GROUP"])
+        report = self.history_summary(years, "Group ID", ScoutCensus.column_labels['id']["GROUP"], unit_type="Group")
+        if report_name:
+            utility.save_report(report, self.settings["Output folder"], report_name, logger=self.logger)
+        return report
 
-    def section_history_summary(self, years):
+    def section_history_summary(self, years, report_name=None):
         # Works effectively for years after 2017
         self.logger.info("Beginning section_history_summary")
-        return self.history_summary(years, "compass ID", "compass")
+        report = self.history_summary(years, "compass ID", "compass")
+        if report_name:
+            utility.save_report(report, self.settings["Output folder"], report_name, logger=self.logger)
+        return report
 
-    def history_summary(self, years, id_name, census_col):
+    def history_summary(self, years, id_name, census_col, unit_type=None):
+        sections_dict = ScoutCensus.column_labels['sections']
+
         # Must have imd scores and deciles already in census_postcode_data.
-        section_numbers = []
+        self.logger.info(f"Grouping data by {census_col}")
+        data = self.census_data.data
+        grouped_data = data.groupby([census_col], sort=False)
+
+        # create dataframe of all constant values, which happen to all be scout org hierachy related
+        self.logger.info(f"Creating table of Scout organisational data")
+        scout_org_cols = [
+            census_col,
+            ScoutCensus.column_labels['UNIT_TYPE'],
+            ScoutCensus.column_labels['name']["GROUP"],
+            ScoutCensus.column_labels['name']["DISTRICT"],
+            ScoutCensus.column_labels['name']["COUNTY"],
+            ScoutCensus.column_labels['name']["REGION"],
+            ScoutCensus.column_labels['name']["COUNTRY"]
+        ]
+        scout_org_data = grouped_data[scout_org_cols].first()
+
+        # if unit_types is set the series should be overwritten with that value
+        # this is for manually overwriting the unit type
+        if unit_type:
+            scout_org_data[ScoutCensus.column_labels['UNIT_TYPE']] = unit_type
+
+        self.logger.info(f"Finding opening and closing years")
+        # Takes the year column from the grouped_data object resulting in a SeriesGroupBy
+        # Applies the years_of_return method to get max and min years for each series in the object
+        # Applies to a Series, unpacking the returned tuples to individual series
+        # Casts to an object dtype as later we introduce text.
+        years_return = grouped_data["Year"]\
+            .agg(lambda df: utility.years_of_return(df))\
+            .apply(pd.Series)\
+            .astype(object)
+
+        # If open in the first year of data or last year of data, add an explanatory note that the limits are not certain
+        years_return[0] = years_return[0].mask(years_return[0] == years[0], f"{years[0]} or before")
+        years_return[1] = years_return[1].mask(years_return[1] == years[-1], f"Open in {years[-1]}")
+        years_return.columns = ["min_year", "max_year"]
+
+        # for each dataframe in the groupby object, find the lowest IMD rank from the latest year, and return
+        # values associated with that rank. This requires IMD decile to have been added beforehand
+        imd_cols = ["clean_postcode", "ctry", "imd", "imd_decile"]
+
+        def imd_groupby(df: pd.DataFrame):
+            # To find the postcode and IMD for a range of Sections and Group records across several years.
+            # Find the most recent year, and then choose the Postcode with the lowest IMD Rank.
+            most_recent_year = df["Year"].max()
+            df["imd"] = df["imd"].where(df["imd"] > 0)  # Only keep values where IMD rank is greater than 0
+            most_recent_records = df[df["Year"] == most_recent_year]  # The latest year of records
+            min_imd_records = most_recent_records.nsmallest(1, "imd")  # get smallest imd rank
+            return min_imd_records[imd_cols]
+
+        # per year open, record the total young people per section and the number of adults
+        # uses a nested groupby for efficiency
+        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys() if section != "Explorers"}
+        adult_cols = ["Leaders", "SectAssistants", "OtherAdults"]
+
+        def year_groupby(df):
+            dicts: pd.Series = df.groupby(['Year'], sort=True).apply(section_groupby).to_list()
+            output = {}
+            for row in dicts:
+                output = {**output, **row}
+            return output
+
+        def section_groupby(df):
+            census_year = df.name
+            output = {}
+            for section, cols in section_cols.items():
+                output[f"{section}-{census_year}"] = df[cols].to_numpy().sum()
+            output[f"Adults-{census_year}"] = df[adult_cols].to_numpy().sum()
+            return output
+
+        # For each year, calculate and add number of beavers, cubs, scouts.  Explorers deliberately omitted.
+        # Expand series of dictionaries to a dataframe with the same index
+        self.logger.info(f"Creating table of members by section and adults by year")
+        member_numbers_table = grouped_data.apply(year_groupby)
+        member_numbers_table = pd.DataFrame(member_numbers_table.to_list(), index=member_numbers_table.index)
+
+        # apply the imd function and map country codes to country names
+        self.logger.info(f"Creating table of IMD data and postcodes")
+        imd_table = grouped_data.apply(imd_groupby).droplevel(1)
+        imd_table["IMD Country"] = imd_table["ctry"].map(self.ons_pd.COUNTRY_CODES)
+
+        column_renaming = {
+            census_col: id_name, 'type': 'Type', 'G_name': 'Group', 'D_name': 'District', 'C_name': 'County', 'R_name': 'Region', 'X_name': 'Scout Country',
+            'clean_postcode': 'Postcode', 'imd': 'IMD Rank', 'imd_decile': 'IMD Decile',
+            'min_year': 'First Year', 'max_year': 'Last Year', }
+
+        self.logger.info(f"Merging tables and conforming columns")
+        history_summary_data = scout_org_data.join([imd_table, years_return, member_numbers_table])\
+            .rename(columns=column_renaming)\
+            .reset_index(drop=True)
+
+        # create output columns list and add generated section names
+        output_columns = [id_name, "Type", "Group", "District", "County", "Region", "Scout Country", "Postcode", "IMD Country", "IMD Rank", "IMD Decile", "First Year", "Last Year"]
         for year in years:
-            for section in ScoutCensus.column_labels['sections'].keys():
-                if section != "Explorers":
-                    section_numbers.append(section + "-" + year)
-            section_numbers.append("Adults-" + year)
+            output_columns.extend([f"{section}-{year}" for section in sections_dict.keys() if section != "Explorers"])
+            output_columns.append(f"Adults-{year}")
 
-        output_columns = [id_name, "Type", "Group", "District", "County", "Region", "Scout Country", "Postcode", "IMD Country", "IMD Rank", "IMD Decile", "First Year", "Last Year"] + section_numbers
-        output_data = pd.DataFrame(columns=output_columns)
-        # find the list groups, by applying unique to group_id col
-        group_list = self.census_data.data[census_col].unique()
-        self.census_data.data["imd"] = pd.to_numeric(self.census_data.data["imd"], errors='coerce')
-        group_list = [group for group in group_list if str(group) != "nan"]
+        return pd.DataFrame(history_summary_data, columns=output_columns)
 
-        self.logger.info(f"Producing summary of {len(group_list)}")
-
-        increment = len(group_list) / 100
-        old_percentage = 0
-        for index, group in enumerate(group_list):
-            new_percentage = index // increment
-            if new_percentage > old_percentage:
-                self.logger.info("% completion = " + str(index // increment))
-                old_percentage = new_percentage
-            self.logger.debug(group)
-            group_data = {}
-            # find records in group
-            group_records = self.census_data.data[self.census_data.data[census_col] == group]
-            first_year, last_year = self.years_of_return(group_records)
-            if str(first_year) == years[0]:
-                group_data["First Year"] = years[0] + " or before"
-            else:
-                group_data["First Year"] = str(first_year)
-            if str(last_year) == years[-1]:
-                group_data["Last Year"] = "Open in " + years[-1]
-            else:
-                group_data["Last Year"] = str(last_year)
-
-            group_data[id_name] = group
-            group_data["Type"] = group_records[ScoutCensus.column_labels['UNIT_TYPE']].unique()[0]
-            group_data["Group"] = group_records[ScoutCensus.column_labels['name']["GROUP"]].unique()[0]
-            # As district, region and county must be the same for all sections
-            # in a Group - just get the first one.
-            group_data["District"] = group_records[ScoutCensus.column_labels['name']["DISTRICT"]].unique()[0]
-            group_data["County"] = group_records["C_name"].unique()[0]
-            group_data["Region"] = group_records["R_name"].unique()[0]
-            group_data["Scout Country"] = group_records["X_name"].unique()[0]
-
-            # For each year, calculate and add number of beavers, cubs, scouts.
-            # Explorers deliberately omitted.
-            for year in years:
-                group_records_year = group_records.loc[group_records["Year"] == year]
-                for section in ScoutCensus.column_labels['sections'].keys():
-                    if section != "Explorers":
-                        group_data[section + "-" + year] = group_records_year[ScoutCensus.column_labels['sections'][section]["male"]].sum() + group_records_year[ScoutCensus.column_labels['sections'][section]["female"]].sum()
-                group_data["Adults-" + year] = group_records_year["Leaders"].sum() + group_records_year["SectAssistants"].sum() + group_records_year["OtherAdults"].sum()
-
-            # To find the postcode and IMD for a range of Sections and Group
-            # records across several years. Find the most recent year, and then
-            # choose the Postcode, where the IMD Rank is the lowest.
-            most_recent_year = str(last_year)
-            group_records_most_recent = group_records.loc[group_records["Year"] == most_recent_year]
-            min_imd_rank = group_records_most_recent["imd"].min()
-            min_imd_records = group_records_most_recent.loc[group_records_most_recent["imd"] == min_imd_rank]
-            # add postcode
-            if min_imd_records.empty:
-                group_records_with_postcode = group_records.loc[group_records["lat"] != "error"]
-                min_imd_rank = group_records_with_postcode["imd"].min()
-                min_imd_records = group_records_with_postcode.loc[group_records_with_postcode["imd"] == min_imd_rank]
-
-                if min_imd_records.empty:
-                    min_imd_records = group_records
-
-            group_data["Postcode"] = min_imd_records[ScoutCensus.column_labels['POSTCODE']].unique()[0]
-            country = self.ons_data.COUNTRY_CODES.get(min_imd_records["ctry"].unique()[0])
-            if country:
-                group_data["IMD Country"] = country
-            else:
-                group_data["IMD Country"] = ScoutCensus.DEFAULT_VALUE
-            # add IMD rank and score and decile
-            # group_data["IMD Score"] = min_imd_records["imd_score"].unique()[0]
-            group_data["IMD Decile"] = min_imd_records["imd_decile"].unique()[0]
-            group_data["IMD Rank"] = min_imd_rank
-            # output_data.append(group_data, ignore_index=True)
-            group_data_df = pd.DataFrame([group_data], columns=output_columns)
-            output_data = pd.concat([output_data, group_data_df], axis=0, sort=False)
-
-        output_data.reset_index(drop=True, inplace=True)
-        return output_data
-
-    def new_section_history_summary(self, years):
+    def new_section_history_summary(self, years, report_name=None):
         # Given data on all sections, provides summary of all new sections, and
         # copes with the pre-2017 section reporting structure
         self.logger.info(f"Beginning new_section_history_summary for {years}")
@@ -270,36 +239,44 @@ class ScoutData(Base):
 
         self.logger.info("Finding new Beaver, Cub and Scout Sections")
         # Iterate through Groups looking for new Sections
-        group_ids = self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]].unique()
-        group_ids = [str(x).strip() for x in group_ids]
-        if "nan" in group_ids:
-            group_ids.remove("nan")
+        group_ids = self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]].drop_duplicates().dropna().to_list()
+
+        # for each section in each group in the census
+        # construct dict of {year: number of sections of that type open in that year}
+        # construct list of number of sections of that type open in that year
+        # construct list of changes in number of sections per year
+        # if there is an increase year on year
+        # for each year from the second year calculate the change in the number of sections
+        # whatever happens with change
+        # do the same for district sections (explorers)
+        #
+        #
+        #
 
         for group_id in group_ids:
             group_records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["GROUP"]] == group_id]
 
             for section in self.census_data.get_section_names('Group'):
-                nu_sections = []
+                units_by_year = {}
                 for year in years:
-                    group_records_year = group_records.loc[group_records["Year"] == year]
-                    nu_sections.append(group_records_year[ScoutCensus.column_labels['sections'][section]["unit_label"]].sum())
-            #    if self.has_increase(nu_sections):
-                increments = [nu_sections[ii + 1] - nu_sections[ii] for ii in range(len(nu_sections) - 1)]
-                nu_sections_by_year = dict(zip(years, nu_sections))
+                    section_numbers_year = group_records.loc[group_records["Year"] == year, ScoutCensus.column_labels['sections'][section]["unit_label"]].sum()
+                    units_by_year[year] = section_numbers_year
+
+                increments = [units_by_year[year + 1] - units_by_year[year] for year in units_by_year.keys() if (year + 1) in units_by_year]
                 if max(increments) > 0:
-                    self.logger.debug(f"Identified year profile of sections: {nu_sections_by_year}")
+                    self.logger.debug(f"Identified year profile of sections: {units_by_year}")
                     opened_sections = []
                     closed_sections = []
                     for year in years[1:]:
-                        change = nu_sections_by_year[year] - nu_sections_by_year[str(int(year)-1)]
+                        change = units_by_year[year] - units_by_year[year - 1]
                         if change > 0:
                             # Extent life of current sections
                             for open_sections in opened_sections:
                                 open_sections["years"].append(year)
                             # Create new section record
                             for ii in range(change):
-                                self.logger.debug(f"New {section} found for {group_id} in {year}")
-                                opened_sections.append({"id": group_id, "section": section, "years": [year], "nu_sections": nu_sections_by_year})
+                                self.logger.debug(f"New {section} section found for {group_id} in {year}")
+                                opened_sections.append({"id": group_id, "section": section, "years": [year], "nu_sections": units_by_year})
                         elif change == 0:
                             # Lengthens all sections by a year
                             for open_sections in opened_sections:
@@ -320,32 +297,29 @@ class ScoutData(Base):
 
         self.logger.info("Finding new Explorer Sections")
         # Iterate through District looking for new Sections
-        district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
-        district_ids = [str(x).strip() for x in district_ids]
-        if "nan" in district_ids:
-            district_ids.remove("nan")
+        district_ids = self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].drop_duplicates().dropna().to_list()
 
         for district_id in district_ids:
             district_records = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == district_id]
-            nu_sections = []
+            units_by_year = []
             for year in years:
                 district_records_year = district_records.loc[district_records["Year"] == year]
-                nu_sections.append(district_records_year[ScoutCensus.column_labels['sections']["Explorers"]["unit_label"]].sum())
+                units_by_year.append(district_records_year[ScoutCensus.column_labels['sections']["Explorers"]["unit_label"]].sum())
 
-            increments = [nu_sections[ii + 1] - nu_sections[ii] for ii in range(len(nu_sections) - 1)]
-            nu_sections_by_year = dict(zip(years, nu_sections))
+            increments = [units_by_year[ii + 1] - units_by_year[ii] for ii in range(len(units_by_year) - 1)]
+            units_by_year = dict(zip(years, units_by_year))
             if max(increments) > 0:
                 opened_sections = []
                 closed_sections = []
                 for year in years[1:]:
-                    change = nu_sections_by_year[year] - nu_sections_by_year[str(int(year)-1)]
+                    change = units_by_year[year] - units_by_year[year - 1]
                     if change > 0:
                         # Extent life of current sections
                         for open_sections in opened_sections:
                             open_sections["years"].append(year)
                         # Create new section record
                         for ii in range(change):
-                            opened_sections.append({"id": district_id, "section": "Explorers", "years": [year], "nu_sections": nu_sections_by_year})
+                            opened_sections.append({"id": district_id, "section": "Explorers", "years": [year], "nu_sections": units_by_year})
                     elif change == 0:
                         # Lengthens all sections by a year
                         for open_sections in opened_sections:
@@ -364,19 +338,22 @@ class ScoutData(Base):
 
         section_details = []
         for year in years:
-            # section_details.append(year + "_Units")
-            if int(year) >= 2018:
-                section_details.append(year + "_Members")
+            if year < 2017:
+                section_details.append(f"{year}_Est_Members")
             else:
-                section_details.append(year + "_Est_Members")
+                section_details.append(f"{year}_Members")
 
-        output_columns = ["Object_ID", "Section Name", "Section", "Group_ID", "Group", "District_ID", "District", "County", "Region", "Scout Country", "Postcode", "IMD Country", "IMD Rank", "IMD Decile", "First Year", "Last Year", years[0] + "_sections"] + section_details
+        output_columns = ["Object_ID", "Section Name", "Section", "Group_ID", "Group", "District_ID", "District",
+                          "County", "Region", "Scout Country",
+                          "Postcode", "IMD Country", "IMD Rank", "IMD Decile",
+                          "First Year", "Last Year", f"{years[0]}_sections"] + section_details
         output_data = pd.DataFrame(columns=output_columns)
 
         self.logger.info(f"Start iteration through {len(new_section_ids)} new Sections")
         used_compass_ids = set()
         count = 0
         total = len(new_section_ids)
+        new_sections_id: dict
         for new_sections_id in new_section_ids:
             section_data = {}
             self.logger.debug(f"Recording {new_sections_id}")
@@ -398,98 +375,86 @@ class ScoutData(Base):
                 raise Exception(f"{section} neither belongs to a Group or District. id = {new_sections_id}")
 
             for year in open_years:
+                members_cols = [ScoutCensus.column_labels['sections'][section]["male"], ScoutCensus.column_labels['sections'][section]["female"]]
                 year_records = records.loc[records["Year"] == year]
-                if int(year) >= 2018:
+                if year >= 2017:
                     compass_id = section_data.get("Object_ID")
                     section_year_records = year_records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
 
                     if compass_id:
                         section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                        section_data[year + "_Members"] = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum() + section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
+                        section_data[f"{year}_Members"] = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum() + section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
                     else:
-                        section_year_ids = section_year_records["Object_ID"].unique()
-                        if int(open_years[0]) >= 2018:
+                        section_year_ids: pd.Series = section_year_records["Object_ID"].drop_duplicates()
+                        if open_years[0] >= 2017:
                             # If section became open after 31st January 2017 then can identify by Object_ID id
-                            last_year_records = records.loc[records["Year"] == str(int(year) - 1)]
+                            last_year_records = records.loc[records["Year"] == (year - 1)]
                             old_section_ids = last_year_records["Object_ID"].unique()
-                            opened_section_ids = [section_id for section_id in section_year_ids if section_id not in old_section_ids]
+                            opened_section_ids = section_year_ids[~section_year_ids.isin(old_section_ids)]
                             if len(opened_section_ids) > 1:
                                 self.logger.info(f"{len(opened_section_ids)} sections opened")
-                                temp_compass_id = opened_section_ids[0]
-                                ii = 0
-                                continue_search = True
-                                while (temp_compass_id in used_compass_ids) and continue_search:
-                                    if ii < len(opened_section_ids):
-                                        temp_compass_id = opened_section_ids[ii]
-                                        ii += 1
-                                    else:
-                                        continue_search = False
-                                compass_id = temp_compass_id
+                                unused_ids = opened_section_ids[~opened_section_ids.isin(used_compass_ids)]
+                                compass_id = unused_ids.iloc[0] if unused_ids else opened_section_ids.iloc[-1]
                             elif len(opened_section_ids) == 0:
-                                self.logger.error(f"No sections opened\n{year}: {section_year_ids}\n{int(year)-1}: {old_section_ids}")
+                                self.logger.error(f"No sections opened\n{year}: {section_year_ids}\n{year-1}: {old_section_ids}")
                             elif len(opened_section_ids) == 1:
-                                compass_id = opened_section_ids[0]
+                                compass_id = opened_section_ids.iloc[0]
                                 self.logger.debug(f"Assigned id: {compass_id}")
 
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
-                            section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                            section_data[year + "_Members"] = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum() + section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
+                            section_data[f"{year}_Members"] = section_year_records.loc[section_year_records["Object_ID"] == compass_id, members_cols].to_numpy().sum()
                         else:
-                            compass_id = max(section_year_ids)
+                            compass_id = section_year_ids.max()
+
                             if compass_id in used_compass_ids:
-                                section_year_ids.sort()
-                                ii = 0
-                                while compass_id in used_compass_ids:
-                                    compass_id = section_year_ids[-ii]
-                                    ii += 1
+                                section_year_ids.sort_values(ascending=False)
+                                unused_ids = section_year_ids[~section_year_ids.isin(used_compass_ids)]
+                                compass_id = unused_ids.iloc[0]
+
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
-                            section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                            male_members = section_record[ScoutCensus.column_labels['sections'][section]["male"]].sum()
-                            female_members = section_record[ScoutCensus.column_labels['sections'][section]["female"]].sum()
-                            self.logger.debug(f"{section} in {section_id} in {year} found {male_members + female_members} members")
-                            section_data[year + "_Members"] = male_members + female_members
+                            total_members = section_year_records.loc[section_year_records["Object_ID"] == compass_id, members_cols].to_numpy().sum()
+
+                            self.logger.debug(f"{section} in {section_id} in {year} found {total_members} members")
+                            section_data[f"{year}_Members"] = total_members
                 else:
-                    year_before_section_opened = str(int(open_years[0])-1)
+                    year_before_section_opened = open_years[0] - 1
                     year_before_records = records.loc[records["Year"] == year_before_section_opened]
 
                     number_of_new_sections = new_sections_id["nu_sections"][open_years[0]] - new_sections_id["nu_sections"][year_before_section_opened]
 
-                    old_male_members = year_before_records[ScoutCensus.column_labels['sections'][section]["male"]].sum()
-                    old_female_members = year_before_records[ScoutCensus.column_labels['sections'][section]["female"]].sum()
-                    old_members = old_male_members + old_female_members
-
-                    new_male_members = year_records[ScoutCensus.column_labels['sections'][section]["male"]].sum()
-                    new_female_members = year_records[ScoutCensus.column_labels['sections'][section]["female"]].sum()
-                    new_members = new_male_members + new_female_members
+                    new_members = year_records[members_cols].to_numpy().sum()
+                    old_members = year_before_records[members_cols].to_numpy().sum()
 
                     additional_members = (new_members - old_members) / number_of_new_sections
                     if additional_members < 0:
                         self.logger.warning(f"{section_id} increased number of {section} sections but membership decreased by {additional_members}")
 
                     self.logger.debug(f"{section} in {section_id} in {year} found {additional_members} members")
-                    section_data[year + "_Est_Members"] = additional_members
+                    section_data[f"{year}_Est_Members"] = additional_members
 
             closed_years = [year for year in years if year not in open_years]
             for year in closed_years:
-                if int(year) >= 2018:
-                    section_data[year + "_Members"] = 0
+                if year >= 2017:
+                    section_data[f"{year}_Members"] = 0
                 else:
-                    section_data[year + "_Est_Members"] = 0
+                    section_data[f"{year}_Est_Members"] = 0
 
-            section_data[years[0] + "_sections"] = new_sections_id["nu_sections"][years[0]]
+            section_data[f"{years[0]}_sections"] = new_sections_id["nu_sections"][years[0]]  # hlt this
+
+            section_records = None
 
             if section_data.get("Object_ID"):
                 section_records = records.loc[records["Object_ID"] == section_data.get("Object_ID")]
                 section_data["Section Name"] = section_records["name"].unique()[0]
             else:
-                if int(open_years[-1]) < 2017:
+                if open_years[-1] < 2017:
                     if section in self.census_data.get_section_names('Group'):
                         section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
                     elif section in self.census_data.get_section_names('District'):
                         section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_DISTRICT]
-                elif int(open_years[-1]) == 2017:
+                elif open_years[-1] == 2017:
                     section_records = records.loc[records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
                 else:
                     raise Exception(f"Unable to find section records for {new_section_ids}")
@@ -502,11 +467,11 @@ class ScoutData(Base):
             section_data["Scout Country"] = section_records["X_name"].unique()[0]
 
             if open_years[0] == years[0]:
-                section_data["First Year"] = years[0] + " or before"
+                section_data["First Year"] = f"{years[0]} or before"
             else:
                 section_data["First Year"] = open_years[0]
             if open_years[-1] == years[-1]:
-                section_data["Last Year"] = "Open in " + years[-1]
+                section_data["Last Year"] = f"Open in {years[-1]}"
             else:
                 section_data["Last Year"] = open_years[-1]
 
@@ -522,33 +487,29 @@ class ScoutData(Base):
                 if section in self.census_data.get_section_names('Group'):
                     # In the event that the Object_IDs aren't consistent, pick a section in the group that's most recent
                     # is only applicable after 2017, so sections are assumed to exist.
-                    self.logger.debug(f"There are {records.shape[0]} group records")
-                    group_sections = records.loc[records[ScoutCensus.column_labels['id']["GROUP"]] == section_data["Group_ID"]]
-                    self.logger.debug(f"There are {group_sections.shape[0]} group records")
-                    section_rec = group_sections.loc[group_sections[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]]
-                    self.logger.debug(f"There are {section_rec.shape[0]} group records in {section}")
-                    most_recent_sec = section_rec.loc[section_rec["Year"] == most_recent_year]
-                    self.logger.debug(f"There are {most_recent_sec.shape[0]} group records in {section} in {most_recent_year}")
-                    most_recent = most_recent_sec.iloc[0]
+                    most_recent = records.loc[
+                        records[ScoutCensus.column_labels['id']["GROUP"]] == section_data["Group_ID"] &
+                        records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"] &
+                        records["Year"] == most_recent_year
+                        ].iloc[0]
                 elif section in self.census_data.get_section_names('District'):
-                    district_sections = records.loc[records[ScoutCensus.column_labels['id']["DISTRICT"]] == section_data["District_ID"]]
-                    section_rec = district_sections.loc[district_sections[ScoutCensus.column_labels['UNIT_TYPE']] == section]
-                    most_recent = section_rec.loc[section_rec["Year"] == most_recent_year].iloc[0]
+                    most_recent = records.loc[
+                        records[ScoutCensus.column_labels['id']["DISTRICT"]] == section_data["District_ID"] &
+                        records[ScoutCensus.column_labels['UNIT_TYPE']] == section &
+                        records["Year"] == most_recent_year
+                        ].iloc[0]
             else:
                 self.logger.warning("Multiple sections found, assigning a section")
                 most_recent = most_recent.iloc[0]
 
             postcode_valid = most_recent.at["postcode_is_valid"]
-            # self.logger.debug(f"Identified:\n{most_recent} determined postcode valid:\n{postcode_valid}\n{postcode_valid == 1}\n{int(postcode_valid) == 1}")
+            # self.logger.debug(f"Identified:\n{most_recent} determined postcode valid:\n{postcode_valid}\n{postcode_valid == 1}\n{postcode_valid == 1}")
             # add postcode
-            if postcode_valid == "1":
+            if postcode_valid == 1:
                 self.logger.debug(f"Adding postcode {most_recent.at[ScoutCensus.column_labels['POSTCODE']]}")
                 section_data["Postcode"] = most_recent.at[ScoutCensus.column_labels['POSTCODE']]
-                country = self.ons_data.COUNTRY_CODES.get(most_recent.at["ctry"])
-                if country:
-                    section_data["IMD Country"] = country
-                else:
-                    section_data["IMD Country"] = ScoutCensus.DEFAULT_VALUE
+                country = self.ons_pd.COUNTRY_CODES.get(most_recent.at["ctry"])
+                section_data["IMD Country"] = country if country else ScoutCensus.DEFAULT_VALUE
                 section_data["IMD Decile"] = most_recent.at["imd_decile"]
                 section_data["IMD Rank"] = most_recent.at["imd"]
             else:
@@ -561,4 +522,6 @@ class ScoutData(Base):
             output_data = pd.concat([output_data, section_data_df], axis=0)
 
         output_data.reset_index(drop=True, inplace=True)
+        if report_name:
+            utility.save_report(output_data, self.settings["Output folder"], report_name, logger=self.logger)
         return output_data
