@@ -1,64 +1,46 @@
+import time
 import pandas as pd
-import numpy as np
-from src.map_plotter import ChoroplethMapPlotter
+
+from src.base import Base
 from src.scout_census import ScoutCensus
-from src.census_merge_data import CensusMergePostcode
-import src.log_util as log_util
-import folium
-import branca
-import geopandas as gpd
-import shapely
-import collections
-from itertools import cycle
-import json
+from src.census_merge_data import CensusMergeData
+from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+import src.utility as utility
 
 
-class ScoutMap:
+class ScoutData(Base):
     """Provides access to manipulate and process data
 
-    :param str census_csv_path: A path to a .csv file that contains Scout Census data
-
-    :var dict ScoutMap.SECTIONS: Holds information about scout sections
     """
 
-    SECTIONS = {
-        'Beavers': {'field_name': '%-Beavers', 'ages': [(6, 1), (7, 1)]},
-        'Cubs': {'field_name': '%-Cubs', 'ages': [(8, 1), (9, 1), (10, 0.5)]},
-        'Scouts': {'field_name': '%-Scouts', 'ages': [(10, 0.5), (11, 1), (12, 1), (13, 1)]},
-        'Explorers': {'field_name': '%-Explorers', 'ages': [(14, 1), (15, 1), (16, 1), (17, 1)]}
-    }
+    def __init__(self, csv_has_ons_pd_data=True, load_ons_pd_data=False):
+        super().__init__(settings=True, log_path='logs/geo_mapping.log')
+        self.logger.info(f"Starting at {time.time()}")
+        self.logger.finished(f"Logging setup", start_time=self.start_time)
 
-    def __init__(self, census_csv_path):
+        self.logger.info("Loading Scout Census data")
+        # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
+        self.census_data = ScoutCensus(self.settings["Scout Census location"])
+        self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
-        # Loads Scout Census Data
-        self.census_data = ScoutCensus(census_csv_path)
+        self.min_year, self.max_year = utility.years_of_return(self.census_data.data)
 
-        # Set by ScriptHandler as 'parent'
-        self.ons_data = None
-        self.boundary_report = {}
-        self.district_mapping = {}
+        if csv_has_ons_pd_data:
+            self.logger.info("Loading ONS data")
+            start_time = time.time()
 
-        self.boundary_dict = None
-        self.boundary_regions_data = None
+            if self.has_ons_pd_data():
+                self.ons_pd = ONSPostcodeDirectoryMay19(self.settings["ONS PD location"], load_data=load_ons_pd_data)
+            else:
+                raise Exception(f"The ScoutMap file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
-        # Can be set by set_region_of_color
-        self.region_of_color = None
+            self.logger.info(f"Loading ONS data from {self.ons_pd.PUBLICATION_DATE}", start_time=start_time)
 
-        # Load the settings file
-        with open("settings.json", "r") as read_file:
-            self.settings = json.load(read_file)["settings"]
+    def merge_ons_postcode_directory(self, ons_postcode_directory):
+        """Merges CensusData object with ONSPostcodeDirectory object and outputs to csv
 
-        # Folder to save output files to
-        self.OUTPUT = self.settings["Output folder"]
-
-        # Facilitates logging
-        self.logger = log_util.create_logger(__name__,)
-
-    def merge_ons_postcode_directory(self, ONS_postcode_directory):
-        """Merges ScoutCensus object with ONSPostcodeDirectory object and outputs to csv
-
-        :param ONS_postcode_directory: Refers to the ONS Postcode Directory
-        :type ONS_postcode_directory: ONSPostcodeDirectory object
+        :param ons_postcode_directory: Refers to the ONS Postcode Directory
+        :type ons_postcode_directory: ONSPostcodeDirectory object
         """
         # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
@@ -67,9 +49,8 @@ class ScoutMap:
         }
 
         self.logger.debug("Initialising merge object")
-        merge = CensusMergePostcode(
-            self.census_data,
-            self.census_data.sections_file_path[:-4] + f" with {ONS_postcode_directory.PUBLICATION_DATE} fields.csv", )
+        merge = CensusMergeData(
+            self.census_data.sections_file_path[:-4] + f" with {ons_postcode_directory.PUBLICATION_DATE} fields.csv", )
 
         self.logger.info("Cleaning the postcodes")
         merge.clean_and_verify_postcode(self.census_data.data, ScoutCensus.column_labels['POSTCODE'])
@@ -79,18 +60,18 @@ class ScoutMap:
         # initially merge just Country column to test what postcodes can match
         self.census_data.data = merge.merge_data(
             self.census_data.data,
-            ONS_postcode_directory.data['ctry'],
+            ons_postcode_directory.data['ctry'],
             "clean_postcode", )
 
         # attempt to fix invalid postcodes
         self.census_data.data = merge.try_fix_invalid_postcodes(
             self.census_data.data,
-            ONS_postcode_directory.data['ctry'], )
+            ons_postcode_directory.data['ctry'], )
 
         # fully merge the data
         self.census_data.data = merge.merge_data(
             self.census_data.data,
-            ONS_postcode_directory.data,
+            ons_postcode_directory.data,
             "clean_postcode", )
 
         # fill unmerged rows with default values
@@ -105,13 +86,13 @@ class ScoutMap:
             self.census_data.data,
             "clean_postcode", )
 
-    def has_ons_data(self):
+    def has_ons_pd_data(self):
         """Finds whether ONS data has been added
 
         :returns: Whether the Scout Census data has ONS data added
         :rtype: bool
         """
-        return self.census_data.has_ons_data()
+        return self.census_data.has_ons_pd_data()
 
     def filter_records(self, field, value_list, mask=False, exclusion_analysis=False):
         """Filters the Census records by any field in ONS PD.
@@ -123,34 +104,14 @@ class ScoutMap:
 
         :returns None: Nothing
         """
-        # Count number of rows
-        original_records = len(self.census_data.data.index)
+        data = self.census_data.data
+        self.census_data.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
+        self.min_year, self.max_year = utility.years_of_return(self.census_data.data)
 
-        # Filter records
-        if not mask:
-            self.logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
-            if exclusion_analysis:
-                excluded_data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
-            self.census_data.data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
-        else:
-            self.logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
-            if exclusion_analysis:
-                excluded_data = self.census_data.data.loc[self.census_data.data[field].isin(value_list)]
-            self.census_data.data = self.census_data.data.loc[~self.census_data.data[field].isin(value_list)]
-
-        remaining_records = len(self.census_data.data.index)
-        self.logger.info(f"Resulting in {remaining_records} records remaining.")
-
-        if exclusion_analysis:
-            # Calculate the number of records that have been filtered out
-            excluded_records = original_records - remaining_records
-            self.logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
-
-            # Prints number of members and % of members filtered out for each section
-            for section in ScoutCensus.column_labels['sections'].keys():
-                self.logger.debug(f"Analysis of {section} member exclusions")
-                section_type = ScoutCensus.column_labels['sections'][section]["type"]
-                section_dict = ScoutCensus.column_labels['sections'][section]
+    def add_imd_decile(self):
+        self.logger.info("Adding Index of Multiple Deprivation Decile")
+        self.census_data.data["imd_decile"] = utility.calc_imd_decile(self.census_data.data["imd"], self.census_data.data["ctry"], self.ons_pd)
+        return self.census_data.data
 
                 excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
                 self.logger.debug(f"Excluded sections\n{excluded_sections}")
@@ -601,84 +562,3 @@ class ScoutMap:
 
         output_data.reset_index(drop=True, inplace=True)
         return output_data
-
-    def add_IMD_decile(self):
-        self.logger.info("Adding Index of Multiple Deprivation Decile")
-
-        self.census_data.data["imd_decile"] = self.census_data.data.apply(lambda row:
-            self.calc_imd_decile(int(row["imd"]), row["ctry"]) if row["imd"] != "error" else "error", axis=1)
-
-        return self.census_data.data
-
-    def country_add_IMD_decile(self, data, country):
-        """Used to add IMD data to DataFrames that aren't the core census data
-
-        For example used to add IMD deciles to Lower Super Output Area boundary
-        reports.
-
-        All boundaries must be from the same country.
-
-        :param DataFrame data: Data to add IMD decile to. Must have 'imd' column
-        :param str country: Country code
-
-        :returns DataFrame: Original DataFrame with extra imd_decile column
-        """
-        data["imd_decile"] = data.apply(lambda row: self.calc_imd_decile(int(row["imd"]), country) if row["imd"] != "error" else "error", axis=1)
-        return data
-
-    def calc_imd_decile(self, rank, ctry):
-        country = self.ons_data.COUNTRY_CODES.get(ctry)
-        if country:
-            # upside down floor division to get ceiling
-            return -((-rank * 10) // self.ons_data.IMD_MAX[country])
-        else:
-            return "error"
-
-    def group_IDs_from_fields(self, group_details, census_cols):
-        groups = self.census_data.data.loc[self.census_data.data[ScoutCensus.column_labels['UNIT_TYPE']] == self.census_data.UNIT_LEVEL_GROUP]
-        input_cols = list(group_details.columns.values)
-        output_columns = input_cols + [ScoutCensus.column_labels['id']["GROUP"]] + census_cols
-        output_pd = pd.DataFrame(columns=output_columns)
-
-        paired_cols = list(zip(input_cols, census_cols))
-
-        for group in group_details.itertuples():
-            self.logger.debug(group)
-            group_data = {}
-            dict_group = group._asdict()
-            for col in input_cols:
-                group_data[col] = dict_group[col]
-
-            for col in census_cols:
-                group_data[col] = None
-
-            for paired_columns in paired_cols:
-                group_record = groups.loc[groups[paired_columns[1]] == str(dict_group[paired_columns[0]]).strip()]
-                matching_group_ids = group_record[ScoutCensus.column_labels['id']["GROUP"]].unique()
-                self.logger.debug(f"Group matched: {matching_group_ids}")
-                if len(matching_group_ids) == 1:
-                    self.logger.info(f"Matched group")
-                    group_data[ScoutCensus.column_labels['id']["GROUP"]] = matching_group_ids[0]
-                    for col in census_cols:
-                        group_data[col] = group_record[col].unique()[0]
-                elif len(matching_group_ids) > 1:
-                    self.logger.error(f"Error. Multiple Group IDs possible for: {group} looking for {paired_columns[0]}")
-                elif len(matching_group_ids) == 0:
-                    self.logger.error(f"No group matches {group} looking for {paired_columns[0]}")
-
-            group_data_df = pd.DataFrame([group_data], columns=output_columns)
-            output_pd = pd.concat([output_pd, group_data_df], axis=0)
-
-        output_pd.reset_index(drop=True, inplace=True)
-        return output_pd
-
-    @staticmethod
-    def years_of_return(records):
-        years_of_data = [int(year) for year in records["Year"].unique()]
-        return min(years_of_data), max(years_of_data)
-
-    @staticmethod
-    def has_increase(numeric_list):
-        increments = [numeric_list[ii + 1] - numeric_list[ii] for ii in range(len(numeric_list) - 1)]
-        max_increment = max(increments)
-        return max_increment > 0
