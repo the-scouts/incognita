@@ -59,13 +59,11 @@ class DistrictBoundaries(Base):
 
         # Calculates all the other points within twice the distance of the
         # closest point from a neighbouring district
-        all_points["nearest_points"] = all_points.apply(
-            lambda row: self.nearest_other_points(row, all_points.loc[all_points["D_ID"] != row["D_ID"]]), axis=1)
+        all_points["nearest_points"] = all_points.apply(lambda row: self.nearest_other_points(row, all_points.loc[all_points["D_ID"] != row["D_ID"]]), axis=1)
         all_points["buffer_distance"] = 0
 
         # Initial calcuation of the buffer distances
-        self.logger.info(
-            "Calculating buffer distances of " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " points")
+        self.logger.info("Calculating buffer distances of " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " points")
         all_points["buffer_distance"] = all_points.apply(lambda row: self.buffer_distance(row, all_points), axis=1)
         self.logger.info("On first pass " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " missing buffer distance")
 

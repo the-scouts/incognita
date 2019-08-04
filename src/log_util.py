@@ -3,6 +3,7 @@ import time
 
 FINISHED_LEVEL_NUM = logging.INFO + 5
 
+
 def create_logger(name, file_path=None):
     """Creates and returns a logger with preset options
 

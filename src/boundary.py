@@ -2,7 +2,7 @@ import pandas as pd
 import collections
 
 from src.base import Base
-from src.scout_map import ScoutMap
+from src.scout_data import ScoutData
 from src.scout_census import ScoutCensus
 import src.utility as utility
 
@@ -22,11 +22,11 @@ class Boundary(Base):
         'Explorers': [(14, 1), (15, 1), (16, 1), (17, 1)]
     }
 
-    def __init__(self, geography_name, scout_data_object: ScoutMap):
+    def __init__(self, geography_name, scout_data_object: ScoutData):
         super().__init__(settings=True)
 
         self.census_data = scout_data_object.census_data
-        self.ons_pd = scout_data_object.ons_data
+        self.ons_pd = scout_data_object.ons_pd
 
         self.boundary_dict = None
         self.boundary_regions_data = None
