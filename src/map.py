@@ -21,8 +21,7 @@ class Map(Base):
         # Can be set by set_region_of_colour
         self.region_of_colour = None
 
-        self.scout_census = scout_data_object.scout_census
-        self.ons_pd = scout_data_object.ons_pd
+        self.scout_data = scout_data_object
 
         self.create_map(dimension, map_name, boundary_object, **kwargs)
 
@@ -103,7 +102,7 @@ class Map(Base):
         """
         self.logger.info("Adding section markers to map")
 
-        valid_points = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
+        valid_points = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Sets the map so it opens in the right area
         self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
@@ -225,7 +224,7 @@ class Map(Base):
             - awards
         :param str single_section: One of Beavers, Cubs, Scouts, Explorers, Network
         """
-        data: pd.DataFrame = self.scout_census.data
+        data: pd.DataFrame = self.scout_data.data
         unit_type_label = ScoutCensus.column_labels['UNIT_TYPE']
 
         if single_section:
@@ -233,7 +232,7 @@ class Map(Base):
             section_type = ScoutCensus.column_labels['sections'][single_section]["type"]
             section_types = [section_type]
         else:
-            min_year, max_year = utility.years_of_return(data["Year"])
+            max_year = self.scout_data.max_year
             latest_year_records = data.loc[data["Year"] == max_year]
 
             filtered_data = latest_year_records
@@ -257,7 +256,8 @@ class Map(Base):
 
         if location_cols == "Postcodes":
             # Merge with ONS Postcode Directory to obtain dataframe with lat/long
-            custom_data = pd.merge(custom_data, self.ons_pd.data, how='left', left_on=location_cols, right_index=True, sort=False)
+            ons_pd_data = self.scout_data.ons_pd.data
+            custom_data = pd.merge(custom_data, ons_pd_data, how='left', left_on=location_cols, right_index=True, sort=False)
             location_cols = {"crs": 4326, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
@@ -299,7 +299,7 @@ class Map(Base):
     def district_colour_mapping(self):
         colours = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple',
                          'lightgrayblack', 'orange', 'pink', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
-        district_ids = self.scout_census.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
+        district_ids = self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
         mapping = {district_id: next(colours) for district_id in district_ids}
         colour_mapping = {"census_column": ScoutCensus.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping

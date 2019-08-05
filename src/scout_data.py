@@ -1,7 +1,5 @@
 from datetime import datetime
 import time
-from typing import List
-import pandas as pd
 
 from src.base import Base
 from src.scout_census import ScoutCensus
@@ -23,9 +21,10 @@ class ScoutData(Base):
         self.logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         self.scout_census = ScoutCensus(self.settings["Scout Census location"])
+        self.data = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
-        self.min_year, self.max_year = utility.years_of_return(self.scout_census.data)
+        self.min_year, self.max_year = utility.years_of_return(self.data)
 
         if csv_has_ons_pd_data:
             self.logger.info("Loading ONS data")
@@ -90,10 +89,9 @@ class ScoutData(Base):
     def has_ons_pd_data(self):
         """Finds whether ONS data has been added
 
-        :returns: Whether the Scout Census data has ONS data added
-        :rtype: bool
+        :return bool: Whether the Scout Census data has ONS data added
         """
-        return self.scout_census.has_ons_pd_data()
+        return ScoutCensus.column_labels['VALID_POSTCODE'] in list(self.data.columns.values)
 
     def filter_records(self, field, value_list, mask=False, exclusion_analysis=False):
         """Filters the Census records by any field in ONS PD.
@@ -105,11 +103,11 @@ class ScoutData(Base):
 
         :returns None: Nothing
         """
-        data = self.scout_census.data
-        self.scout_census.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
-        self.min_year, self.max_year = utility.years_of_return(self.scout_census.data)
+        data = self.data
+        self.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
+        self.min_year, self.max_year = utility.years_of_return(self.data)
 
     def add_imd_decile(self):
         self.logger.info("Adding Index of Multiple Deprivation Decile")
-        self.scout_census.data["imd_decile"] = utility.calc_imd_decile(self.scout_census.data["imd"], self.scout_census.data["ctry"], self.ons_pd)
-        return self.scout_census.data
+        self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], self.ons_pd)
+        return self.data

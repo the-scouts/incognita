@@ -25,7 +25,7 @@ class Boundary(Base):
     def __init__(self, geography_name, scout_data_object: ScoutData):
         super().__init__(settings=True)
 
-        self.scout_census = scout_data_object.scout_census
+        self.scout_data = scout_data_object
         self.ons_pd = scout_data_object.ons_pd
 
         self.boundary_dict = None
@@ -117,10 +117,10 @@ class Boundary(Base):
 
         region_ids = self.boundary_regions_data[codes_key].dropna().drop_duplicates()
 
-        district_ids_by_region = self.scout_census.data.loc[self.scout_census.data[region_type].isin(region_ids), [region_type, district_id_column, ]].dropna().drop_duplicates()
+        district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column, ]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
-        region_ids_by_district = self.scout_census.data.loc[self.scout_census.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
+        region_ids_by_district = self.scout_data.data.loc[self.scout_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
         region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == ScoutCensus.DEFAULT_VALUE)].dropna().drop_duplicates()
 
         count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})  # count of how many regions the district occupies
@@ -150,12 +150,6 @@ class Boundary(Base):
         """
         # to remove IDE errors
         awards_mapping, year = None, None
-
-        opt_groups = False
-        opt_section_numbers = False
-        opt_6_to_17_numbers = False
-        opt_awards = False
-        opt_waiting_list_totals = False
         name = self.boundary_dict.get("name")  # e.g oslaua osward pcon
         sections_dict = ScoutCensus.column_labels['sections']
 
@@ -178,9 +172,9 @@ class Boundary(Base):
             True if "waiting list total" in options \
             else False
 
-        self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.scout_census.data.index)} records")
+        self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
 
-        min_year, max_year = utility.years_of_return(self.scout_census.data["Year"])
+        min_year, max_year = utility.years_of_return(self.scout_data.data["Year"])
         years_in_data = range(min_year, max_year + 1)
         if len(years_in_data) > 1:
             if historical:
@@ -230,7 +224,7 @@ class Boundary(Base):
             }
             code = boundary_data[name]
 
-            records_in_boundary = self.scout_census.data.loc[self.scout_census.data[name] == code]
+            records_in_boundary = self.scout_data.data.loc[self.scout_data.data[name] == code]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
 
             if opt_groups:
@@ -288,7 +282,7 @@ class Boundary(Base):
                     number_of_ons_regions_district_is_in = districts[district_id]
                     self.logger.debug(f"{district_id} in {number_of_ons_regions_district_is_in} ons boundaries")
 
-                    district_records = self.scout_census.data.loc[self.scout_census.data[district_id_column] == district_id]  # Records for current district ID
+                    district_records = self.scout_data.data.loc[self.scout_data.data[district_id_column] == district_id]  # Records for current district ID
 
                     # QSAs achieved in district, divided by the number of regions the district is in
                     boundary_data["QSA"] += district_records["Queens_Scout_Awards"].sum() / number_of_ons_regions_district_is_in
@@ -352,7 +346,7 @@ class Boundary(Base):
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
-        min_year, max_year = utility.years_of_return(self.scout_census.data["Year"])
+        min_year, max_year = utility.years_of_return(self.scout_data.data["Year"])
         years_in_data = range(min_year, max_year + 1)
 
         # setup population columns
@@ -426,13 +420,13 @@ class Boundary(Base):
         return uptake_report
 
     def filter_set_boundaries_in_scout_area(self, column, value_list):
-        records_in_scout_area = self.scout_census.data.loc[self.scout_census.data[column].isin(value_list)]
+        records_in_scout_area = self.scout_data.data.loc[self.scout_data.data[column].isin(value_list)]
         boundaries_in_scout_area = records_in_scout_area[self.boundary_dict["name"]].unique()
         self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[self.boundary_dict["codes"]["key"]].isin(boundaries_in_scout_area)]
 
     def filter_records_by_boundary(self):
         """Selects the records that are with the boundary specified"""
-        self.scout_census.data = utility.filter_records(self.scout_census.data, self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]], self.logger)
+        self.scout_data.data = utility.filter_records(self.scout_data.data, self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]], self.logger)
 
     def filter_boundaries_by_scout_area(self, boundary, column, value_list):
         """Filters the boundaries, to include only those boundaries which have
@@ -462,7 +456,7 @@ class Boundary(Base):
         """
         self.logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
 
-        records = self.scout_census.data.loc[self.scout_census.data[column].isin(value_list)]
+        records = self.scout_data.data.loc[self.scout_data.data[column].isin(value_list)]
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
 
         ons_codes = records[ons_code].drop_duplicates().dropna()

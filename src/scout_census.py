@@ -105,10 +105,3 @@ class ScoutCensus:
         section_dict: Dict = ScoutCensus.column_labels['sections']
         return [section_dict[section]["type"] for section in section_names_list]
         # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
-
-    def has_ons_pd_data(self):
-        """Finds whether ONS data has been added
-
-        :return bool: Whether the Scout Census data has ONS data added
-        """
-        return ScoutCensus.column_labels['VALID_POSTCODE'] in list(self.data.columns.values)

@@ -2,6 +2,7 @@ import pandas as pd
 import geopandas as gpd
 import shapely
 
+from scout_data import ScoutData
 from src.base import Base
 from src.scout_census import ScoutCensus
 
@@ -10,17 +11,8 @@ class DistrictBoundaries(Base):
     def __init__(self, scout_data_object):
         super().__init__()
 
-        self.scout_census = scout_data_object.scout_census
+        self.scout_data: ScoutData = scout_data_object
         self.ons_pd = scout_data_object.ons_pd
-
-    # utility method
-    def has_ons_pd_data(self):
-        """Finds whether ONS data has been added
-
-        :returns: Whether the Scout Census data has ONS data added
-        :rtype: bool
-        """
-        return self.scout_census.has_ons_pd_data()
 
     def create_district_boundaries(self):
         """
@@ -30,14 +22,14 @@ class DistrictBoundaries(Base):
         that doesn't overlap or leave gaps between Districts.
         """
 
-        if not self.has_ons_pd_data():
+        if not self.scout_data.has_ons_pd_data():
             raise Exception("Must have ons data added before creating district boundaries")
 
         # Find all the District IDs and names
-        districts = self.scout_census.data[[ScoutCensus.column_labels['id']["DISTRICT"], ScoutCensus.column_labels['name']["DISTRICT"]]].drop_duplicates()
+        districts = self.scout_data.data[[ScoutCensus.column_labels['id']["DISTRICT"], ScoutCensus.column_labels['name']["DISTRICT"]]].drop_duplicates()
 
         # Finds all the records with valid postcodes in the Scout Census
-        valid_locations = self.scout_census.data.loc[self.scout_census.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
+        valid_locations = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row
