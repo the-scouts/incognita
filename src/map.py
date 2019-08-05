@@ -69,10 +69,11 @@ class Map(Base):
         min_value = data_codes["data"][score_col].min()
         max_value = data_codes["data"][score_col].max()
         self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
-        colourmap = branca.colormap.LinearColormap(colors=['#ca0020', '#f4a582', '#92c5de', '#0571b0'],
-                                                  index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
-                                                  vmin=min_value,
-                                                  vmax=max_value)
+        colourmap = branca.colormap.LinearColormap(
+            colors=['#ca0020', '#f4a582', '#92c5de', '#0571b0'],
+            index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
+            vmin=min_value,
+            vmax=max_value)
         non_zero_score_col.sort_values(axis=0, inplace=True)
         colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
@@ -80,11 +81,12 @@ class Map(Base):
         self.map_plotter.add_areas(legend_label, show=True, boundary_name=geography_area_names, colourmap=colourmap)
 
         if static_scale:
-            colourmap_static = branca.colormap.LinearColormap(colors=['#ca0020', '#f7f7f7', '#0571b0'],
-                                                             index=static_scale["index"],
-                                                             vmin=static_scale["min"],
-                                                             vmax=static_scale["max"]) \
-                .to_step(index=static_scale["boundaries"])
+            colourmap_static = branca.colormap.LinearColormap(
+                colors=['#ca0020', '#f7f7f7', '#0571b0'],
+                index=static_scale["index"],
+                vmin=static_scale["min"],
+                vmax=static_scale["max"]
+            ).to_step(index=static_scale["boundaries"])
             colourmap_static.caption = legend_label + " (static)"
             self.map_plotter.add_areas(legend_label + " (static)", show=False, boundary_name=geography_area_names,
                                        colourmap=colourmap_static)
@@ -125,8 +127,8 @@ class Map(Base):
             self.logger.debug(postcode)
             # Find all the sections with the same postcode
             colocated_sections = sections.loc[sections[ScoutCensus.column_labels['POSTCODE']] == postcode]
-            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.scout_census.get_section_type('District'))]
-            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(self.scout_census.get_section_type('Group'))]
+            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(ScoutCensus.get_section_type('District'))]
+            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(ScoutCensus.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
@@ -235,7 +237,7 @@ class Map(Base):
             latest_year_records = data.loc[data["Year"] == max_year]
 
             filtered_data = latest_year_records
-            section_types = self.scout_census.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
+            section_types = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
 
         self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data)
 
