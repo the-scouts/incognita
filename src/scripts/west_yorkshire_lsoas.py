@@ -8,7 +8,6 @@ if __name__ == "__main__":
     scout_data.filter_records("Year", [2015, 2016, 2017, 2018, 2019])
     scout_data.filter_records("postcode_is_valid", [1])
     scout_data.filter_records("C_ID", [10000122])
-    print(scout_data.scout_census.data)
     scout_data.add_imd_decile()
 
     boundary = Boundary("lsoa", scout_data)
