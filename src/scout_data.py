@@ -38,11 +38,10 @@ class ScoutData(Base):
 
             self.logger.finished(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data ", start_time=start_time)
 
-    def merge_ons_postcode_directory(self, ons_postcode_directory):
+    def merge_ons_postcode_directory(self, ons_pd):
         """Merges ScoutCensus object with ONSPostcodeDirectory object and outputs to csv
 
-        :param ons_postcode_directory: Refers to the ONS Postcode Directory
-        :type ons_postcode_directory: ONSPostcodeDirectory object
+        :param ONSPostcodeDirectoryMay19 ons_pd: Refers to the ONS Postcode Directory
         """
         # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
@@ -51,41 +50,41 @@ class ScoutData(Base):
         }
 
         self.logger.debug("Initialising merge object")
-        merge = CensusMergeData(
-            self.scout_census.sections_file_path[:-4] + f" with {ons_postcode_directory.PUBLICATION_DATE} fields.csv", )
+        merge = CensusMergeData()
 
         self.logger.info("Cleaning the postcodes")
-        merge.clean_and_verify_postcode(self.scout_census.data, ScoutCensus.column_labels['POSTCODE'])
+        merge.clean_and_verify_postcode(self.data, ScoutCensus.column_labels['POSTCODE'])
 
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
 
         # initially merge just Country column to test what postcodes can match
-        self.scout_census.data = merge.merge_data(
-            self.scout_census.data,
-            ons_postcode_directory.data['ctry'],
+        self.data = merge.merge_data(
+            self.data,
+            ons_pd.data['ctry'],
             "clean_postcode", )
 
         # attempt to fix invalid postcodes
-        self.scout_census.data = merge.try_fix_invalid_postcodes(
-            self.scout_census.data,
-            ons_postcode_directory.data['ctry'], )
+        self.data = merge.try_fix_invalid_postcodes(
+            self.data,
+            ons_pd.data['ctry'], )
 
         # fully merge the data
-        self.scout_census.data = merge.merge_data(
-            self.scout_census.data,
-            ons_postcode_directory.data,
+        self.data = merge.merge_data(
+            self.data,
+            ons_pd.data,
             "clean_postcode", )
 
         # fill unmerged rows with default values
         self.logger.info("filling unmerged rows")
-        self.scout_census.data = merge.fill_unmerged_rows(
-            self.scout_census.data,
+        self.data = merge.fill_unmerged_rows(
+            self.data,
             ScoutCensus.column_labels['VALID_POSTCODE'],
             ons_fields_data_types, )
 
         # save the data to CSV and save invalid postcodes to an error file
         merge.output_data(
-            self.scout_census.data,
+            self.data,
+            self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv",
             "clean_postcode", )
 
     def has_ons_pd_data(self):

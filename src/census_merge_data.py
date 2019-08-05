@@ -16,10 +16,8 @@ class CensusMergeData(Base):
         :param error_path: path to where errors are saved (this is for merge errors)
         """
 
-    def __init__(self, output_csv_path, error_path="error_file.txt"):
+    def __init__(self):
         super().__init__()
-        self.output_file_path = output_csv_path
-        self.ERROR_FILE_PATH = error_path
 
     def merge_data(self, census_data, data_to_merge, census_index_column):
         """Merge census data and input data on key and index.
@@ -41,12 +39,13 @@ class CensusMergeData(Base):
 
         return census_data
 
-    def output_data(self, census_data, postcode_merge_column):
+    def output_data(self, census_data, output_path, postcode_merge_column):
         """Save passed dataframe to csv file.
 
         Also output list of errors in the merge process to a text file
 
         :param census_data: pandas DataFrame with census data
+        :param str output_path: string path for merged dataframe save location
         :param str postcode_merge_column: column that was used as the merge index, and will have invalid postcodes
         :return: None
         """
@@ -60,7 +59,7 @@ class CensusMergeData(Base):
         error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", ]
         census_data.loc[census_data[valid_postcode_label] == 0, error_output_fields].to_csv('error_file.csv', index=False, encoding='utf-8-sig')
         # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
-        census_data.to_csv(self.output_file_path, index=False, encoding='utf-8-sig')
+        census_data.to_csv(output_path, index=False, encoding='utf-8-sig')
 
     @staticmethod
     def postcode_cleaner(postcode):
