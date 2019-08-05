@@ -53,19 +53,21 @@ class Boundary(Base):
         if geography_name in boundaries_dict.keys():
             self.boundary_dict = boundaries_dict[geography_name]
             names_and_codes_file_path = self.boundary_dict["codes"].get("path")
-            self.boundary_regions_data = pd.read_csv(self.ons_pd.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path,
-                                                     dtype={
-                                                        self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
-                                                        self.boundary_dict["codes"]["name"]: "object"
-                                                        })
+            self.boundary_regions_data = pd.read_csv(
+                self.ons_pd.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path,
+                dtype={
+                    self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
+                    self.boundary_dict["codes"]["name"]: "object"
+                })
         elif geography_name in self.settings["Scout Mappings"].keys():
             self.boundary_dict = self.settings["Scout Mappings"][geography_name]
             names_and_codes_file_path = self.boundary_dict["codes"].get("path")
-            self.boundary_regions_data = pd.read_csv(names_and_codes_file_path,
-                                                     dtype={
-                                                        self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
-                                                        self.boundary_dict["codes"]["name"]: "object"
-                                                        })
+            self.boundary_regions_data = pd.read_csv(
+                names_and_codes_file_path,
+                dtype={
+                    self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
+                    self.boundary_dict["codes"]["name"]: "object"
+                })
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys() + self.settings['Scout Mapping'].keys()}")
 
@@ -160,16 +162,21 @@ class Boundary(Base):
         if not name:
             raise Exception("boundary_dict has not been set. Try calling set_boundary")
 
-        if "Groups" in options:
-            opt_groups = True
-        if "Section numbers" in options:
-            opt_section_numbers = True
-        if "6 to 17 numbers" in options:
-            opt_6_to_17_numbers = True
-        if "awards" in options:
-            opt_awards = True
-        if "waiting list total" in options:
-            opt_waiting_list_totals = True
+        opt_groups = \
+            True if "Groups" in options \
+            else False
+        opt_section_numbers = \
+            True if "Section numbers" in options \
+            else False
+        opt_6_to_17_numbers = \
+            True if "6 to 17 numbers" in options \
+            else False
+        opt_awards = \
+            True if "awards" in options \
+            else False
+        opt_waiting_list_totals = \
+            True if "waiting list total" in options \
+            else False
 
         self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.scout_census.data.index)} records")
 
