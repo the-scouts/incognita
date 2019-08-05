@@ -50,7 +50,7 @@ class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):
         # Paths to all shapefiles within the Boundaries folder
         shapefile_paths = {
             "LADs": self.settings["Boundaries folder"] + r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp",
-            "City": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "County": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
             "Ward": self.settings["Boundaries folder"] + r"Wards_May_2018_Boundaries\Wards_May_2018_Boundaries.shp",
             "PCon": self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
             "LSOA": self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp",
@@ -63,15 +63,13 @@ class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):
             "lad": {
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_18.csv", "key": "LAD18CD"},
-                # "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD",
                 "boundary": {"shapefile": shapefile_paths["LADs"], "key": 'lad18cd', "name": 'lad18nm', },
                 "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
-                # "age_profile": "lad_by_age.csv", "age_profile_code_col": "Code",
             },
             "cty": {
                 "name": "oslaua",
                 "codes": "LA_UA names and codes UK as at 12_18.csv", "code_col_name": "LAD18CD",
-                "boundary": {"shapefile": shapefile_paths["City"], "key": 'ctyua17cd', "name": 'ctyua17nm', },
+                "boundary": {"shapefile": shapefile_paths["County"], "key": 'ctyua17cd', "name": 'ctyua17nm', },
                 "age_profile": None, "age_profile_code_col": None,
             },
             "osward": {

@@ -50,7 +50,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         # Paths to all shapefiles within the Boundaries folder
         shapefile_paths = {
             "LADs": self.settings["Boundaries folder"] + r"Local_Authority_Districts_April_2019_Boundaries_UK_BUC\Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
-            "City": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "County": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
             "Ward": self.settings["Boundaries folder"] + r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp",
             "PCon": self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
             "LSOA": self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp",
@@ -69,7 +69,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
             "cty": {
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "key_type": "object", "name": "LAD19NM"},
-                "boundary": {"shapefile": shapefile_paths["City"], "key": 'ctyua17cd', "name": 'ctyua17nm', },
+                "boundary": {"shapefile": shapefile_paths["County"], "key": 'ctyua17cd', "name": 'ctyua17nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "osward": {
