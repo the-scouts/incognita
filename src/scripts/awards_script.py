@@ -7,23 +7,23 @@ and 31st January 2019 of the eligible Beavers. and percentage of QSAs.
 This script has no command line options.
 """
 
-
-from script_handler import ScriptHandler
-from scout_map import ScoutMap
+from src.scout_data import ScoutData
+from src.boundary import Boundary
+from src.map import Map
 
 if __name__ == "__main__":
+    scout_data = ScoutData()
+    # scout_data.filter_records("postcode_is_valid", [1])
+    scout_data.filter_records("Year", [2019])
+    # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
+    scout_data.filter_records("D_ID", [10001886, 10001334, 10001332], mask=True)
 
-    script_handler = ScriptHandler()
-    script_handler.run(ScoutMap.set_boundary, ["lad"])
-    script_handler.run(ScoutMap.filter_records, ["Year", ["2019"]])
-    #script_handler.run(ScoutMap.filter_records, ["postcode_is_valid", ["1"]])
-    #script_handler.run(ScoutMap.ons_to_district_mapping, ["oslaua"])
+    boundary = Boundary("lad", scout_data)
+    boundary.create_boundary_report(options=["awards"], report_name="laua_awards_report")
 
-    script_handler.run(ScoutMap.create_boundary_report, ["awards"], "laua_awards_report")
-    script_handler.run(ScoutMap.create_map, ["%-QSA", "QSA %", "UK_QSA_awards", "QSA %"])
-
-    #script_handler.run(ScoutMap.add_single_section_to_map, ["Beavers", script_handler.map.district_mapping(), ["youth membership", "awards"]])
-    script_handler.run(ScoutMap.save_map)
-    script_handler.run(ScoutMap.show_map)
-
-    script_handler.close()
+    dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
+    map = Map(scout_data, boundary, dimension, map_name="UK_QSA_awards2", cluster_markers=True)
+    map.add_sections_to_map(map.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers")
+    map.save_map()
+    map.show_map()
+    scout_data.close()

@@ -1,10 +1,10 @@
 import pandas as pd
-import json
-from src.census_data import CensusData
-import src.log_util as log_util
+
+from src.base import Base
+from src.scout_census import ScoutCensus
 
 
-class ONSData:
+class ONSPostcodeDirectory(Base):
     """Used for holding and accessing ONS Postcode Directory data
 
     :param str ons_pd_csv_path: path to the ONS Postcode Directory csv file
@@ -13,20 +13,18 @@ class ONSData:
     :param list fields: columns to read from the csv file
     :param dict data_types: pandas datatypes for the columns to load
 
-    :var ONSData.PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
-    :var dict ONSData.IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
-    :var dict ONSData.COUNTRY_CODES: ONS Postcode Directory codes for each country
+    :var ONSPostcodeDirectory.PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
+    :var dict ONSPostcodeDirectory.IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
+    :var dict ONSPostcodeDirectory.COUNTRY_CODES: ONS Postcode Directory codes for each country
     """
     PUBLICATION_DATE = None
     IMD_MAX = {"England": None, "Wales": None, "Scotland": None, "Northern Ireland": None}
     COUNTRY_CODES = {}
 
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
-        self.fields = fields
-        self.logger = log_util.create_logger(__name__,)
+        super().__init__(settings=True)
 
-        with open("settings.json", "r") as read_file:
-            self.settings = json.load(read_file)["settings"]
+        self.fields = fields
 
         if load_data:
             self.logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{self.fields}")
@@ -34,7 +32,7 @@ class ONSData:
 
             for field in data_types:
                 if data_types[field] == 'category':
-                    self.data[field] = self.data[field].cat.add_categories([CensusData.DEFAULT_VALUE])
+                    self.data[field] = self.data[field].cat.add_categories([ScoutCensus.DEFAULT_VALUE])
 
     def ons_field_mapping(self, start_geography, start_values, target_geography):
         """Used to convert between ONS geographies.
@@ -47,7 +45,6 @@ class ONSData:
 
         :return: DataSeries of codes in the target_geography
         """
-
         # Maps the start geography to target geography
         areas_mapped = self.data.loc[self.data[start_geography].isin(start_values), target_geography].drop_duplicates()
         return areas_mapped
