@@ -1,4 +1,6 @@
 from datetime import datetime
+import geopandas as gpd
+import shapely
 import time
 
 from src.base import Base
@@ -24,7 +26,7 @@ class ScoutData(Base):
         self.data = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
-        self.min_year, self.max_year = utility.years_of_return(self.data)
+        self.min_year, self.max_year = utility.years_of_return(self.data["Year"])
 
         if csv_has_ons_pd_data:
             self.logger.info("Loading ONS data")
@@ -105,7 +107,40 @@ class ScoutData(Base):
         """
         data = self.data
         self.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
-        self.min_year, self.max_year = utility.years_of_return(self.data)
+        self.min_year, self.max_year = utility.years_of_return(self.data["Year"])
+
+    def nearby_records(self, field, value_list, distance):
+        """Filters the records
+
+        :param str field: field to filter Sections on
+        :param list value_list: list of valid values
+        :param int distance: The distance in metres to extend by
+
+        """
+        self.logger.info("Creates geometry")
+        data_with_points = gpd.GeoDataFrame(self.data, geometry=gpd.points_from_xy(self.data.long, self.data.lat))
+
+        data_with_points.crs = {'init': 'epsg:4326'}
+        # Converts the co-ordinate reference system into OS36 which uses
+        # (x-y) coordinates in metres, rather than (long, lat) coordinates.
+        data_with_points = data_with_points.to_crs({'init': 'epsg:27700'})
+
+        self.logger.info(f"Filters for records that satify {field} in {value_list}")
+        filtered_points = data_with_points.loc[data_with_points[field].isin(value_list)]
+        self.logger.info(f"Resulting in {len(filtered_points.index)} number of Sections")
+        self.logger.info(f"Creating area of interest")
+        in_area = shapely.geometry.MultiPoint(filtered_points["geometry"].tolist())
+        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}, now convex hull ...")
+        in_area = in_area.convex_hull
+        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}, now buffering ...")
+        in_area = in_area.buffer(distance)
+        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}")
+
+        self.logger.info(f"Finding Sections in buffered area of interest")
+        is_near = data_with_points.apply(lambda area: area.geometry.within(in_area), axis=1)
+        self.logger.info(f"Found {sum(is_near)} Sections nearby")
+
+        return data_with_points[is_near]
 
     def add_imd_decile(self):
         self.logger.info("Adding Index of Multiple Deprivation Decile")

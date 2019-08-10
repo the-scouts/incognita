@@ -25,14 +25,13 @@ class Map(Base):
 
         self.create_map(dimension, map_name, boundary_object, **kwargs)
 
-    def create_map(self, dimension, map_name, boundary_object, static_scale=None, cluster_markers=False):
+    def create_map(self, dimension, map_name, boundary_object, static_scale=None):
         """
 
         :param dimension: dict of column of ScoutCensus dataframe and labels for tooltip and key/legend
         :param map_name:
         :param boundary_object:
         :param static_scale:
-        :param cluster_markers:
         :return:
         """
         boundary_dict = boundary_object.boundary_dict
@@ -56,12 +55,11 @@ class Map(Base):
         }
 
         if not (score_col in list(data_codes["data"].columns)):
-            raise Exception(f"The column {score_col} does not exist in data.\nValid columns are {list(data_codes['data'].columns)}")
+            raise Exception(f"The column {score_col} does not exist in data.\nValid columns are:\n{list(data_codes['data'].columns)}")
 
         self.map_plotter = MapPlotter(geography_info,
                                       data_codes,
-                                      self.settings["Output folder"] + map_name,
-                                      cluster_markers)
+                                      self.settings["Output folder"] + map_name)
 
         non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
         non_zero_score_col.dropna(inplace=True)
@@ -69,7 +67,7 @@ class Map(Base):
         max_value = data_codes["data"][score_col].max()
         self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
         colourmap = branca.colormap.LinearColormap(
-            colors=['#ca0020', '#f4a582', '#92c5de', '#0571b0'],
+            colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
             index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
             vmin=min_value,
             vmax=max_value)
@@ -81,7 +79,7 @@ class Map(Base):
 
         if static_scale:
             colourmap_static = branca.colormap.LinearColormap(
-                colors=['#ca0020', '#f7f7f7', '#0571b0'],
+                colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
                 index=static_scale["index"],
                 vmin=static_scale["min"],
                 vmax=static_scale["max"]
@@ -90,7 +88,7 @@ class Map(Base):
             self.map_plotter.add_areas(legend_label + " (static)", show=False, boundary_name=geography_area_names,
                                        colourmap=colourmap_static)
 
-    def add_meeting_places_to_map(self, sections, colour, marker_data):
+    def add_meeting_places_to_map(self, sections, colour, marker_data, layer='Sections', cluster_markers=False):
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
@@ -99,10 +97,15 @@ class Map(Base):
         :param list marker_data: List of strings which determines content for popup, including:
             - youth membership
             - awards
+        :param str layer: Name of layer on map to add meeting places to
+        :param bool cluster_markers: If true markers are clustered
         """
         self.logger.info("Adding section markers to map")
 
-        valid_points = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
+        if not self.map_plotter.layers.get(layer):
+            self.map_plotter.add_layer(layer, cluster_markers)
+
+        valid_points = sections.loc[sections[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
 
         # Sets the map so it opens in the right area
         self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
@@ -206,9 +209,9 @@ class Map(Base):
                     marker_colour = 'gray'
 
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
-            self.map_plotter.add_marker(lat, long, popup, marker_colour)
+            self.map_plotter.add_marker(lat, long, popup, marker_colour, layer)
 
-    def add_sections_to_map(self, colour, marker_data, single_section=None):
+    def add_sections_to_map(self, colour, marker_data, single_section=None, layer='Sections'):
         """Filter sections and add to map.
 
         If a single section is specified, plots that section onto the map in
@@ -223,6 +226,7 @@ class Map(Base):
             - youth membership
             - awards
         :param str single_section: One of Beavers, Cubs, Scouts, Explorers, Network
+        :param str layer: The layer of the map that the setions are added to
         """
         data: pd.DataFrame = self.scout_data.data
         unit_type_label = ScoutCensus.column_labels['UNIT_TYPE']
@@ -238,7 +242,7 @@ class Map(Base):
             filtered_data = latest_year_records
             section_types = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
 
-        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data)
+        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer)
 
     def add_custom_data(self, csv_file_path, layer_name, location_cols, markers_clustered=False, marker_data=None):
         """Function to add custom data as markers on map
@@ -298,7 +302,7 @@ class Map(Base):
 
     def district_colour_mapping(self):
         colours = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple',
-                         'lightgrayblack', 'orange', 'pink', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
+                         'lightgray', 'orange', 'pink', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
         district_ids = self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
         mapping = {district_id: next(colours) for district_id in district_ids}
         colour_mapping = {"census_column": ScoutCensus.column_labels['id']["DISTRICT"], "mapping": mapping}

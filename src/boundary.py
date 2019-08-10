@@ -1,4 +1,6 @@
 import pandas as pd
+import geopandas as gpd
+import shapely
 import collections
 
 from src.base import Base
@@ -341,8 +343,12 @@ class Boundary(Base):
 
         if age_profile_path:
             data_types = {str(key): "Int16" for key in range(5, 26)}
-            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path,
-                                         dtype=data_types)
+            try:
+                age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path,
+                                             dtype=data_types)
+            except TypeError:
+                self.logger.error("Age profiles must be integers in each age category")
+                raise
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
@@ -386,7 +392,7 @@ class Boundary(Base):
                                 # There are Scouts but no eligible population in the geographic area
                                 boundary_row.at[col_name] = 100
 
-                section_total = area_pop.loc[[f"{age}" for age in range(6, 18)]].iloc[0].sum()
+                section_total = area_pop.loc[:,[f"{age}" for age in range(6, 18)]].iloc[0].sum()
                 boundary_row.at['Pop_All'] = section_total
                 for year in years_in_data:
                     col_name = f"%-All-{year}"
@@ -400,9 +406,11 @@ class Boundary(Base):
                             # There are Scouts but no eligible population in the geographic area
                             boundary_row.at[col_name] = 100
             else:
-                for section in Boundary.SECTION_AGES.keys():
-                    boundary_row.at[f"%-{section}"] = np.NaN
-                boundary_row.at[f'%-All-{section}'] = np.NaN
+                self.logger.warning(f"{area_code} does not exist in age profile file found here: {age_profile_path}")
+                for year in years_in_data:
+                    for section in Boundary.SECTION_AGES.keys():
+                        boundary_row.at[f"%-{section}-{year}"] = np.NaN
+                    boundary_row.at[f'%-All-{year}'] = np.NaN
 
             uptake_report.iloc[area_row] = boundary_row
 
@@ -413,6 +421,8 @@ class Boundary(Base):
                 uptake_report[col_name].clip(upper=max_value, inplace=True)
             max_value = uptake_report[f"%-All-{year}"].quantile(0.975)
             uptake_report[f"%-All-{year}"].clip(upper=max_value, inplace=True)
+
+        self.boundary_report[self.boundary_dict["name"]] = uptake_report
 
         if report_name:
             self.save_report(uptake_report, report_name)
@@ -438,6 +448,35 @@ class Boundary(Base):
         """
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
         self.filter_boundaries(boundary, ons_value_list)
+
+    def filter_boundaries_near_scout_area(self, boundary, column, value_list):
+        """Filters the boundaries, to include only those boundaries which have
+        Sections that satisfy the requirement that the column is in the value_list,
+        or in a neighbouring boundary.
+
+        :param str boundary: ONS boundary to filter on
+        :param str column: Scout boundary (e.g. C_ID)
+        :param list value_list: List of values in the Scout boundary
+        """
+        near_records = self.scout_data.nearby_records(column, value_list, 3000)
+        nearby_values = near_records[boundary].unique()
+
+        #ons_value_list = self.ons_from_scout_area(boundary, column, nearby_values)
+        self.logger.info(f"Found {nearby_values}")
+        #boundaries = gpd.GeoDataFrame.from_file(self.boundary_dict["boundary"]["shapefile"])
+        #self.logger.info(f"Looking at boundaries:\n{boundaries}")
+
+        #in_area = boundaries.loc[boundaries[self.boundary_dict["boundary"]["key"]].isin(ons_value_list)]
+        #self.logger.info(f"Found {len(in_area.index)} boundaries inside area")
+        #out_area = boundaries.loc[~boundaries[self.boundary_dict["boundary"]["key"]].isin(ons_value_list)]
+
+        #in_multipolygon = shapely.ops.unary_union(in_area["geometry"].tolist())
+        #in_mutlipolygon = in_multipolygon.buffer(1000)
+
+        #is_near = boundaries.apply(lambda area: area.geometry.intersects(in_multipolygon), axis=1)
+        #self.logger.info(f"Resulting in {sum(is_near)} boundaries")
+        #near_codes = boundaries[is_near][self.boundary_dict["boundary"]["key"]]
+        self.filter_boundaries(boundary, nearby_values)
 
     def ons_from_scout_area(self, ons_code, column, value_list):
         """Produces list of ONS Geographical codes that exist within a subset

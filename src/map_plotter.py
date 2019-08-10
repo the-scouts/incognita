@@ -1,7 +1,7 @@
 import folium
 from folium.plugins import MarkerCluster
 from folium.map import FeatureGroup
-import geopandas
+import geopandas as gpd
 import webbrowser
 import os
 
@@ -27,12 +27,12 @@ class MapPlotter(Base):
     :var self.map: holds the folium map object
     """
 
-    def __init__(self, shape_files_dict, data_info, out_file, sections_clustered=False):
+    def __init__(self, shape_files_dict, data_info, out_file):
         super().__init__()
 
         self.out_file = out_file + ".html"
         self.code_name = shape_files_dict["key"]
-        self.logger.info(f"Creating map of {data_info['code_col']}s against {data_info['score_col']} using the following data\n{data_info['data']}")
+        self.logger.info(f"Creating map of {data_info['code_col']}s against {data_info['score_col']}")
         self.map_data = data_info['data']
         self.CODE_COL = data_info['code_col']
         self.SCORE_COL = data_info['score_col']
@@ -42,13 +42,12 @@ class MapPlotter(Base):
         self.map = folium.Map(location=[53.5, -1.49], zoom_start=6)
 
         self.layers = {}
-        self.add_layer('Sections', sections_clustered)
 
         self.geo_data = None
 
         self.filter_shape_file(shape_files_dict["shapefile"])
 
-    def add_layer(self, name, markers_clustered):
+    def add_layer(self, name, markers_clustered=False, show=True):
         """
         Adds a maker layer to the map
 
@@ -56,9 +55,9 @@ class MapPlotter(Base):
         :param bool markers_clustered: Whether the markers should cluster or not
         """
         if markers_clustered:
-            self.layers[name] = MarkerCluster(name=name).add_to(self.map)
+            self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)
         else:
-            self.layers[name] = FeatureGroup(name=name).add_to(self.map)
+            self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
 
     def filter_shape_file(self, shape_file_path):
         """Loads, filters and converts shapefiles for later use
@@ -72,7 +71,7 @@ class MapPlotter(Base):
         """
 
         # Read a shape file
-        all_shapes = geopandas.GeoDataFrame.from_file(shape_file_path)
+        all_shapes = gpd.GeoDataFrame.from_file(shape_file_path)
 
         original_number_of_shapes = len(all_shapes.index)
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
