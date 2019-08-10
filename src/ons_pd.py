@@ -46,5 +46,9 @@ class ONSPostcodeDirectory(Base):
         :return: DataSeries of codes in the target_geography
         """
         # Maps the start geography to target geography
-        areas_mapped = self.data.loc[self.data[start_geography].isin(start_values), target_geography].drop_duplicates()
+        try:
+            areas_mapped = self.data.loc[self.data[start_geography].isin(start_values), target_geography].drop_duplicates()
+        except AttributeError:
+            self.logger.error("No data in ONS PD object. Ensure ScoutData object is created with load_ons_pd_data being True")
+            raise
         return areas_mapped
