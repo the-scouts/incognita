@@ -41,7 +41,7 @@ def wrapper(method):
 
             # Try to log how long the function took
             try:
-                self.logger.duration(method.__name__, start_time)
+                self.logger.duration(method.__name__, start_time=start_time)
             except AttributeError:
                 pass
 
