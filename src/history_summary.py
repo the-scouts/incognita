@@ -59,7 +59,7 @@ class HistorySummary(Base):
         # Applies to a Series, unpacking the returned tuples to individual series
         # Casts to an object dtype as later we introduce text.
         years_return = grouped_data["Year"]\
-            .agg(lambda df: utility.years_of_return(df))\
+            .agg(lambda df: utility.years_of_return(df["Year"]))\
             .apply(pd.Series)\
             .astype(object)
 
