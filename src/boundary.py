@@ -237,7 +237,8 @@ class Boundary(Base):
                 # Removes leading and trailing whitespace
                 # Concatenates the Series to a string with a newline separator
                 boundary_data["Groups"] = records_in_boundary[ScoutCensus.column_labels['name']["GROUP"]]\
-                    .dropna() \
+                    .dropna()\
+                    .drop_duplicates()\
                     .astype(str)\
                     .str.strip()\
                     .str.cat(sep='\n')
@@ -449,7 +450,7 @@ class Boundary(Base):
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
         self.filter_boundaries(boundary, ons_value_list)
 
-    def filter_boundaries_near_scout_area(self, boundary, column, value_list):
+    def filter_boundaries_near_scout_area(self, boundary, column, value_list, distance=3000):
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list,
         or in a neighbouring boundary.
@@ -457,25 +458,12 @@ class Boundary(Base):
         :param str boundary: ONS boundary to filter on
         :param str column: Scout boundary (e.g. C_ID)
         :param list value_list: List of values in the Scout boundary
+        :param int distance: Distance in metres from Scout boundary to loo for boundaries
         """
-        near_records = self.scout_data.nearby_records(column, value_list, 3000)
+        near_records = self.scout_data.nearby_records(column, value_list, distance)
         nearby_values = near_records[boundary].unique()
 
-        #ons_value_list = self.ons_from_scout_area(boundary, column, nearby_values)
         self.logger.info(f"Found {nearby_values}")
-        #boundaries = gpd.GeoDataFrame.from_file(self.boundary_dict["boundary"]["shapefile"])
-        #self.logger.info(f"Looking at boundaries:\n{boundaries}")
-
-        #in_area = boundaries.loc[boundaries[self.boundary_dict["boundary"]["key"]].isin(ons_value_list)]
-        #self.logger.info(f"Found {len(in_area.index)} boundaries inside area")
-        #out_area = boundaries.loc[~boundaries[self.boundary_dict["boundary"]["key"]].isin(ons_value_list)]
-
-        #in_multipolygon = shapely.ops.unary_union(in_area["geometry"].tolist())
-        #in_mutlipolygon = in_multipolygon.buffer(1000)
-
-        #is_near = boundaries.apply(lambda area: area.geometry.intersects(in_multipolygon), axis=1)
-        #self.logger.info(f"Resulting in {sum(is_near)} boundaries")
-        #near_codes = boundaries[is_near][self.boundary_dict["boundary"]["key"]]
         self.filter_boundaries(boundary, nearby_values)
 
     def ons_from_scout_area(self, ons_code, column, value_list):
