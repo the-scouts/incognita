@@ -23,7 +23,7 @@
       "imd_decile":
       {
           "name": "imd_decile",
-          "codes": {"path": "../../data/Scout Census Data/imd_names_and_codes.csv", "key": "IMD Decile", "key_type": "Int32", "name": "Name"},
+          "codes": {"path": "../../data/Scout Census Data/imd_names_and_codes.csv", "key": "IMD Decile", "key_type": "Object", "name": "Name"},
           "boundary": null,
           "age_profile": null
       }
