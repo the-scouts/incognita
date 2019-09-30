@@ -22,7 +22,7 @@ class DistrictBoundaries(Base):
         that doesn't overlap or leave gaps between Districts.
         """
 
-        if not self.scout_data.has_ons_pd_data():
+        if not self.has_ons_data():
             raise Exception("Must have ons data added before creating district boundaries")
 
         # Find all the District IDs and names
@@ -33,8 +33,8 @@ class DistrictBoundaries(Base):
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row
-        all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long"])
-        all_locations[["D_name", "Object_ID"]] = valid_locations[["D_name", "Object_ID"]]
+        all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long", "clean_postcode"])
+        all_locations[["D_name", "Object_ID", "clean_postcode"]] = valid_locations[["D_name", "Object_ID", "clean_postcode"]]
         all_locations[["D_ID", "lat", "long"]] = valid_locations[["D_ID", "lat", "long"]].apply(pd.to_numeric, errors='coerce')
         all_locations.drop_duplicates(subset=["lat", "long"], inplace=True)
 
@@ -51,25 +51,25 @@ class DistrictBoundaries(Base):
 
         # Calculates all the other points within twice the distance of the
         # closest point from a neighbouring district
-        all_points["nearest_points"] = all_points.apply(lambda row: self.nearest_other_points(row, all_points.loc[all_points["D_ID"] != row["D_ID"]]), axis=1)
+        all_points["nearest_points"] = all_points.apply(lambda row: self.nearest_other_points(row, all_points), axis=1)
+        all_points["indexes_of_interest"] = all_points.apply(lambda row: self.indexes_of_interest(row, all_points), axis=1)
         all_points["buffer_distance"] = 0
 
         # Initial calcuation of the buffer distances
-        self.logger.info("Calculating buffer distances of " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " points")
+        self.logger.info(f"Calculating buffer distances of {sum(all_points['buffer_distance'] == 0)} points")
         all_points["buffer_distance"] = all_points.apply(lambda row: self.buffer_distance(row, all_points), axis=1)
-        self.logger.info("On first pass " + str(all_points["buffer_distance"].value_counts().iloc[0]) + " missing buffer distance")
+        self.logger.info(f"On first pass {sum(all_points['buffer_distance'] == 0)} missing buffer distance")
 
-        old_number = all_points["buffer_distance"].value_counts().iloc[0]
-        new_number = 0
+        old_number = sum(all_points['buffer_distance'] == 0)
+        new_number = 1
         # The algorithm is iterative, so stop when no more points have their
         # buffers identified
-        while new_number < old_number:
-            old_number = all_points["buffer_distance"].value_counts().iloc[0]
+        while (new_number < old_number) and (new_number > 0):
+            old_number = sum(all_points["buffer_distance"] == 0)
             all_points["buffer_distance"] = all_points.apply(lambda row: self.buffer_distance(row, all_points), axis=1)
-            new_number = all_points["buffer_distance"].value_counts().iloc[0]
+            new_number = sum(all_points["buffer_distance"] == 0)
             self.logger.info(f"On next pass {new_number} missing buffer distance")
-            _ = all_points.loc[all_points["buffer_distance"] == 0]
-            self.logger.debug(f"The following points do not have buffer distances defined:\n{_}")
+            self.logger.debug(f"The following points do not have buffer distances defined:\n{all_points.loc[all_points['buffer_distance'] == 0]}")
 
         # Create the GeoDataFrame that will form the GeoJSON
         output_columns = ["id", "name"]
@@ -110,15 +110,42 @@ class DistrictBoundaries(Base):
         output_gpd.to_file("districts_buffered.geojson", driver='GeoJSON')
 
     def buffer_distance(self, point_details, all_points):
-        obj_id = point_details["Object_ID"]
-        self.logger.debug(f"Finding buffer distance of {point_details.index} with object ID {obj_id}")
-        distance = 0
-        nearest_points = point_details["nearest_points"]
+        """
+        Calculates the buffer distance of a point. Sometimes is inconclusive
+        as requires the results of the buffer distance of other points, and
+        in this case returns 0.
+
+        :param GeoDataSeries row: row containing 'nearest points' and 'indexes of interest' columns
+        :param GeoDataFrame all_points: Contains all points.
+        """
         if point_details["buffer_distance"] == 0:
+            distance = 0
             valid = True
+
+            self.logger.debug(f"Finding buffer distance of\n{point_details}")
+            nearest_points = point_details["nearest_points"]
+            #self.logger.debug(f"Found nearest points\n{nearest_points}")
+
+            # The factor of 6, is due to the furthest relevant section to the next part of the function
+            # The furthest nearest point is twice the distance, and therefore the furthest nearest point
+            # to the furthest nearest point is 6 times the distance from the original point.
+
+            #boundary_of_interest = nearest_points[0]["Distance"] * 6
+            #self.logger.debug(f"Points of interest lie within {boundary_of_interest}")
+            #points = [p for p in all_points["geometry"] if point_details["geometry"].distance(p) < boundary_of_interest]
+            #self.logger.debug(f"Found {len(points)} within {boundary_of_interest}, which are\n{points}")
+            #points_of_interest = all_points.loc[all_points["geometry"].isin(points)]
+
+            #self.logger.debug(f"all_points:\n{all_points}")
+            #self.logger.debug(f"indexes_of_interest:\n{point_details['indexes_of_interest']}")
+            points_of_interest = all_points.loc[point_details["indexes_of_interest"]]
+            #self.logger.debug(f"Resulting in the following points of interest\n{points_of_interest}")
+
             for nearby_point in nearest_points:
-                point_obj = nearby_point["Point"]
-                buffer = self.buffer_distance_from_point(point_obj, all_points)
+                #self.logger.debug(f"Nearby point dictionary:\n{nearby_point}")
+                nearby_point_details = points_of_interest.loc[nearby_point["Index"], :]
+                #self.logger.debug(f"Nearby point:\n{nearby_point_details}")
+                buffer = nearby_point_details["buffer_distance"].iloc[0]
                 if buffer != 0:
                     new_distance = nearby_point["Distance"] - buffer
                     if distance == 0:
@@ -130,49 +157,45 @@ class DistrictBoundaries(Base):
                         # Decide if these two points are a 'pair'.
                         # I.e. if the restricting factor is just their
                         # mutual closeness.
-                        nearby_point_details = all_points.loc[all_points["geometry"] == point_obj]
                         nearest_to_nearby = nearby_point_details["nearest_points"].iloc[0]
-                        unset_nearby = [p["Point"] for p in nearest_to_nearby if self.buffer_distance_from_point(p["Point"], all_points) == 0]
-                        if unset_nearby:
-                            closer_set = []
-                            ii = 0
-                            while nearest_to_nearby[ii]["Point"] != unset_nearby[0]:
-                                closer_set.append(nearest_to_nearby[ii])
-                                ii += 1
-                            buffers = [self.buffer_distance_from_point(p["Point"], all_points) for p in closer_set]
-                            if 0 in buffers:
-                                # Means that there is a closer point with no buffer defined
-                                valid = False
-                            elif buffers and (max(buffers) > nearby_point["Distance"] / 2):
-                                # Means that there is closer point with a buffer big enough to make a difference
-                                valid = False
-                            else:
-                                if unset_nearby[0] == point_details["geometry"]:
-                                    # The closest unset point to this near point we are considering is the original point
-                                    distance = nearby_point["Distance"] / 2
-                                else:
+                        #self.logger.debug(f"Nearest to nearby points\n{nearest_to_nearby}")
+                        nearest_to_nearby_indexes = [p["Index"][0] for p in nearest_to_nearby]
+
+                        nearest_to_nearby_details = points_of_interest.loc[nearest_to_nearby_indexes, :]
+                        #self.logger.debug(f"Nearest to nearby details\n{nearest_to_nearby_details}")
+
+                        unset_nearby = nearest_to_nearby_details.loc[nearest_to_nearby_details["buffer_distance"] == 0]
+                        #self.logger.debug(f"Unset nearby\n{unset_nearby}")
+                        #self.logger.debug(f"Unset nearby - index\n{unset_nearby.index}")
+                        #self.logger.debug(f"Unset nearby - Index\n{unset_nearby['Index']}")
+                        #self.logger.debug(f"Unset nearby - index2\n{unset_nearby['Index']}")
+
+                        if not unset_nearby.empty:
+                            #self.logger.debug(f"Closest unset:\n{3 in unset_nearby.index}")
+                            #self.logger.debug(f"Closest unset:\n{nearest_to_nearby[0]['Index'][0] in unset_nearby.index}")
+                            closest_unset = [p for p in nearest_to_nearby if p["Index"][0] in unset_nearby.index][0]
+                            closer_set = [p for p in nearest_to_nearby if p["Distance"] < closest_unset["Distance"]]
+                            #self.logger.debug(f"The following points are closer with defined buffers\n{closer_set}")
+                            if closer_set:
+                                buffers = nearest_to_nearby_details.loc[[p["Index"][0] for p in closer_set], :]["buffer_distance"]
+
+                                if (not buffers.empty) and (max(buffers) > nearby_point["Distance"] / 2):
                                     valid = False
+
+                            if points_of_interest.loc[closest_unset['Index'], :]["index"].iloc[0] == point_details["index"]:
+                                # The closest unset point to this near point we are considering is the original point
+                                distance = nearby_point["Distance"] / 2
+                            else:
+                                valid = False
             if not valid:
                 distance = 0
+            #self.logger.debug(f"Buffer distance is {distance}")
         else:
             distance = point_details["buffer_distance"]
+            #self.logger.debug(f"Buffer distance already set at {distance}")
         return distance
 
-    @staticmethod
-    def buffer_distance_from_point(point, all_points):
-        """
-        Find the distance recorded using the point as the key
-
-        :param shapely.Point point: Point interested in
-        :param GeoDataFrame all_points: DataFrame containing 'buffer_distance' column
-
-        :returns float: Distance recorded as buffer from point
-        """
-        point_details = all_points.loc[all_points["geometry"] == point]
-        buffer = point_details["buffer_distance"].iloc[0]
-        return buffer
-
-    def nearest_other_points(self, row, other_data):
+    def nearest_other_points(self, row, all_points):
         """
         Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
         the points and corresponding distances for all points with twice
@@ -184,10 +207,43 @@ class DistrictBoundaries(Base):
         :returns list: Sorted list of dictionaries containing points and distances
         """
         point = row["geometry"]
-        self.logger.debug("nearest_other_points:" + str(row.index))
+        #self.logger.debug(f"nearest_other_points:\n{row}")
+
+        other_data = all_points.loc[all_points["D_ID"] != row["D_ID"]]
         other_points = shapely.geometry.MultiPoint(other_data["geometry"].tolist())
-        distance = point.distance(other_points)*2
-        points = [{"Point": p, "Distance": point.distance(p)} for p in other_points if point.distance(p) < distance]
+
+        nearest_points = shapely.ops.nearest_points(point, other_points)
+        nearest_other_point = nearest_points[1]
+        distance = point.distance(nearest_other_point) * 2
+
+
+        points = [{"Point": p, "Distance": point.distance(p), "Index": other_data.loc[other_data["geometry"] == p].index} for p in other_points if point.distance(p) < distance]
+
         points.sort(key=lambda i: i["Distance"])
-        self.logger.debug(points)
+        #self.logger.debug(points)
         return points
+
+    def indexes_of_interest(self, row, all_points):
+        """
+        Provides index of all points within 3 times the distance of the
+        closest point.
+
+        (This is the maximal set of points that could affect the buffer distance
+        of this point)
+
+        :param DataSeries row: Row of a GeoDataFrame - requires a 'nearest_points' column
+        :param DataFrame all_points: All the points to be considered.
+
+        :returns: Indexes of interest
+        """
+        #self.logger.debug(f"indexes row:\n{row}")
+        distance = row["nearest_points"][0]["Distance"]
+        point = row["geometry"]
+        #self.logger.debug(f"indexes distance:\n{distance}")
+        indexes_of_interest = [all_points.loc[all_points["geometry"] == p].index for p in all_points["geometry"] if point.distance(p) < (distance * 3)]
+        #self.logger.debug(f"indexes of interest:\n{indexes_of_interest}")
+        resultant_indexes = indexes_of_interest[0]
+        for index in indexes_of_interest[1:]:
+            resultant_indexes = resultant_indexes.union(index)
+        #self.logger.debug(f"resultant index:\n{resultant_indexes}")
+        return resultant_indexes

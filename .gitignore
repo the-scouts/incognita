@@ -11,3 +11,4 @@ src/logs/*.log
 src/scripts/logs/*.log
 src/scripts/error_file.txt
 *egg-info*
+src/scripts/profile_output.txt
