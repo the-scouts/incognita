@@ -24,7 +24,8 @@ if __name__ == "__main__":
     boundary.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county", exec_tm=True)
     boundary.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
 
-    static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 5, 8, 11, 14, 20]}
+    # % 6-17 pcon uptake from Jan-2019 Scout Census with May 2019 ONS
+    static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
 
     max_year = scout_data.max_year
 
