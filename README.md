@@ -18,7 +18,7 @@ You will need to obtain the latest version of the ONS Postcode Directory. Note
 that this has some open licences attached to it.
 
 If this is not May 2018, then you will need to create another child class of
-ONSData in ONS_data.py
+ONSPostcodeDirectory in ONS_data.py
 
 You will need to populate the settings.json file with the appropriate file paths
 

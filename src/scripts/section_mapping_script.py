@@ -1,8 +1,6 @@
-from src.script_handler import ScriptHandler
-from src.scout_map import ScoutMap
+from src.scout_data import ScoutData
 
 if __name__ == "__main__":
-
-    script_handler = ScriptHandler()
-    script_handler.run(ScoutMap.add_IMD_decile)
-    script_handler.run(ScoutMap.group_history_summary, [["2019"]], "2019_groups_with_IMD")
+    scout_data = ScoutData()
+    scout_data.add_imd_decile()
+    scout_data.group_history_summary(["2019"], report_name="2019_groups_with_IMD")

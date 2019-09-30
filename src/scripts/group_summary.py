@@ -1,8 +1,6 @@
-from src.script_handler import ScriptHandler
-from src.scout_map import ScoutMap
+from src.scout_data import ScoutData
 
 if __name__ == "__main__":
-
-    script_handler = ScriptHandler()
-    script_handler.run(ScoutMap.add_IMD_decile)
-    sections = script_handler.run(ScoutMap.filter_records, [["imd_decile"],[1,2]])
+    scout_data = ScoutData()
+    scout_data.add_imd_decile()
+    sections = scout_data.filter_records("imd_decile", [1, 2])
