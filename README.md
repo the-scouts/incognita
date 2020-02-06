@@ -26,7 +26,9 @@ You will need to populate the settings.json file with the appropriate file paths
 Use setup.py or environment.yml with pip or conda to install the required packages and their dependancies.
 
 #### geopandas:
-To install geopandas using pip on windows, follow the following steps:
+It is highly recommended to use conda to install geopandas.
+
+However, to install geopandas using pip on windows, follow the following steps:
 * Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), [pyproj](http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyproj), [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree), and [Shapely](http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely). Choose the correct python version & platform (note as of Jun 19 Fiona doesn't support GDAL 3.x)
 * Install any prerequisites (e.g. C++ redistributables)
 * pip install the wheels in the following order (preferably in a VirtualEnv)
