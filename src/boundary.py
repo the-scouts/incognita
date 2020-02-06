@@ -138,7 +138,7 @@ class Boundary(Base):
         self.district_mapping[ons_code] = mapping
         self.logger.debug("Finished mapping from ons boundary to district")
 
-    def create_boundary_report(self, options=["Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"], historical=False, report_name=None):
+    def create_boundary_report(self, options=["Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"], historical=False, report_name=None):
         """Produces .csv file summarising by boundary provided.
 
         Requires self.boundary_data to be set, preferably by :meth:scout_data.set_boundary
@@ -158,6 +158,12 @@ class Boundary(Base):
         if not name:
             raise Exception("boundary_dict has not been set. Try calling set_boundary")
 
+        opt_number_of_sections = \
+            True if "Number of Sections" in options \
+            else False
+        opt_number_of_groups = \
+            True if "Number of Groups" in options \
+            else False
         opt_groups = \
             True if "Groups" in options \
             else False
@@ -189,11 +195,18 @@ class Boundary(Base):
         if opt_groups:
             output_columns.append("Groups")
 
+        if opt_number_of_groups:
+            output_columns.append("Number of Groups")
+
+
         for year in years_in_data:
             if opt_section_numbers:
                 output_columns += [f"Beavers-{year}", f"Cubs-{year}", f"Scouts-{year}", f"Explorers-{year}"]
             if opt_6_to_17_numbers:
                 output_columns.append(f"All-{year}")
+            if opt_number_of_sections:
+                for section in sections_dict.keys():
+                    output_columns.append(f"{sections_dict[section]['type']}s-{year}")
 
         if opt_waiting_list_totals:
             output_columns += [f"Waiting List-{year}" for year in years_in_data]
@@ -229,20 +242,23 @@ class Boundary(Base):
             records_in_boundary = self.scout_data.data.loc[self.scout_data.data[name] == code]
             self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
 
-            if opt_groups:
+            if opt_groups or opt_number_of_groups:
                 # Used to list the groups that operate within the boundary
                 # Gets all groups in the records_in_boundary dataframe
                 # Removes NaN values
                 # Converts all values to strings to make sure the string operations work
                 # Removes leading and trailing whitespace
                 # Concatenates the Series to a string with a newline separator
-                boundary_data["Groups"] = records_in_boundary[ScoutCensus.column_labels['name']["GROUP"]]\
-                    .dropna() \
+                groups = records_in_boundary[ScoutCensus.column_labels['name']["GROUP"]]\
+                    .dropna()\
                     .astype(str)\
                     .str.strip()\
-                    .str.cat(sep='\n')
+                    .drop_duplicates()
 
-            if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals:
+                boundary_data["Number of Groups"] = len(groups)
+                boundary_data["Groups"] = groups.str.cat(sep='\n')
+
+            if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
                 self.logger.debug(f"Obtaining Section numbers and waiting list for {year}")
                 for year in years_in_data:
                     year_records = records_in_boundary.loc[records_in_boundary[ScoutCensus.column_labels['YEAR']] == year]
@@ -259,6 +275,9 @@ class Boundary(Base):
 
                         if sections_dict[section].get("waiting_list"):
                             boundary_data[f"Waiting List-{year}"] += year_records[sections_dict[section]["waiting_list"]].sum()
+
+                        if opt_number_of_sections:
+                            boundary_data[f"{sections_dict[section]['type']}s-{year}"] = len(year_records.loc[year_records["type"] == sections_dict[section]["type"]])
 
             if opt_awards:
                 award_name = sections_dict["Beavers"]["top_award"]
