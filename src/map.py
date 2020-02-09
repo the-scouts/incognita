@@ -10,6 +10,7 @@ from src.scout_data import ScoutData
 from src.base import Base
 from src.map_plotter import MapPlotter
 from src.scout_census import ScoutCensus
+from src.boundary import Boundary
 
 
 class Map(Base):
@@ -88,6 +89,26 @@ class Map(Base):
             self.map_plotter.add_areas(legend_label + " (static)", show=False, boundary_name=geography_area_names,
                                        colourmap=colourmap_static)
 
+    def add_areas(self, dimension, boundary: Boundary):
+        self.map_plotter.update_boundary(boundary)
+        self.map_plotter.update_score_col(dimension, boundary)
+
+        non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]] != 0]
+        non_zero_score_col.dropna(inplace=True)
+        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].min()
+        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].max()
+        self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
+        colourmap = branca.colormap.LinearColormap(
+            colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
+            index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
+            vmin=min_value,
+            vmax=max_value)
+        non_zero_score_col.sort_values(axis=0, inplace=True)
+        colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+        self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
+        colourmap.caption = dimension["legend"]
+        self.map_plotter.add_areas(dimension["legend"], show=False, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
+
     def add_meeting_places_to_map(self, sections, colour, marker_data, layer='Sections', cluster_markers=False):
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
@@ -161,7 +182,7 @@ class Map(Base):
             groups = colocated_group_sections[ScoutCensus.column_labels['id']["GROUP"]].unique()
             self.logger.debug(groups)
             for group in groups:
-                colocated_in_group = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['id']["GROUP"]] == group]
+                colocated_in_group = colocated_group_sections.loc[colocated_group_sections[ScoutCensus.column_labels['id']["GROUP"]] == group]
                 group_name = colocated_in_group.iloc[0][ScoutCensus.column_labels['name']["GROUP"]] + " Group"
 
                 html += (f"<h3 align=\"center\">{group_name}</h3><p align=\"center\">"

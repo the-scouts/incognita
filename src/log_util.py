@@ -18,7 +18,7 @@ def create_logger(name, file_path=None):
 
     # set up a log to the console
     console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
+    console.setLevel(logging.DEBUG)
     console.setFormatter(logging.Formatter(fmt="%(filename)s - %(levelname)s - %(message)s"))
 
     # creates the main logger
