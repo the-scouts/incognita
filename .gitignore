@@ -1,4 +1,4 @@
-*.html
+Output/*.html
 *.csv
 __pycache__/*
 */__pycache__/*
