@@ -6,6 +6,7 @@ import webbrowser
 import os
 
 from src.base import Base
+from src.boundary import Boundary
 
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
 # It is used by folium to plot the data.
@@ -35,7 +36,8 @@ class MapPlotter(Base):
         self.logger.info(f"Creating map of {data_info['code_col']}s against {data_info['score_col']}")
         self.map_data = data_info['data']
         self.CODE_COL = data_info['code_col']
-        self.SCORE_COL = data_info['score_col']
+        self.SCORE_COL = {}
+        self.SCORE_COL[shape_files_dict["name"]] = data_info['score_col']
         self.score_col_label = data_info["score_col_label"]
 
         # Create folium map
@@ -46,6 +48,31 @@ class MapPlotter(Base):
         self.geo_data = None
 
         self.filter_shape_file(shape_files_dict["shapefile"])
+
+    def update_boundary(self, boundary: Boundary):
+        """
+        Changes the boundary to a new boundary
+        @TODO: map_plotter should be able to formally deal with multiple layers,
+        using different boundaries, and should be able to swap between them,
+        (i.e. using dictionaries, with keys of the boundary name.)
+        @TODO: This would be simpler, if the boundary object obfuscated the
+        structure of the dictionaries underneath
+
+        :param Boundary boundary: contains details about the new boundary
+        """
+        self.code_name = boundary.boundary_dict["boundary"]["key"]
+
+        name = boundary.boundary_dict["name"]
+        self.map_data = boundary.boundary_report[name]
+        self.CODE_COL = name
+        self.filter_shape_file(boundary.boundary_dict["boundary"]["shapefile"])
+
+        self.logger.info(f"Boundary changed to: {name} ({self.code_name}). Data has columns {self.map_data.columns}.")
+
+    def update_score_col(self, dimension, boundary):
+        self.SCORE_COL[boundary.boundary_dict["boundary"]["name"]] = dimension["column"]
+        self.score_col_label = dimension["tooltip"]
+        self.logger.info(f"Setting score column to {self.SCORE_COL[boundary.boundary_dict['boundary']['name']]} (displayed: {self.score_col_label})")
 
     def add_layer(self, name, markers_clustered=False, show=True):
         """
@@ -94,7 +121,7 @@ class MapPlotter(Base):
         :param colourmap: branca colour map object
         :return: None
         """
-        self.logger.debug(f"Merging geo_json on {self.code_name} with {self.CODE_COL} from boundary report")
+        self.logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
         merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL)
         self.logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
@@ -105,13 +132,13 @@ class MapPlotter(Base):
             data=merged_data.to_json(),
             name=name,
             style_function=lambda x: {
-               'fillColor': self.map_colourmap(x['properties'], colourmap),
+               'fillColor': self.map_colourmap(x['properties'], colourmap, boundary_name),
                'color': 'black',
-               'fillOpacity': 0.4,
-               'weight': 0.2
+               'fillOpacity': 0.33,
+               'weight': 0.5
             },
             tooltip=folium.GeoJsonTooltip(
-               fields=[boundary_name, self.SCORE_COL],
+               fields=[boundary_name, self.SCORE_COL[boundary_name]],
                aliases=['Name', self.score_col_label],
                localize=True
             ),
@@ -119,15 +146,17 @@ class MapPlotter(Base):
         ).add_to(self.map)
         colourmap.add_to(self.map)
 
-    def map_colourmap(self, properties, colourmap):
+    def map_colourmap(self, properties, colourmap, boundary_name):
         """Returns colour from colour map function and value
 
         :param properties: dictionary of properties
         :param colourmap: a Branca Colormap object to calculate the region's colour
         :return str: hexadecimal colour value "#RRGGBB"
         """
-        area_score = properties[self.SCORE_COL]
+        self.logger.debug(f"Colouring {properties} by {self.SCORE_COL[boundary_name]}")
+        area_score = properties.get(self.SCORE_COL[boundary_name])
         if area_score is None:
+            self.logger.debug("Colouring gray")
             return '#cccccc'
         elif float(area_score) == 0:
             return '#555555'

@@ -7,8 +7,7 @@ from src.base import Base
 from src.scout_data import ScoutData
 from src.scout_census import ScoutCensus
 import src.utility as utility
-
-np = pd.np
+import numpy as np
 
 
 class Boundary(Base):
@@ -37,6 +36,18 @@ class Boundary(Base):
         self.district_mapping = {}
 
         self.set_boundary(geography_name)
+
+    @property
+    def ons_column_name(self):
+        return self.boundary_dict["name"]
+
+    @property
+    def shapefile_key(self):
+        return self.boundary_dict["boundary"]["key"]
+
+    @property
+    def shapefile_name_column(self):
+        return self.boundary_dict["boundary"]["name"]
 
     def set_boundary(self, geography_name):
         """Sets the boundary_dict and boundary_regions_data members
@@ -259,7 +270,7 @@ class Boundary(Base):
                 boundary_data["Groups"] = groups.str.cat(sep='\n')
 
             if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
-                self.logger.debug(f"Obtaining Section numbers and waiting list for {year}")
+                self.logger.debug(f"Obtaining Section numbers and/or waiting list for {year}")
                 for year in years_in_data:
                     year_records = records_in_boundary.loc[records_in_boundary[ScoutCensus.column_labels['YEAR']] == year]
 
