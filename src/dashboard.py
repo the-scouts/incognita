@@ -2,9 +2,6 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 
-from src.scout_data import ScoutData
-from src.boundary import Boundary
-from src.map import Map
 from src.base import Base
 
 class Dashboard(Base):
