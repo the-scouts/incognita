@@ -14,7 +14,7 @@ from src.boundary import Boundary
 
 
 class Map(Base):
-    def __init__(self, scout_data_object: ScoutData, boundary_object, dimension, map_name, **kwargs):
+    def __init__(self, scout_data_object: ScoutData, map_name, **kwargs):
         super().__init__(settings=True)
 
         self.map_plotter = None
@@ -24,21 +24,23 @@ class Map(Base):
 
         self.scout_data = scout_data_object
 
-        self.create_map(dimension, map_name, boundary_object, **kwargs)
+        self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
 
-    def create_map(self, dimension, map_name, boundary_object, static_scale=None):
+    def create_map(self, dimension, boundary, static_scale=None):
         """
 
-        :param dimension: dict of column of ScoutCensus dataframe and labels for tooltip and key/legend
-        :param map_name:
-        :param boundary_object:
-        :param static_scale:
+        :param dict dimension: dict of column of ScoutCensus dataframe and labels for tooltip and key/legend
+        :param str map_name: the name for the .html file
+        :param Boundary boundary: The boundary object to use to produce the map
+        :param dict static_scale: Optional, allows a scale to be specified
         :return:
         """
-        boundary_dict = boundary_object.boundary_dict
-        boundary_report = boundary_object.boundary_report
+        self.map_plotter.set_boundary(boundary)
+        self.map_plotter.set_score_col(dimension, boundary)
 
-        geography_name = boundary_dict["name"]
+        boundary_report = boundary.boundary_report
+
+        geography_name = boundary.ons_column_name
         geography_info = boundary_dict["boundary"]
         geography_area_names = boundary_dict["boundary"]["name"]
 
@@ -57,10 +59,6 @@ class Map(Base):
 
         if not (score_col in list(data_codes["data"].columns)):
             raise Exception(f"The column {score_col} does not exist in data.\nValid columns are:\n{list(data_codes['data'].columns)}")
-
-        self.map_plotter = MapPlotter(geography_info,
-                                      data_codes,
-                                      self.settings["Output folder"] + map_name)
 
         non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
         non_zero_score_col.dropna(inplace=True)
@@ -90,9 +88,9 @@ class Map(Base):
                                        colourmap=colourmap_static)
 
     def add_areas(self, dimension, boundary: Boundary):
-        self.map_plotter.update_boundary(boundary)
-        self.map_plotter.update_score_col(dimension, boundary)
-
+        self.map_plotter.set_boundary(boundary)
+        self.map_plotter.set_score_col(dimension, boundary)
+        
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]] != 0]
         non_zero_score_col.dropna(inplace=True)
         min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].min()

@@ -49,6 +49,14 @@ class Boundary(Base):
     def shapefile_name_column(self):
         return self.boundary_dict["boundary"]["name"]
 
+    @property
+    def data(self):
+        return self.boundary_report[self.ons_column_name]
+
+    @property
+    def shapefile(self):
+        return self.boundary_dict["boundary"]["shapefile"]
+
     def set_boundary(self, geography_name):
         """Sets the boundary_dict and boundary_regions_data members
 
