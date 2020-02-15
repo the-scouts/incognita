@@ -96,4 +96,8 @@ found here:
 
 I would welcome any support, comments or guidance on my code.
 
+## Branches
+The heroku branch is specifically for the heroku application: http://scout-mapping.herokuapp.com. It contains a cut down requirements file to ensure that it
+loads into heroku correctly.
+
 *This project is licensed under the GNU License - see the LICENSE file for details*
