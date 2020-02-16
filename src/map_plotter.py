@@ -44,11 +44,6 @@ class MapPlotter(Base):
     def set_boundary(self, boundary: Boundary):
         """
         Changes the boundary to a new boundary
-        @TODO: map_plotter should be able to formally deal with multiple layers,
-        using different boundaries, and should be able to swap between them,
-        (i.e. using dictionaries, with keys of the boundary name.)
-        @TODO: This would be simpler, if the boundary object obfuscated the
-        structure of the dictionaries underneath
 
         :param Boundary boundary: contains details about the new boundary
         """
@@ -61,6 +56,12 @@ class MapPlotter(Base):
         self.logger.info(f"Boundary changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
     def set_score_col(self, dimension, boundary):
+        """
+        Sets the SCORE_COL to use for a particular boundary
+
+        :param dict dimension: specifies the score column to use int the data
+        :param Boundary boundary: specifies the geography to use
+        """
         self.SCORE_COL[boundary.shapefile_name_column] = dimension["column"]
         self.score_col_label = dimension["tooltip"]
         self.logger.info(f"Setting score column to {self.SCORE_COL[boundary.shapefile_name_column]} (displayed: {self.score_col_label})")
