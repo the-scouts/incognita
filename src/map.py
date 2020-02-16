@@ -87,10 +87,10 @@ class Map(Base):
             self.map_plotter.add_areas(legend_label + " (static)", show=False, boundary_name=geography_area_names,
                                        colourmap=colourmap_static)
 
-    def add_areas(self, dimension, boundary: Boundary):
+    def add_areas(self, dimension, boundary: Boundary, show=False):
         self.map_plotter.set_boundary(boundary)
         self.map_plotter.set_score_col(dimension, boundary)
-        
+
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]] != 0]
         non_zero_score_col.dropna(inplace=True)
         min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].min()
@@ -105,7 +105,7 @@ class Map(Base):
         colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
         colourmap.caption = dimension["legend"]
-        self.map_plotter.add_areas(dimension["legend"], show=False, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
+        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
 
     def add_meeting_places_to_map(self, sections, colour, marker_data, layer='Sections', cluster_markers=False):
         """Adds the sections provided as markers to map with the colour, and data
