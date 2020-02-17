@@ -52,8 +52,8 @@ class Map(Base):
                 vmin=min_value,
                 vmax=max_value)
 
-                non_zero_score_col.sort_values(axis=0, inplace=True)
-                colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+            non_zero_score_col.sort_values(axis=0, inplace=True)
+            colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
         else:
             colourmap = branca.colormap.LinearColormap(
                 colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     pcon = Boundary("pcon", scout_data)
-    pcon.filter_boundaries_near_scout_area("pcon" , "C_ID", [10000122], exec_tm=True)
+    pcon.filter_boundaries_near_scout_area("pcon" , "C_name", ["Hampshire"], exec_tm=True)
     pcon.filter_records_by_boundary(exec_tm=True)
     pcon.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name="pcon_central_yorkshire", exec_tm=True)
     pcon.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
@@ -45,11 +45,11 @@ if __name__ == "__main__":
     map.add_areas(dimension, imd)
 
     # Plotting the sections
-    map.set_region_of_colour("C_name", ["Central Yorkshire"])
+    map.set_region_of_colour("C_name", ["Hampshire"])
     map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)
     map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)
-    map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Central Yorkshire")], 'lightgray', ["youth membership"], 'Other Sections')
-    map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Central Yorkshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
+    map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Hampshire")], 'lightgray', ["youth membership"], 'Other Sections')
+    map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Hampshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
     map.save_map()
 
     # create_section_maps
