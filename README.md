@@ -39,6 +39,9 @@ However, to install geopandas using pip on windows, follow the following steps:
     5. Shapely
 * pip install geopandas
 
+### Generating datafile
+To generate the datafile needed for most operations, run `add_ons_data_script.py` with clean prototype extract. 
+
 ## Resources:
 ### Postcode Directory:
  * Latest ONS Postcode Directory ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory))
