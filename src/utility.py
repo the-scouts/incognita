@@ -76,7 +76,7 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
     """
 
     :param pd.Series imd_ranks:
-    :param pd.Series or str country_codes:
+    :param pd.Series country_codes:
     :param ons_object:
 
     :var pd.Series country_names:
@@ -86,13 +86,6 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
 
     :return:
     """
-
-    # to handle the one country case
-    if type(country_codes) is str:
-        temp_df = pd.DataFrame(imd_ranks)
-        temp_df["country"] = country_codes
-        country_codes = temp_df["country"]
-        del temp_df
 
     country_names = country_codes.map(ons_object.COUNTRY_CODES)
     imd_max = country_names.map(ons_object.IMD_MAX)
@@ -119,24 +112,6 @@ def try_downcast(series):
             return series
     except ValueError:
         return series
-
-
-def country_add_imd_decile(data, country, ons_object):
-    """Used to add IMD data to DataFrames that aren't the core census data
-
-    For example used to add IMD deciles to Lower Super Output Area boundary
-    reports.
-
-    All boundaries must be from the same country.
-
-    :param DataFrame data: Data to add IMD decile to. Must have 'imd' column
-    :param str country: Country code
-    :param ons_object:
-
-    :returns DataFrame: Original DataFrame with extra imd_decile column
-    """
-    data["imd_decile"] = calc_imd_decile(data["imd"], country, ons_object)
-    return data
 
 
 def save_report(report, output_path, report_name, logger=None):
