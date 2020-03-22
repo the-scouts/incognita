@@ -17,10 +17,10 @@ class Boundary(Base):
     """
 
     SECTION_AGES = {
-        'Beavers': [(6, 1), (7, 1)],
-        'Cubs': [(8, 1), (9, 1), (10, 0.5)],
-        'Scouts': [(10, 0.5), (11, 1), (12, 1), (13, 1)],
-        'Explorers': [(14, 1), (15, 1), (16, 1), (17, 1)]
+        'Beavers': {"ages": ["6", "7"]},
+        'Cubs': {"ages": ["8", "9"], "halves": ["10"]},
+        'Scouts': {"halves": ["10"], "ages": ["11", "12", "13"]},
+        'Explorers': {"ages": ["14", "15", "16", "17"]}
     }
 
     def __init__(self, geography_name, scout_data_object: ScoutData):
@@ -344,107 +344,58 @@ class Boundary(Base):
         return output_data
 
     def create_uptake_report(self, report_name=None):
-        """Creates an report by the boundary that has been set, requires
-        a boundary report to already have been run.
+        """Creates a report of scouting uptake in geographic areas
+
+        Creates an report by the boundary that has been set, requires a boundary report to already have been run.
         Requires population data by age for the specified boundary.
 
-        :var pd.DataFrame uptake_report:
+        :param str report_name: Name to save the report as
 
-        :returns: Uptake data of Scouts in the boundary
-        :rtype: pd.DataFrame
+        :returns pd.DataFrame: Uptake data of Scouts in the boundary
         """
-        boundary_dict = self.boundary_dict
-        boundary = boundary_dict["name"]
+        geog_name: str = self.boundary_dict.get("name")
+        age_profile_path: str = self.boundary_dict.get("age_profile").get("path")
+        age_profile_key: str = self.boundary_dict.get("age_profile").get("key")
+        boundary_report: pd.DataFrame = self.boundary_report.get(geog_name)
 
-        uptake_report: pd.DataFrame = self.boundary_report.get(boundary_dict["name"])
-        section = None
-
-        if uptake_report is None:
+        if boundary_report is None:
             raise AttributeError("Boundary report doesn't exist")
+        elif age_profile_path is None:
+            raise AttributeError(f"Population by age data not present for this {geog_name}")
 
-        age_profile_path = boundary_dict.get("age_profile").get("path")
+        data_types = {str(key): "Int16" for key in range(5, 26)}
+        try:
+            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path,
+                                         dtype=data_types)
+        except TypeError:
+            self.logger.error("Age profiles must be integers in each age category")
+            raise
 
-        if age_profile_path:
-            data_types = {str(key): "Int16" for key in range(5, 26)}
-            try:
-                age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path,
-                                             dtype=data_types)
-            except TypeError:
-                self.logger.error("Age profiles must be integers in each age category")
-                raise
-        else:
-            raise Exception(f"Population by age data not present for this {boundary}")
+        # population data
+        for section, ages in Boundary.SECTION_AGES.items():
+            age_profile_pd[f'Pop_{section}'] = age_profile_pd[ages["ages"]].sum(axis=1)
+            age_profile_pd[f'Pop_{section}'] += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
+        age_profile_pd['Pop_All'] = age_profile_pd[[f"{age}" for age in range(6, 17+1)]].sum(axis=1)
 
-        years_in_data = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
+        # merge population data
+        cols = [f"Pop_{section}" for section in Boundary.SECTION_AGES.keys()] + ['Pop_All'] + [age_profile_key]
+        uptake_report = boundary_report.merge(age_profile_pd[cols], how='left', left_on=geog_name, right_on=age_profile_key, sort=False)
+        del uptake_report[age_profile_key]
 
-        # setup population columns
-        pop_cols = [f"Pop_{section}" for section in Boundary.SECTION_AGES.keys()]
-        pop_cols.append("Pop_All")
+        years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
 
-        # setup uptake columns
+        # add uptake data
         uptake_cols = []
-        for year in years_in_data:
-            uptake_cols.extend([f"%-{section}-{year}" for section in Boundary.SECTION_AGES.keys()])
-            uptake_cols.append(f"%-All-{year}")
-
-        # adds all new columns with blank data (np.NaN)
-        new_cols = uptake_report.columns.tolist() + pop_cols + uptake_cols
-        uptake_report = uptake_report.reindex(columns=new_cols)
-
-        for area_row in range(len(uptake_report.index)):
-            boundary_row = uptake_report.iloc[area_row]
-            area_code = boundary_row.at[boundary]
-            area_pop = age_profile_pd.loc[age_profile_pd[boundary_dict["age_profile"]["key"]] == area_code]
-
-            if not area_pop.empty:
-                for section in Boundary.SECTION_AGES.keys():
-                    section_total = 0
-                    for age in Boundary.SECTION_AGES[section]:
-                        section_total += area_pop.iloc[0][str(age[0])] * age[1]
-                    boundary_row.at[f'Pop_{section}'] = section_total
-                    for year in years_in_data:
-                        col_name = f"%-{section}-{year}"
-                        if section_total > 0:
-                            boundary_row.at[col_name] = (boundary_row.at[f"{section}-{year}"] / section_total) * 100
-                        else:
-                            if boundary_row.at[f"{section}-{year}"] == 0:
-                                # No Scouts and no eligible population in the geographic area
-                                boundary_row.at[col_name] = np.NaN
-                            else:
-                                # There are Scouts but no eligible population in the geographic area
-                                boundary_row.at[col_name] = 100
-
-                section_total = area_pop.loc[:,[f"{age}" for age in range(6, 18)]].iloc[0].sum()
-                boundary_row.at['Pop_All'] = section_total
-                for year in years_in_data:
-                    col_name = f"%-All-{year}"
-                    if section_total > 0:
-                        boundary_row.at[col_name] = (boundary_row.at[f"All-{year}"] / section_total) * 100
-                    else:
-                        if boundary_row.at[f'All-{year}'] == 0:
-                            # No Scouts and no eligible population in the geographic area
-                            boundary_row.at[col_name] = np.NaN
-                        else:
-                            # There are Scouts but no eligible population in the geographic area
-                            boundary_row.at[col_name] = 100
-            else:
-                self.logger.warning(f"{area_code} does not exist in age profile file found here: {age_profile_path}")
-                for year in years_in_data:
-                    for section in Boundary.SECTION_AGES.keys():
-                        boundary_row.at[f"%-{section}-{year}"] = np.NaN
-                    boundary_row.at[f'%-All-{year}'] = np.NaN
-
-            uptake_report.iloc[area_row] = boundary_row
-
-        for year in years_in_data:
+        for year in years:
             for section in Boundary.SECTION_AGES.keys():
-                col_name = f"%-{section}-{year}"
-                max_value = uptake_report[col_name].quantile(0.975)
-                uptake_report[col_name].clip(upper=max_value, inplace=True)
-            max_value = uptake_report[f"%-All-{year}"].quantile(0.975)
-            uptake_report[f"%-All-{year}"].clip(upper=max_value, inplace=True)
-
-        self.boundary_report[self.boundary_dict["name"]] = uptake_report
+                uptake_section = uptake_report[f"{section}-{year}"] / uptake_report[f'Pop_{section}']
+                max_value = uptake_section.quantile(0.975)
+                uptake_report[f"%-{section}-{year}"] = uptake_section.clip(upper=max_value)
+            uptake_all = uptake_report[f"All-{year}"] / uptake_report[f'Pop_All']
+            max_value = uptake_all.quantile(0.975)
+            uptake_report[f"%-All-{year}"] = uptake_all.clip(upper=max_value)
+            # TODO explain 97.5th percentile clip
+        # TODO check edge cases - 0 population and 0 or more scouts
 
         if report_name:
             self.save_report(uptake_report, report_name)
