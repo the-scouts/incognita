@@ -12,7 +12,6 @@ if __name__ == "__main__":
 
     boundary = Boundary("lsoa", scout_data)
     boundary.filter_boundaries_by_scout_area("oslaua" , "C_ID", [10000122])
-    boundary.filter_records_by_boundary()
     boundary.create_boundary_report(["Section numbers"], historical=True, report_name="central_yorkshire_by_lsoa8")   # TODO: before postcode filtering
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}

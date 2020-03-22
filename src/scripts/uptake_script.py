@@ -20,7 +20,6 @@ if __name__ == "__main__":
 
     boundary = Boundary("pcon", scout_data)
     boundary.filter_boundaries_near_scout_area("pcon" , "C_ID", [10000122], exec_tm=True)
-    boundary.filter_records_by_boundary(exec_tm=True)
     boundary.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county", exec_tm=True)
     boundary.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
 

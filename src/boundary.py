@@ -402,16 +402,6 @@ class Boundary(Base):
         self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[codes_key].isin(boundary_subset)]
         self.logger.info(f"Resulting in {len(self.boundary_regions_data.index)} {name} boundaries")
 
-
-    def filter_set_boundaries_in_scout_area(self, column, value_list):
-        records_in_scout_area = self.scout_data.data.loc[self.scout_data.data[column].isin(value_list)]
-        boundaries_in_scout_area = records_in_scout_area[self.boundary_dict["name"]].unique()
-        self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[self.boundary_dict["codes"]["key"]].isin(boundaries_in_scout_area)]
-
-    def filter_records_by_boundary(self):
-        """Selects the records that are with the boundary specified"""
-        self.scout_data.data = utility.filter_records(self.scout_data.data, self.boundary_dict["name"], self.boundary_regions_data[self.boundary_dict["codes"]["key"]], self.logger)
-
     def filter_boundaries_by_scout_area(self, boundary, column, value_list):
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
