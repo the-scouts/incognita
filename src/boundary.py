@@ -73,21 +73,25 @@ class Boundary(Base):
 
         if geography_name in boundaries_dict.keys():
             self.boundary_dict = boundaries_dict[geography_name]
-            names_and_codes_file_path = self.boundary_dict["codes"].get("path")
+            boundary_codes_dict = self.boundary_dict["codes"]
+            names_and_codes_file_path = boundary_codes_dict.get("path")
+
             self.boundary_regions_data = pd.read_csv(
                 self.ons_pd.NAMES_AND_CODES_FILE_LOCATION + names_and_codes_file_path,
                 dtype={
-                    self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
-                    self.boundary_dict["codes"]["name"]: "object"
+                    boundary_codes_dict["key"]: boundary_codes_dict["key_type"],
+                    boundary_codes_dict["name"]: "object"
                 })
         elif geography_name in self.settings["Scout Mappings"].keys():
             self.boundary_dict = self.settings["Scout Mappings"][geography_name]
-            names_and_codes_file_path = self.boundary_dict["codes"].get("path")
+            boundary_codes_dict = self.boundary_dict["codes"]
+            names_and_codes_file_path = boundary_codes_dict.get("path")
+
             self.boundary_regions_data = pd.read_csv(
                 names_and_codes_file_path,
                 dtype={
-                    self.boundary_dict["codes"]["key"]: self.boundary_dict["codes"]["key_type"],
-                    self.boundary_dict["codes"]["name"]: "object"
+                    boundary_codes_dict["key"]: boundary_codes_dict["key_type"],
+                    boundary_codes_dict["name"]: "object"
                 })
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys() + self.settings['Scout Mapping'].keys()}")
