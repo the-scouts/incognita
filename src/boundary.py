@@ -307,7 +307,7 @@ class Boundary(Base):
             .reset_index(drop=True)
 
         merged_dataframes = pd.concat(dataframes, axis=1)
-        output_data = areas_data.merge(merged_dataframes, how='left', left_on="lsoa11", right_index=True, sort=False)
+        output_data = areas_data.merge(merged_dataframes, how='left', left_on=geog_name, right_index=True, sort=False)
         self.boundary_report[geog_name] = output_data
 
         if report_name:
