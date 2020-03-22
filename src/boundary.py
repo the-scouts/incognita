@@ -96,34 +96,6 @@ class Boundary(Base):
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys() + self.settings['Scout Mapping'].keys()}")
 
-    def filter_boundaries(self, field, value_list):
-        """Filters the boundary_regions_data table by if the area code is within both value_list and the census_data table.
-
-        Requires set_boundary to have been called.
-        Uses ONS Postcode Directory to find which of set boundaries are within
-        the area defined by the value_list.
-
-        :param str field: The field on which to filter
-        :param list value_list: The values on which to filter
-
-        :returns None: Nothing
-        """
-
-        if not self.boundary_dict:
-            raise Exception("boundary_dict has not been set, or there is no data in it")  # Has Boundary.set_boundary() been called?
-
-        name = self.boundary_dict["name"]
-        codes_key = self.boundary_dict["codes"]["key"]
-
-        self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
-        # Filters ons data table if field column is in value_list. Returns ndarray of unique area codes
-        boundary_subset = self.ons_pd.ons_field_mapping(field, value_list, name)
-        self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
-
-        # Filters the boundary names and codes table by areas within the boundary_subset list
-        self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[codes_key].isin(boundary_subset)]
-        self.logger.info(f"Resulting in {len(self.boundary_regions_data.index)} {name} boundaries")
-
     def ons_to_district_mapping(self, ons_code):
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
@@ -402,6 +374,35 @@ class Boundary(Base):
 
         return uptake_report
 
+    def filter_boundaries(self, field, value_list):
+        """Filters the boundary_regions_data table by if the area code is within both value_list and the census_data table.
+
+        Requires set_boundary to have been called.
+        Uses ONS Postcode Directory to find which of set boundaries are within
+        the area defined by the value_list.
+
+        :param str field: The field on which to filter
+        :param list value_list: The values on which to filter
+
+        :returns None: Nothing
+        """
+
+        if not self.boundary_dict:
+            raise Exception("boundary_dict has not been set, or there is no data in it")  # Has Boundary.set_boundary() been called?
+
+        name = self.boundary_dict["name"]
+        codes_key = self.boundary_dict["codes"]["key"]
+
+        self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
+        # Filters ons data table if field column is in value_list. Returns ndarray of unique area codes
+        boundary_subset = self.ons_pd.ons_field_mapping(field, value_list, name)
+        self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
+
+        # Filters the boundary names and codes table by areas within the boundary_subset list
+        self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[codes_key].isin(boundary_subset)]
+        self.logger.info(f"Resulting in {len(self.boundary_regions_data.index)} {name} boundaries")
+
+
     def filter_set_boundaries_in_scout_area(self, column, value_list):
         records_in_scout_area = self.scout_data.data.loc[self.scout_data.data[column].isin(value_list)]
         boundaries_in_scout_area = records_in_scout_area[self.boundary_dict["name"]].unique()
@@ -455,27 +456,19 @@ class Boundary(Base):
         """Produces list of ONS Geographical codes that exist within a subset
         of the Scout Census data.
 
-        :param ons_code: A field of the ONS Postcode Directory
-        :param column: A field of the Scout Census data
-        :param value_list: Values to accept
+        :param str ons_code: A field of the ONS Postcode Directory
+        :param str column: A field of the Scout Census data
+        :param list value_list: Values to accept
 
-        :type ons_code: str
-        :type column: str
-        :type value_list: list
-
-        :returns: List of ONS Geographical codes of type ons_code.
-        :rtype: list
+        :returns list: List of ONS Geographical codes of type ons_code.
         """
         self.logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
 
         records = self.scout_data.data.loc[self.scout_data.data[column].isin(value_list)]
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
 
-        ons_codes = records[ons_code].drop_duplicates().dropna()
-        ons_codes = ons_codes[ons_codes != ScoutCensus.DEFAULT_VALUE]
-        self.logger.debug(f"Found raw {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
-
-        ons_codes = [code for code in ons_codes if (isinstance(code, str) or (isinstance(code, np.int32)))]
+        records = records[records != ScoutCensus.DEFAULT_VALUE]
+        ons_codes = records[ons_code].drop_duplicates().dropna().to_list()
         self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
 
         return ons_codes
