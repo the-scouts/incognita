@@ -166,20 +166,10 @@ class Boundary(Base):
 
         Requires self.boundary_data to be set, preferably by :meth:scout_data.set_boundary
 
-        :param options: List of data to be included in report
-        :param historical: Check to ensure that multiple years of data are intentional
-        :param report_name:
-
-        :type options: list
-        :type historical: bool
+        :param list options: List of data to be included in report
+        :param bool historical: Check to ensure that multiple years of data are intentional
+        :param str report_name:
         """
-        # to remove IDE errors
-        awards_mapping, year = None, None
-        name = self.boundary_dict.get("name")  # e.g oslaua osward pcon
-        sections_dict = ScoutCensus.column_labels['sections']
-
-        if not name:
-            raise Exception("boundary_dict has not been set. Try calling set_boundary")
 
         opt_number_of_sections = \
             True if "Number of Sections" in options \
@@ -202,8 +192,12 @@ class Boundary(Base):
         opt_waiting_list_totals = \
             True if "waiting list total" in options \
             else False
+        geog_name = self.boundary_dict.get("name")  # e.g oslaua osward pcon lsoa11
 
-        self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
+        if not geog_name:
+            raise Exception("boundary_dict has not been set. Try calling set_boundary")
+        else:
+            self.logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values().to_list()
         if len(years) > 1:
@@ -212,149 +206,137 @@ class Boundary(Base):
             else:
                 self.logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
-        output_columns = ["Name", self.boundary_dict["name"]]
-
-        if opt_groups:
-            output_columns.append("Groups")
-
-        if opt_number_of_groups:
-            output_columns.append("Number of Groups")
-
-
-        for year in years_in_data:
-            if opt_section_numbers:
-                output_columns += [f"Beavers-{year}", f"Cubs-{year}", f"Scouts-{year}", f"Explorers-{year}"]
-            if opt_6_to_17_numbers:
-                output_columns.append(f"All-{year}")
-            if opt_number_of_sections:
-                for section in sections_dict.keys():
-                    output_columns.append(f"{sections_dict[section]['type']}s-{year}")
-
-        if opt_waiting_list_totals:
-            output_columns += [f"Waiting List-{year}" for year in years_in_data]
-
-        if opt_awards:
-            output_columns.append("%-" + sections_dict["Beavers"]["top_award"])
-            output_columns.append("QSA")
-            output_columns.append("%-QSA")
-
-            awards_mapping = self.district_mapping.get(name)
-            if not awards_mapping:
-                names = [self.ons_pd.BOUNDARIES[boundary]['name'] for boundary in self.ons_pd.BOUNDARIES]
-                if name in names:
-                    self.ons_to_district_mapping(name)
-                    awards_mapping = self.district_mapping.get(name)
-            else:
-                self.logger.error("awards mapping successfully retrieved. can't delete if stmt")
-
-        self.logger.debug(f"Report contains the following data:\n{output_columns}")
-
-        output_data = pd.DataFrame(columns=output_columns)
+        sections_dict = ScoutCensus.column_labels['sections']
         district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
-        num_records = len(self.boundary_regions_data.index)
+        award_name = sections_dict["Beavers"]["top_award"]
+        award_eligible = sections_dict["Beavers"]["top_award_eligible"]
+        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys()}
 
-        for ii in range(num_records):
-            self.logger.debug(f"{ii+1} out of {num_records}")
-            boundary_data = {
-                "Name": self.boundary_regions_data.iloc[ii, 1],
-                name: self.boundary_regions_data.iloc[ii, 0],
+        def groups_groupby(group_series: pd.Series):
+            # Used to list the groups that operate within the boundary
+            # Gets all groups in the records_in_boundary dataframe
+            # Removes NaN values
+            # Converts all values to strings to make sure the string operations work
+            # Removes leading and trailing whitespace
+            # Concatenates the Series to a string with a newline separator
+            return group_series \
+                .dropna().drop_duplicates() \
+                .str.strip() \
+                .str.cat(sep='\n')
+
+            # boundary_data["Number of Groups"] = len(groups)
+            # TODO Number of Groups
+
+        def young_people_numbers_groupby(group_df: pd.DataFrame):
+            output = {}
+            dicts: pd.Series = group_df.groupby(['Year'], sort=True).apply(year_groupby).to_list()
+            for row in dicts:
+                output = {**output, **row}
+            return output
+
+        def year_groupby(group_df: pd.DataFrame):
+            census_year = group_df.name
+            output = {}
+            all_young_people = 0
+            waiting_list = 00
+
+            for section, cols in section_cols.items():
+                total_young_people = group_df[cols].to_numpy().sum()
+                all_young_people += total_young_people
+                if opt_section_numbers:
+                    output[f"{section}-{census_year}"] = total_young_people
+                if sections_dict[section].get("waiting_list"):
+                    waiting_list += group_df[sections_dict[section]["waiting_list"]].sum()
+
+            if opt_6_to_17_numbers:
+                output[f"All-{census_year}"] = all_young_people
+            if opt_waiting_list_totals:
+                output[f"Waiting List-{census_year}"] = waiting_list
+            if opt_number_of_sections:
+                _ = 1+1
+                # boundary_data[f"{sections_dict[section]['type']}s-{year}"] = len(year_records.loc[year_records["type"] == sections_dict[section]["type"]])
+                # TODO Number of Sections
+            return output
+
+        def awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame):
+            summed = group_df[[award_name, award_eligible, ]].sum()
+            output = summed.to_dict()
+            if summed[award_eligible] > 0:
+                output[f"%-{award_name}"] = (summed[award_name] * 100) / summed[award_eligible]
+
+            # calculates the nominal QSAs per ONS region specified.
+            # Divides total # of awards by the number of Scout Districts that the ONS Region is in
+            code = group_df.name
+            district_ids = awards_mapping.get(code, {}) if not geog_name == "D_ID" else {code: 1}
+            awards_regions_data = awards_data.loc[[id for id in district_ids.keys()]].sum()
+
+            output["QSA"] = awards_regions_data["QSA"]
+            if awards_regions_data["qsa_eligible"] > 0:
+                output["%-QSA"] = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
+
+            return output
+
+        def awards_per_region(district_records, district_nums):
+            district_id = district_records.name
+            num_ons_regions_occupied_by_district = district_nums[district_id]
+
+            self.logger.debug(f"{district_id} in {num_ons_regions_occupied_by_district} ons boundaries")
+
+            return {
+                # QSAs achieved in district, divided by the number of regions the district is in
+                "QSA": district_records["Queens_Scout_Awards"].sum() / num_ons_regions_occupied_by_district,
+                # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
+                "qsa_eligible": district_records["Eligible4QSA"].sum() / num_ons_regions_occupied_by_district
             }
-            code = boundary_data[name]
 
-            records_in_boundary = self.scout_data.data.loc[self.scout_data.data[name] == code]
-            self.logger.debug(f"Found {len(records_in_boundary.index)} records with {name} == {code}")
+        grouped_data = self.scout_data.data.groupby([geog_name], sort=False)
+        dataframes = []
 
-            if opt_groups or opt_number_of_groups:
-                # Used to list the groups that operate within the boundary
-                # Gets all groups in the records_in_boundary dataframe
-                # Removes NaN values
-                # Converts all values to strings to make sure the string operations work
-                # Removes leading and trailing whitespace
-                # Concatenates the Series to a string with a newline separator
-                groups = records_in_boundary[ScoutCensus.column_labels['name']["GROUP"]]\
-                    .dropna()\
-                    .astype(str)\
-                    .str.strip()\
-                    .drop_duplicates()
+        if opt_groups or opt_number_of_groups:
+            self.logger.debug(f"Adding group data")
+            group_table: pd.Series = grouped_data[ScoutCensus.column_labels['name']["GROUP"]].apply(groups_groupby)
+            dataframes.append(group_table.rename("Groups"))
+            # TODO Num of Groups
 
-                boundary_data["Number of Groups"] = len(groups)
-                boundary_data["Groups"] = groups.str.cat(sep='\n')
-
-            if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
-                self.logger.debug(f"Obtaining Section numbers and/or waiting list for {year}")
-                for year in years_in_data:
-                    year_records = records_in_boundary.loc[records_in_boundary[ScoutCensus.column_labels['YEAR']] == year]
-
-                    boundary_data[f"All-{year}"] = 0
-                    boundary_data[f"Waiting List-{year}"] = 0
-
-                    for section in sections_dict.keys():
-                        m_yp = year_records[sections_dict[section]["male"]].sum()
-                        f_yp = year_records[sections_dict[section]["female"]].sum()
-
-                        boundary_data[f"{section}-{year}"] = m_yp + f_yp
-                        boundary_data[f"All-{year}"] += (m_yp + f_yp)
-
-                        if sections_dict[section].get("waiting_list"):
-                            boundary_data[f"Waiting List-{year}"] += year_records[sections_dict[section]["waiting_list"]].sum()
-
-                        if opt_number_of_sections:
-                            boundary_data[f"{sections_dict[section]['type']}s-{year}"] = len(year_records.loc[year_records["type"] == sections_dict[section]["type"]])
-
-            if opt_awards:
-                award_name = sections_dict["Beavers"]["top_award"]
-
-                eligible = records_in_boundary[sections_dict["Beavers"]["top_award_eligible"]].sum()
-                awards = records_in_boundary[award_name].sum()
-                if eligible > 0:
-                    boundary_data[f"%-{award_name}"] = (awards * 100) / eligible
-                else:
-                    boundary_data[f"%-{award_name}"] = np.NaN
-
-                if name == "D_ID":
-                    districts = {code: 1}
-                else:
-                    districts = awards_mapping.get(code, {})
-
-                boundary_data["QSA"] = 0
-                qsa_eligible = 0
-
-                # calculates the nominal QSAs per ONS region specified.
-                # Divides total # of awards by the number of Scout Districts that the ONS Region is in
-                for district_id in districts.keys():  # district_id within ONS region
-                    number_of_ons_regions_district_is_in = districts[district_id]
-                    self.logger.debug(f"{district_id} in {number_of_ons_regions_district_is_in} ons boundaries")
-
-                    district_records = self.scout_data.data.loc[self.scout_data.data[district_id_column] == district_id]  # Records for current district ID
-
-                    # QSAs achieved in district, divided by the number of regions the district is in
-                    boundary_data["QSA"] += district_records["Queens_Scout_Awards"].sum() / number_of_ons_regions_district_is_in
-
-                    # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
-                    qsa_eligible += district_records["Eligible4QSA"].sum() / number_of_ons_regions_district_is_in
-
-                if qsa_eligible > 0:
-                    boundary_data["%-QSA"] = (boundary_data["QSA"] * 100) / qsa_eligible
-                else:
-                    boundary_data["%-QSA"] = np.NaN
-
-            self.logger.debug(f"Adding data from {code}\n{boundary_data}")
-            boundary_data_df = pd.DataFrame([boundary_data], columns=output_columns)
-            output_data = pd.concat([output_data, boundary_data_df], axis=0, sort=False)
+        if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
+            self.logger.debug(f"Adding young people numbers")
+            dataframes.append(grouped_data.apply(young_people_numbers_groupby).apply(pd.Series))
+            # TODO Num of Sections
 
         if opt_awards:
-            max_value = output_data["%-" + sections_dict["Beavers"]["top_award"]].quantile(0.95)
-            output_data["%-" + sections_dict["Beavers"]["top_award"]].clip(upper=max_value, inplace=True)
+            geog_names = [self.ons_pd.BOUNDARIES[boundary]['name'] for boundary in self.ons_pd.BOUNDARIES]
+            if geog_name not in geog_names:
+                raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
-        if name == "lsoa11":
-            self.logger.debug(f"Output_data so far:\n{output_data}")
-            unique_lsoas_with_imd = self.ons_pd.data[["lsoa11", "imd"]].drop_duplicates("lsoa11")
-            self.logger.debug(f"Merging with\n{unique_lsoas_with_imd}")
-            output_data = pd.merge(left=output_data, right=unique_lsoas_with_imd, how="left", on="lsoa11", validate="1:1")
-            output_data = utility.country_add_imd_decile(output_data, "E92000001", self.ons_pd)
+            self.logger.debug(f"Creating awards mapping")
+            self.ons_to_district_mapping(geog_name)
+            awards_mapping = self.district_mapping.get(geog_name)
+            district_nums = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
+            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region, district_nums).apply(pd.Series)
 
-        output_data.reset_index(drop=True, inplace=True)
-        self.boundary_report[self.boundary_dict["name"]] = output_data
+            self.logger.debug(f"Adding awards data")
+            awards_table: pd.DataFrame = grouped_data.apply(awards_groupby, awards_per_district_per_regions).apply(pd.Series)
+            top_award = awards_table[f"%-{sections_dict['Beavers']['top_award']}"]
+            max_value = top_award.quantile(0.95)
+            awards_table[f"%-{sections_dict['Beavers']['top_award']}"] = top_award.clip(upper=max_value)
+            dataframes.append(awards_table)
+
+        if geog_name == "lsoa11":
+            self.logger.debug(f"Adding IMD deciles")
+            dataframes.append(grouped_data[["imd_decile"]].first())
+
+        renamed_cols_dict = {self.boundary_dict['codes']['name']: "Name", self.boundary_dict['codes']['key']: geog_name}
+
+        # areas_data holds area names and codes for each area
+        # Area names column is Name and area codes column is the geography type
+        areas_data: pd.DataFrame = self.boundary_regions_data \
+            .copy() \
+            .rename(columns=renamed_cols_dict) \
+            .reset_index(drop=True)
+
+        merged_dataframes = pd.concat(dataframes, axis=1)
+        output_data = areas_data.merge(merged_dataframes, how='left', left_on="lsoa11", right_index=True, sort=False)
+        self.boundary_report[geog_name] = output_data
 
         if report_name:
             self.save_report(output_data, report_name)
