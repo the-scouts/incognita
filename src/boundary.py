@@ -182,7 +182,7 @@ class Boundary(Base):
         district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
         award_name = sections_dict["Beavers"]["top_award"]
         award_eligible = sections_dict["Beavers"]["top_award_eligible"]
-        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys()}
+        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys() if section != "Network"}
 
         def groups_groupby(group_series: pd.Series):
             # Used to list the groups that operate within the boundary
@@ -210,7 +210,7 @@ class Boundary(Base):
             census_year = group_df.name
             output = {}
             all_young_people = 0
-            waiting_list = 00
+            waiting_list = 0
 
             for section, cols in section_cols.items():
                 total_young_people = group_df[cols].to_numpy().sum()
