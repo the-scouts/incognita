@@ -57,21 +57,21 @@ class Map(Base):
         else:
             colourmap = branca.colormap.LinearColormap(
                 colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
-                index=static_scale["index"],
-                vmin=static_scale["min"],
-                vmax=static_scale["max"]
-            ).to_step(index=static_scale["boundaries"])
-            colourmap.caption = legend_label + " (static)"
+                index=scale["index"],
+                vmin=scale["min"],
+                vmax=scale["max"]
+            ).to_step(index=scale["boundaries"])
+            colourmap.caption = dimension["legend"] + " (static)"
 
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
         colourmap.caption = dimension["legend"]
         self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
 
-    def add_meeting_places_to_map(self, sections, colour, marker_data, layer='Sections', cluster_markers=False):
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: str = 'Sections', cluster_markers: bool = False):
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
-        :param DataFrame sections: Census records relating to Sections with lat and long Columns
+        :param pd.DataFrame sections: Census records relating to Sections with lat and long Columns
         :param str or dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
         :param list marker_data: List of strings which determines content for popup, including:
             - youth membership
@@ -90,10 +90,7 @@ class Map(Base):
         self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()],
                                      [valid_points["lat"].max(), valid_points["long"].max()]])
 
-        postcodes = sections[ScoutCensus.column_labels['POSTCODE']].unique()
-        postcodes = [str(postcode) for postcode in postcodes]
-        if "nan" in postcodes:
-            postcodes.remove("nan")
+        postcodes = sections[ScoutCensus.column_labels['POSTCODE']].drop_duplicates().dropna().astype(str).to_list()
 
         increment = len(postcodes) / 100
         count = 1
@@ -107,9 +104,9 @@ class Map(Base):
 
             self.logger.debug(postcode)
             # Find all the sections with the same postcode
-            colocated_sections = sections.loc[sections[ScoutCensus.column_labels['POSTCODE']] == postcode]
-            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(ScoutCensus.get_section_type('District'))]
-            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(ScoutCensus.get_section_type('Group'))]
+            colocated_sections: pd.DataFrame = sections.loc[sections[ScoutCensus.column_labels['POSTCODE']] == postcode]
+            colocated_district_sections: pd.DataFrame = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(ScoutCensus.get_section_type('District'))]
+            colocated_group_sections: pd.DataFrame = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels['UNIT_TYPE']].isin(ScoutCensus.get_section_type('Group'))]
 
             lat = float(colocated_sections.iloc[0]['lat'])
             long = float(colocated_sections.iloc[0]['long'])
@@ -118,7 +115,7 @@ class Map(Base):
             # District sections first followed by Group sections
             html = ""
 
-            districts = colocated_district_sections[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
+            districts = colocated_district_sections[ScoutCensus.column_labels['id']["DISTRICT"]].drop_duplicates()
             for district in districts:
                 district_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels['name']["DISTRICT"]] + " District"
                 html += (f"<h3 align=\"center\">{district_name}</h3><p align=\"center\">"
@@ -137,7 +134,7 @@ class Map(Base):
                         html += f"{yp} {section}<br>"
                 html += "</p>"
 
-            groups = colocated_group_sections[ScoutCensus.column_labels['id']["GROUP"]].unique()
+            groups = colocated_group_sections[ScoutCensus.column_labels['id']["GROUP"]].drop_duplicates()
             self.logger.debug(groups)
             for group in groups:
                 colocated_in_group = colocated_group_sections.loc[colocated_group_sections[ScoutCensus.column_labels['id']["GROUP"]] == group]
@@ -282,7 +279,7 @@ class Map(Base):
     def district_colour_mapping(self):
         colours = cycle(['cadetblue', 'lightblue', 'blue', 'beige', 'red', 'darkgreen', 'lightgreen', 'purple',
                          'lightgray', 'orange', 'pink', 'darkblue', 'darkpurple', 'darkred', 'green', 'lightred'])
-        district_ids = self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].unique()
+        district_ids = self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].drop_duplicates()
         mapping = {district_id: next(colours) for district_id in district_ids}
         colour_mapping = {"census_column": ScoutCensus.column_labels['id']["DISTRICT"], "mapping": mapping}
         return colour_mapping
