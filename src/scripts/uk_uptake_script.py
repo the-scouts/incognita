@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # % 6-17 pcon uptake from Jan-2019 Scout Census with May 2019 ONS
     static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
 
-    max_year = scout_data.max_year
+    max_year = scout_data.data["Year"].max()
 
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}

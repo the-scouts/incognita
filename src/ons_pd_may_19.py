@@ -60,43 +60,49 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         # Dictionary holding dictionaries with information for each type of boundary
         self.BOUNDARIES = {
             "lad": {
-                # "friendly_name": "Local Authority District",
+                # Local Authority Districts
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "key_type": "object", "name": "LAD19NM"},
                 "boundary": {"shapefile": shapefile_paths["LADs"], "key": 'lad19cd', "name": 'lad19nm', },
                 "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
             },
             "cty": {
+                # Counties
                 "name": "oslaua",
                 "codes": {"path": "LA_UA names and codes UK as at 12_19.csv", "key": "LAD19CD", "key_type": "object", "name": "LAD19NM"},
                 "boundary": {"shapefile": shapefile_paths["County"], "key": 'ctyua17cd', "name": 'ctyua17nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "osward": {
+                # Council Wards
                 "name": "osward",
                 "codes": {"path": "Ward names and codes UK as at 05_19_NSPD.csv", "key": "WD19CD", "key_type": "object", "name": "WD19NM"},
                 "boundary": {"shapefile": shapefile_paths["Ward"], "key": 'wd19cd', "name": 'wd19nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "pcon": {
+                # Parliamentary Constituencies
                 "name": "pcon",
                 "codes": {"path": "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv", "key": "PCON14CD", "key_type": "object", "name": "PCON14NM"},
                 "boundary": {"shapefile": shapefile_paths["PCon"], "key": 'pcon17cd', "name": "pcon17nm", },
                 "age_profile": {"path": "pcon_by_age.csv", "key": "PCON11CD"},
             },
             "lsoa": {
+                # Lower Level Super Output Areas
                 "name": "lsoa11",
                 "codes": {"path": "LSOA (2011) names and codes UK as at 12_12.csv", "key": "LSOA11CD", "key_type": "object", "name": "LSOA11NM"},
                 "boundary": {"shapefile": shapefile_paths["LSOA"], "key": 'lsoa11cd', "name": 'lsoa11nm', },
                 "age_profile": {"path": None, "key": None},
             },
             "msoa": {
+                # Middle Layer Super Output Areas
                 "name": "msoa",
                 "codes": {"path": "MSOA (2011) names and codes UK as at 12_12.csv", "key": "MSOA11CD", "key_type": "object", "name": "MSOA11NM"},
                 "boundary": {"shapefile": shapefile_paths["MSOA"], "key": 'msoa11cd', "name": None, },
                 "age_profile": {"path": None, "key": None},
             },
             "iz": {
+                # Intermediate Zones
                 "name": "iz",
                 "codes": {"path": None, "key": None, "key_type": "object", "name": None},
                 "boundary": {"shapefile": shapefile_paths["IZ"], "key": 'InterZone', "name": None, },
