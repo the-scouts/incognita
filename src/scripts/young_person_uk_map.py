@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # # create_section_maps
     # for section_label in Boundary.SECTION_AGES.keys():
-    #     dimension = {"column": f"{section_label}-{scout_data.max_year}", "tooltip": section_label, "legend": f"{scout_data.max_year} {section_label} numbers"}
+    #     dimension = {"column": f"{section_label}-{scout_data.data["Year"].max()}", "tooltip": section_label, "legend": f"{scout_data.data["Year"].max()} {section_label} numbers"}
     #     section_map = Map(scout_data, boundary, dimension, map_name=f"uk_by_la_{section_label}", cluster_markers=True)
     #     section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
     #     section_map.save_map()

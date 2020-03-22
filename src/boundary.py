@@ -201,13 +201,12 @@ class Boundary(Base):
 
         self.logger.info(f"Creating report by {name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
 
-        min_year, max_year = utility.years_of_return(self.scout_data.data["Year"])
-        years_in_data = range(min_year, max_year + 1)
-        if len(years_in_data) > 1:
+        years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values().to_list()
+        if len(years) > 1:
             if historical:
-                self.logger.info(f"Historical analysis from {min_year} to {max_year}")
+                self.logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
             else:
-                self.logger.error(f"Historical option not selected, but multiple years of data selected ({min_year} - {max_year})")
+                self.logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
         output_columns = ["Name", self.boundary_dict["name"]]
 
@@ -390,8 +389,7 @@ class Boundary(Base):
         else:
             raise Exception(f"Population by age data not present for this {boundary}")
 
-        min_year, max_year = utility.years_of_return(self.scout_data.data["Year"])
-        years_in_data = range(min_year, max_year + 1)
+        years_in_data = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
 
         # setup population columns
         pop_cols = [f"Pop_{section}" for section in Boundary.SECTION_AGES.keys()]

@@ -67,15 +67,6 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
     return data
 
 
-def years_of_return(records: pd.Series):
-    """
-
-    :param pd.Series records: a pandas series containing integer years
-    :return:
-    """
-    return records.min(), records.max()
-
-
 def section_from_type(section_type):
     """returns section from section types lookup dict"""
     return section_types[section_type]

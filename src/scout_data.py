@@ -26,8 +26,6 @@ class ScoutData(Base):
         self.data = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
-        self.min_year, self.max_year = utility.years_of_return(self.data["Year"])
-
         if csv_has_ons_pd_data:
             self.logger.info("Loading ONS data")
             start_time = time.time()
@@ -107,7 +105,6 @@ class ScoutData(Base):
         """
         data = self.data
         self.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
-        self.min_year, self.max_year = utility.years_of_return(self.data["Year"])
 
     def nearby_records(self, field, value_list, distance):
         """Filters the records

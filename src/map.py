@@ -215,7 +215,7 @@ class Map(Base):
             section_type = ScoutCensus.column_labels['sections'][single_section]["type"]
             section_types = [section_type]
         else:
-            max_year = self.scout_data.max_year
+            max_year = self.scout_data.data["Year"].max()
             latest_year_records = data.loc[data["Year"] == max_year]
 
             filtered_data = latest_year_records

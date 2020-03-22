@@ -34,7 +34,7 @@ if __name__ == "__main__":
     #imd.filter_records_by_boundary(exec_tm=True)
     imd.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name="imd_central_yorkshire", exec_tm=True)
 
-    max_year = scout_data.max_year
+    max_year = scout_data.data["Year"].max()
 
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
