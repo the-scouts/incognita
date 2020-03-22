@@ -18,14 +18,14 @@ if __name__ == "__main__":
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
-    boundary = Boundary("pcon", scout_data)
-    boundary.filter_boundaries_near_scout_area("pcon" , "C_ID", [10000122], exec_tm=True)
-    boundary.filter_records_by_boundary(exec_tm=True)
-    boundary.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name="pcon_central_yorkshire", exec_tm=True)
-    boundary.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
+    pcon = Boundary("pcon", scout_data)
+    pcon.filter_boundaries_near_scout_area("pcon" , "C_name", ["Hampshire"], exec_tm=True)
+    pcon.filter_records_by_boundary(exec_tm=True)
+    pcon.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name="pcon_central_yorkshire", exec_tm=True)
+    pcon.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
 
     imd = Boundary("lsoa", scout_data)
-    pcon_list = boundary.boundary_regions_data[boundary.boundary_dict["codes"]["key"]]
+    pcon_list = pcon.boundary_regions_data[pcon.boundary_dict["codes"]["key"]]
     imd.filter_boundaries("pcon", pcon_list)
     #lsoa_list = boundary.ons_from_scout_area("lsoa11", "pcon", pcon_list)
     #imd.filter_boundaries("lsoa11", lsoa_list)
@@ -38,17 +38,18 @@ if __name__ == "__main__":
 
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
-    map = Map(scout_data, boundary, dimension, map_name="pcon_imd_uptake_map")
+    map = Map(scout_data, map_name="pcon_imd_uptake_map")
+    map.add_areas(dimension, pcon, show=True)
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
     map.add_areas(dimension, imd)
 
     # Plotting the sections
-    map.set_region_of_colour("C_name", ["Central Yorkshire"])
+    map.set_region_of_colour("C_name", ["Hampshire"])
     map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)
     map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)
-    map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Central Yorkshire")], 'lightgray', ["youth membership"], 'Other Sections')
-    map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Central Yorkshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
+    map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Hampshire")], 'lightgray', ["youth membership"], 'Other Sections')
+    map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Hampshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
     map.save_map()
 
     # create_section_maps

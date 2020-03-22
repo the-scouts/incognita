@@ -28,51 +28,43 @@ class MapPlotter(Base):
     :var self.map: holds the folium map object
     """
 
-    def __init__(self, shape_files_dict, data_info, out_file):
+    def __init__(self, out_file):
         super().__init__()
 
         self.out_file = out_file + ".html"
-        self.code_name = shape_files_dict["key"]
-        self.logger.info(f"Creating map of {data_info['code_col']}s against {data_info['score_col']}")
-        self.map_data = data_info['data']
-        self.CODE_COL = data_info['code_col']
-        self.SCORE_COL = {}
-        self.SCORE_COL[shape_files_dict["name"]] = data_info['score_col']
-        self.score_col_label = data_info["score_col_label"]
 
         # Create folium map
         self.map = folium.Map(location=[53.5, -1.49], zoom_start=6)
-
+        self.SCORE_COL = {}
         self.layers = {}
 
         self.geo_data = None
 
-        self.filter_shape_file(shape_files_dict["shapefile"])
 
-    def update_boundary(self, boundary: Boundary):
+    def set_boundary(self, boundary: Boundary):
         """
         Changes the boundary to a new boundary
-        @TODO: map_plotter should be able to formally deal with multiple layers,
-        using different boundaries, and should be able to swap between them,
-        (i.e. using dictionaries, with keys of the boundary name.)
-        @TODO: This would be simpler, if the boundary object obfuscated the
-        structure of the dictionaries underneath
 
         :param Boundary boundary: contains details about the new boundary
         """
-        self.code_name = boundary.boundary_dict["boundary"]["key"]
+        self.code_name = boundary.shapefile_key
 
-        name = boundary.boundary_dict["name"]
-        self.map_data = boundary.boundary_report[name]
-        self.CODE_COL = name
-        self.filter_shape_file(boundary.boundary_dict["boundary"]["shapefile"])
+        self.map_data = boundary.data
+        self.CODE_COL = boundary.ons_column_name
+        self.filter_shape_file(boundary.shapefile)
 
-        self.logger.info(f"Boundary changed to: {name} ({self.code_name}). Data has columns {self.map_data.columns}.")
+        self.logger.info(f"Boundary changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
-    def update_score_col(self, dimension, boundary):
-        self.SCORE_COL[boundary.boundary_dict["boundary"]["name"]] = dimension["column"]
+    def set_score_col(self, dimension, boundary):
+        """
+        Sets the SCORE_COL to use for a particular boundary
+
+        :param dict dimension: specifies the score column to use int the data
+        :param Boundary boundary: specifies the geography to use
+        """
+        self.SCORE_COL[boundary.shapefile_name_column] = dimension["column"]
         self.score_col_label = dimension["tooltip"]
-        self.logger.info(f"Setting score column to {self.SCORE_COL[boundary.boundary_dict['boundary']['name']]} (displayed: {self.score_col_label})")
+        self.logger.info(f"Setting score column to {self.SCORE_COL[boundary.shapefile_name_column]} (displayed: {self.score_col_label})")
 
     def add_layer(self, name, markers_clustered=False, show=True):
         """

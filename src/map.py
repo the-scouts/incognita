@@ -14,7 +14,7 @@ from src.boundary import Boundary
 
 
 class Map(Base):
-    def __init__(self, scout_data_object: ScoutData, boundary_object, dimension, map_name, **kwargs):
+    def __init__(self, scout_data_object: ScoutData, map_name, **kwargs):
         super().__init__(settings=True)
 
         self.map_plotter = None
@@ -24,90 +24,48 @@ class Map(Base):
 
         self.scout_data = scout_data_object
 
-        self.create_map(dimension, map_name, boundary_object, **kwargs)
+        self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
 
-    def create_map(self, dimension, map_name, boundary_object, static_scale=None):
+    def add_areas(self, dimension, boundary: Boundary, show=False, scale=None):
         """
+        Creates a 2D colouring with geometry specified by the boundary
 
-        :param dimension: dict of column of ScoutCensus dataframe and labels for tooltip and key/legend
-        :param map_name:
-        :param boundary_object:
-        :param static_scale:
-        :return:
+        :param dict dimension: specifies the column of the data to score against
+        :param Boundary boundary: specifies the geometry to be used
+        :param bool show: if True the colouring is shown by default
+        :param dict scale: Allows a fixed value scale, default is boundaries at
+                           0%, 20%, 40%, 60%, 80% and 100%.
         """
-        boundary_dict = boundary_object.boundary_dict
-        boundary_report = boundary_object.boundary_report
-
-        geography_name = boundary_dict["name"]
-        geography_info = boundary_dict["boundary"]
-        geography_area_names = boundary_dict["boundary"]["name"]
-
-        score_col = dimension["column"]
-        display_score_col = dimension["tooltip"]
-        legend_label = dimension["legend"]
-
-        self.logger.info(f"Creating map from {score_col} with name {map_name}")
-
-        data_codes = {
-            "data": boundary_report[geography_name],
-            "code_col": geography_name,
-            "score_col": score_col,
-            "score_col_label": display_score_col
-        }
-
-        if not (score_col in list(data_codes["data"].columns)):
-            raise Exception(f"The column {score_col} does not exist in data.\nValid columns are:\n{list(data_codes['data'].columns)}")
-
-        self.map_plotter = MapPlotter(geography_info,
-                                      data_codes,
-                                      self.settings["Output folder"] + map_name)
-
-        non_zero_score_col = data_codes["data"][score_col].loc[data_codes["data"][score_col] != 0]
-        non_zero_score_col.dropna(inplace=True)
-        min_value = data_codes["data"][score_col].min()
-        max_value = data_codes["data"][score_col].max()
-        self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
-        colourmap = branca.colormap.LinearColormap(
-            colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
-            index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
-            vmin=min_value,
-            vmax=max_value)
-        non_zero_score_col.sort_values(axis=0, inplace=True)
-        colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
-        self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
-        colourmap.caption = legend_label
-        self.map_plotter.add_areas(legend_label, show=True, boundary_name=geography_area_names, colourmap=colourmap)
-
-        if static_scale:
-            colourmap_static = branca.colormap.LinearColormap(
-                colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
-                index=static_scale["index"],
-                vmin=static_scale["min"],
-                vmax=static_scale["max"]
-            ).to_step(index=static_scale["boundaries"])
-            colourmap_static.caption = legend_label + " (static)"
-            self.map_plotter.add_areas(legend_label + " (static)", show=False, boundary_name=geography_area_names,
-                                       colourmap=colourmap_static)
-
-    def add_areas(self, dimension, boundary: Boundary):
-        self.map_plotter.update_boundary(boundary)
-        self.map_plotter.update_score_col(dimension, boundary)
+        self.map_plotter.set_boundary(boundary)
+        self.map_plotter.set_score_col(dimension, boundary)
 
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]] != 0]
         non_zero_score_col.dropna(inplace=True)
         min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].min()
         max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].max()
         self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
-        colourmap = branca.colormap.LinearColormap(
-            colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
-            index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
-            vmin=min_value,
-            vmax=max_value)
-        non_zero_score_col.sort_values(axis=0, inplace=True)
-        colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+
+        if not scale:
+            colourmap = branca.colormap.LinearColormap(
+                colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
+                index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]),
+                vmin=min_value,
+                vmax=max_value)
+
+            non_zero_score_col.sort_values(axis=0, inplace=True)
+            colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+        else:
+            colourmap = branca.colormap.LinearColormap(
+                colors=['#4dac26', '#b8e186', '#f1b6da', '#d01c8b'],
+                index=static_scale["index"],
+                vmin=static_scale["min"],
+                vmax=static_scale["max"]
+            ).to_step(index=static_scale["boundaries"])
+            colourmap.caption = legend_label + " (static)"
+
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
         colourmap.caption = dimension["legend"]
-        self.map_plotter.add_areas(dimension["legend"], show=False, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
+        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
 
     def add_meeting_places_to_map(self, sections, colour, marker_data, layer='Sections', cluster_markers=False):
         """Adds the sections provided as markers to map with the colour, and data

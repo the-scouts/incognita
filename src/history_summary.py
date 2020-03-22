@@ -8,7 +8,7 @@ import src.utility as utility
 
 class HistorySummary(Base):
     def __init__(self, scout_data_object, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(settings=True, **kwargs)
 
         self.scout_data = scout_data_object
 
@@ -136,9 +136,11 @@ class HistorySummary(Base):
         self.logger.info(f"Beginning new_section_history_summary for {years}")
         new_section_ids: List[dict] = []
 
-        self.logger.info("Finding new Beaver, Cub and Scout Sections")
+        self.logger.info(f"Getting group ID list in column {ScoutCensus.column_labels['id']['GROUP']}")
         # Iterate through Groups looking for new Sections
-        group_ids = self.scout_data.data[ScoutCensus.column_labels['id']["GROUP"]].drop_duplicates().dropna().to_list()
+        group_ids = self.scout_data.data[ScoutCensus.column_labels['id']["GROUP"]].dropna().drop_duplicates().to_list()
+
+        self.logger.info(f"Found {len(group_ids)} Groups")
 
         # for each section in each group in the census
         # construct dict of {year: number of sections of that type open in that year}
@@ -152,10 +154,15 @@ class HistorySummary(Base):
         #
         # .
 
+        scout_data = self.scout_data.data.fillna({ScoutCensus.column_labels['id']["GROUP"]: 0,
+                                                  ScoutCensus.column_labels['id']["DISTRICT"]: 0})
+
         for group_id in group_ids:
-            group_records = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['id']["GROUP"]] == group_id]
+            self.logger.info(f"Investigating {group_id}")
+            group_records = scout_data.loc[scout_data[ScoutCensus.column_labels['id']["GROUP"]] == group_id]
 
             for section in ScoutCensus.get_section_names('Group'):
+                self.logger.info(f"Finding {section} sections")
                 units_by_year = {}
                 for year in years:
                     section_numbers_year = group_records.loc[group_records["Year"] == year, ScoutCensus.column_labels['sections'][section]["unit_label"]].sum()
@@ -193,20 +200,23 @@ class HistorySummary(Base):
                     self.logger.debug(f"For {group_id} adding\n{opened_sections + closed_sections}")
                     new_section_ids += opened_sections
                     new_section_ids += closed_sections
+                else:
+                    self.logger.info(f"No new {section} sections in {group_id}")
 
         self.logger.info("Finding new Explorer Sections")
         # Iterate through District looking for new Sections
+
         district_ids = self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]].drop_duplicates().dropna().to_list()
 
         for district_id in district_ids:
-            district_records = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == district_id]
-            units_by_year = []
+            self.logger.info(f"Investigating {district_id}")
+            district_records = scout_data.loc[scout_data[ScoutCensus.column_labels['id']["DISTRICT"]] == district_id]
+            units_by_year = {}
             for year in years:
                 district_records_year = district_records.loc[district_records["Year"] == year]
-                units_by_year.append(district_records_year[ScoutCensus.column_labels['sections']["Explorers"]["unit_label"]].sum())
+                units_by_year[year] = district_records_year[ScoutCensus.column_labels['sections']["Explorers"]["unit_label"]].sum()
 
-            increments = [units_by_year[ii + 1] - units_by_year[ii] for ii in range(len(units_by_year) - 1)]
-            units_by_year = dict(zip(years, units_by_year))
+            increments = [units_by_year[year + 1] - units_by_year[year] for year in units_by_year.keys() if (year + 1) in units_by_year]
             if max(increments) > 0:
                 opened_sections = []
                 closed_sections = []
@@ -263,11 +273,11 @@ class HistorySummary(Base):
             section = new_sections_id["section"]
 
             if section in ScoutCensus.get_section_names('Group'):
-                records = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['id']["GROUP"]] == section_id]
+                records = scout_data.loc[scout_data[ScoutCensus.column_labels['id']["GROUP"]] == section_id]
                 section_data["Group_ID"] = records[ScoutCensus.column_labels['id']["GROUP"]].unique()[0]
                 section_data["Group"] = records[ScoutCensus.column_labels['name']["GROUP"]].unique()[0]
             elif section in ScoutCensus.get_section_names('District'):
-                records = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['id']["DISTRICT"]] == section_id]
+                records = scout_data.loc[scout_data[ScoutCensus.column_labels['id']["DISTRICT"]] == section_id]
                 section_data["Group_ID"] = ""
                 section_data["Group"] = ""
             else:
@@ -293,7 +303,7 @@ class HistorySummary(Base):
                             if len(opened_section_ids) > 1:
                                 self.logger.info(f"{len(opened_section_ids)} sections opened")
                                 unused_ids = opened_section_ids[~opened_section_ids.isin(used_compass_ids)]
-                                compass_id = unused_ids.iloc[0] if unused_ids else opened_section_ids.iloc[-1]
+                                compass_id = unused_ids.iloc[0] if not unused_ids.empty else opened_section_ids.iloc[-1]
                             elif len(opened_section_ids) == 0:
                                 self.logger.error(f"No sections opened\n{year}: {section_year_ids}\n{year-1}: {old_section_ids}")
                             elif len(opened_section_ids) == 1:
@@ -309,7 +319,10 @@ class HistorySummary(Base):
                             if compass_id in used_compass_ids:
                                 section_year_ids.sort_values(ascending=False)
                                 unused_ids = section_year_ids[~section_year_ids.isin(used_compass_ids)]
-                                compass_id = unused_ids.iloc[0]
+                                if not unused_ids.empty:
+                                    compass_id = unused_ids.iloc[0]
+                                else:
+                                    compass_id = section_year_ids.iloc[0]
 
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
@@ -378,6 +391,7 @@ class HistorySummary(Base):
             # records across several years. Find the most recent year, and then
             # choose the Postcode, where the IMD Rank is the lowest.
             most_recent_year = open_years[-1]
+            self.logger.debug(f"Checking {most_recent_year}")
             most_recent = section_records.loc[section_records["Year"] == most_recent_year]
             if most_recent.shape[0] == 1:
                 most_recent = most_recent.iloc[0]
@@ -387,16 +401,21 @@ class HistorySummary(Base):
                     # In the event that the Object_IDs aren't consistent, pick a section in the group that's most recent
                     # is only applicable after 2017, so sections are assumed to exist.
                     most_recent = records.loc[
-                        records[ScoutCensus.column_labels['id']["GROUP"]] == section_data["Group_ID"] &
-                        records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"] &
-                        records["Year"] == most_recent_year
+                        (records[ScoutCensus.column_labels['id']["GROUP"]] == section_data["Group_ID"]) &
+                        (records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]) &
+                        (records["Year"] == most_recent_year)
                         ].iloc[0]
                 elif section in ScoutCensus.get_section_names('District'):
-                    most_recent = records.loc[
-                        records[ScoutCensus.column_labels['id']["DISTRICT"]] == section_data["District_ID"] &
-                        records[ScoutCensus.column_labels['UNIT_TYPE']] == section &
-                        records["Year"] == most_recent_year
-                        ].iloc[0]
+                    most_recent_record = records.loc[
+                        (records[ScoutCensus.column_labels['id']["DISTRICT"]] == section_data["District_ID"]) &
+                        (records[ScoutCensus.column_labels['UNIT_TYPE']] == ScoutCensus.column_labels['sections'][section]["type"]) &
+                        (records["Year"] == most_recent_year)
+                        ]
+
+                    if most_recent_record.empty:
+                        self.logger.error(f"No records found with D_ID = {section_data['District_ID']} in {most_recent_year} that are {section}")
+
+                    most_recent = most_recent_record.iloc[0]
             else:
                 self.logger.warning("Multiple sections found, assigning a section")
                 most_recent = most_recent.iloc[0]
