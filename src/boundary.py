@@ -133,15 +133,19 @@ class Boundary(Base):
         self.district_mapping[ons_code] = mapping
         self.logger.debug("Finished mapping from ons boundary to district")
 
-    def create_boundary_report(self, options=["Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"], historical=False, report_name=None):
+    def create_boundary_report(self, options=None, historical=False, report_name=None):
         """Produces .csv file summarising by boundary provided.
 
         Requires self.boundary_data to be set, preferably by :meth:scout_data.set_boundary
 
-        :param list options: List of data to be included in report
+        :param list or None options: List of data to be included in report
         :param bool historical: Check to ensure that multiple years of data are intentional
         :param str report_name:
         """
+
+        # Set default option set for `options`
+        if options is None:
+            options = ["Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"]
 
         opt_number_of_sections = \
             True if "Number of Sections" in options \
