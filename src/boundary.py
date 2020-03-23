@@ -422,8 +422,36 @@ class Boundary(Base):
         :param str column: Scout boundary (e.g. C_ID)
         :param list value_list: List of values in the Scout boundary
         """
-        near_records = self.scout_data.nearby_records(column, value_list, 3000)
-        nearby_values = near_records[boundary].unique()
+        # Filter sections on `Column`
+        # Extend by 3000 metres
+        field = column
+        distance = 3000
+
+        self.logger.info("Creates geometry")
+        data_with_points = gpd.GeoDataFrame(self.scout_data.data,
+                                            geometry=gpd.points_from_xy(self.scout_data.data.long, self.scout_data.data.lat))
+
+        data_with_points.crs = {'init': 'epsg:4326'}
+        # Converts the co-ordinate reference system into OS36 which uses
+        # (x-y) coordinates in metres, rather than (long, lat) coordinates.
+        data_with_points = data_with_points.to_crs({'init': 'epsg:27700'})
+
+        self.logger.info(f"Filters for records that satify {field} in {value_list}")
+        filtered_points = data_with_points.loc[data_with_points[field].isin(value_list)]
+        self.logger.info(f"Resulting in {len(filtered_points.index)} number of Sections")
+        self.logger.info(f"Creating area of interest")
+        in_area = shapely.geometry.MultiPoint(filtered_points["geometry"].tolist())
+        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}, now convex hull ...")
+        in_area = in_area.convex_hull
+        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}, now buffering ...")
+        in_area = in_area.buffer(distance)
+        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}")
+
+        self.logger.info(f"Finding Sections in buffered area of interest")
+        is_near = data_with_points.apply(lambda area: area.geometry.within(in_area), axis=1)
+        self.logger.info(f"Found {sum(is_near)} Sections nearby")
+
+        nearby_values = data_with_points[is_near][boundary].unique()
         self.logger.info(f"Found {nearby_values}")
 
         self.filter_boundaries(boundary, nearby_values)
