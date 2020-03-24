@@ -6,6 +6,7 @@ import geopandas as gpd
 import numpy as np
 
 import src.utility as utility
+from src.reports import Reports
 from src.scout_data import ScoutData
 from src.base import Base
 from src.map_plotter import MapPlotter
@@ -26,7 +27,7 @@ class Map(Base):
 
         self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
 
-    def add_areas(self, dimension, boundary: Boundary, show=False, scale=None):
+    def add_areas(self, dimension, boundary: Boundary, reports: Reports, show=False, scale=None):
         """
         Creates a 2D colouring with geometry specified by the boundary
 
@@ -36,7 +37,7 @@ class Map(Base):
         :param dict scale: Allows a fixed value scale, default is boundaries at
                            0%, 20%, 40%, 60%, 80% and 100%.
         """
-        self.map_plotter.set_boundary(boundary)
+        self.map_plotter.set_boundary(boundary, reports)
         self.map_plotter.set_score_col(dimension, boundary)
 
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]] != 0]
@@ -163,11 +164,6 @@ class Map(Base):
                 html += "</p>"
 
             # Fixes physical size of popup
-            if len(groups) == 1:
-                height = 120
-            else:
-                height = 240
-            del height  # only to get rid of IDE warning re not used
             iframe = folium.IFrame(html=html, width=350, height=100)
             popup = folium.Popup(iframe, max_width=2650)
 

@@ -5,6 +5,7 @@ import geopandas as gpd
 import webbrowser
 import os
 
+from src.reports import Reports
 from src.base import Base
 from src.boundary import Boundary
 
@@ -40,8 +41,7 @@ class MapPlotter(Base):
 
         self.geo_data = None
 
-
-    def set_boundary(self, boundary: Boundary):
+    def set_boundary(self, boundary: Boundary, reports: Reports):
         """
         Changes the boundary to a new boundary
 
@@ -49,8 +49,8 @@ class MapPlotter(Base):
         """
         self.code_name = boundary.shapefile_key
 
-        self.map_data = boundary.data
-        self.CODE_COL = boundary.ons_column_name
+        self.map_data = reports.data
+        self.CODE_COL = reports.ons_column_name
         self.filter_shape_file(boundary.shapefile)
 
         self.logger.info(f"Boundary changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
@@ -62,9 +62,11 @@ class MapPlotter(Base):
         :param dict dimension: specifies the score column to use int the data
         :param Boundary boundary: specifies the geography to use
         """
-        self.SCORE_COL[boundary.shapefile_name_column] = dimension["column"]
+        shapefile_name_column = boundary.shapefile_name_column
+
+        self.SCORE_COL[shapefile_name_column] = dimension["column"]
         self.score_col_label = dimension["tooltip"]
-        self.logger.info(f"Setting score column to {self.SCORE_COL[boundary.shapefile_name_column]} (displayed: {self.score_col_label})")
+        self.logger.info(f"Setting score column to {self.SCORE_COL[shapefile_name_column]} (displayed: {self.score_col_label})")
 
     def add_layer(self, name, markers_clustered=False, show=True):
         """
