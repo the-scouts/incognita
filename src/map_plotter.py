@@ -7,7 +7,7 @@ import os
 
 from src.reports import Reports
 from src.base import Base
-from src.boundary import Boundary
+from src.geography import Geography
 
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
 # It is used by folium to plot the data.
@@ -41,11 +41,11 @@ class MapPlotter(Base):
 
         self.geo_data = None
 
-    def set_boundary(self, boundary: Boundary, reports: Reports):
+    def set_boundary(self, boundary: Geography, reports: Reports):
         """
         Changes the boundary to a new boundary
 
-        :param Boundary boundary: contains details about the new boundary
+        :param Geography boundary: contains details about the new boundary
         """
         self.code_name = boundary.shapefile_key
 
@@ -53,14 +53,14 @@ class MapPlotter(Base):
         self.CODE_COL = reports.ons_column_name
         self.filter_shape_file(boundary.shapefile)
 
-        self.logger.info(f"Boundary changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
+        self.logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
     def set_score_col(self, dimension, boundary):
         """
         Sets the SCORE_COL to use for a particular boundary
 
         :param dict dimension: specifies the score column to use int the data
-        :param Boundary boundary: specifies the geography to use
+        :param Geography boundary: specifies the geography to use
         """
         shapefile_name_column = boundary.shapefile_name_column
 

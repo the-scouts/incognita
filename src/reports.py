@@ -107,7 +107,7 @@ class Reports(Base):
         geog_name = self.boundary_dict.get("name")  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
-            raise Exception("boundary_dict has not been set. Try calling set_boundary")
+            raise Exception("geography_metadata_dict has not been set. Try calling set_boundary")
         else:
             self.logger.info(
                 f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
@@ -278,7 +278,7 @@ class Reports(Base):
         boundary_report: pd.DataFrame = self.boundary_report.get(geog_name)
 
         if boundary_report is None:
-            raise AttributeError("Boundary report doesn't exist")
+            raise AttributeError("Geography report doesn't exist")
         elif age_profile_path is None:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 

@@ -11,7 +11,7 @@ from src.scout_data import ScoutData
 from src.base import Base
 from src.map_plotter import MapPlotter
 from src.scout_census import ScoutCensus
-from src.boundary import Boundary
+from src.geography import Geography
 
 
 class Map(Base):
@@ -27,12 +27,12 @@ class Map(Base):
 
         self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
 
-    def add_areas(self, dimension, boundary: Boundary, reports: Reports, show=False, scale=None):
+    def add_areas(self, dimension, boundary: Geography, reports: Reports, show=False, scale=None):
         """
         Creates a 2D colouring with geometry specified by the boundary
 
         :param dict dimension: specifies the column of the data to score against
-        :param Boundary boundary: specifies the geometry to be used
+        :param Geography boundary: specifies the geometry to be used
         :param bool show: if True the colouring is shown by default
         :param dict scale: Allows a fixed value scale, default is boundaries at
                            0%, 20%, 40%, 60%, 80% and 100%.
@@ -40,10 +40,10 @@ class Map(Base):
         self.map_plotter.set_boundary(boundary, reports)
         self.map_plotter.set_score_col(dimension, boundary)
 
-        non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]] != 0]
+        non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]] != 0]
         non_zero_score_col.dropna(inplace=True)
-        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].min()
-        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.boundary_dict['boundary']['name']]].max()
+        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]].min()
+        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]].max()
         self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
 
         if not scale:
@@ -66,7 +66,7 @@ class Map(Base):
 
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
         colourmap.caption = dimension["legend"]
-        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=boundary.boundary_dict["boundary"]["name"], colourmap=colourmap)
+        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=boundary.geography_metadata_dict["boundary"]["name"], colourmap=colourmap)
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: str = 'Sections', cluster_markers: bool = False):
         """Adds the sections provided as markers to map with the colour, and data

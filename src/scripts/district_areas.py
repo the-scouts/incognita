@@ -1,5 +1,5 @@
 from src.scout_data import ScoutData
-from src.boundary import Boundary
+from src.geography import Geography
 from src.map import Map
 from src.district_boundaries import DistrictBoundaries
 
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     district_boundaries = DistrictBoundaries(scout_data)
     district_boundaries.create_district_boundaries()
 
-    boundary = Boundary("District", scout_data)
+    boundary = Geography("District", scout_data)
     boundary.create_boundary_report(["Section numbers", "6 to 17 numbers", "awards"], report_name="scout_district_report")
 
     dimension = {"column": "%-Chief_Scout_Bronze_Awards", "tooltip": "% Bronze", "legend": "% Bronze"}

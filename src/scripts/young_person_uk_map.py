@@ -1,5 +1,5 @@
 from src.scout_data import ScoutData
-from src.boundary import Boundary
+from src.geography import Geography
 from src.map import Map
 
 if __name__ == "__main__":
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # scout_data.filter_records("R_ID", [10000046])
     scout_data.filter_records("C_name", ["Cornwall"])
 
-    boundary = Boundary("District", scout_data)
+    boundary = Geography("District", scout_data)
     boundary.create_boundary_report(options=["Section numbers", "6 to 17 numbers"], report_name="uk_by_district")
 
     dimension = {"column": "All-2019", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     map.save_map()
 
     # # create_section_maps
-    # for section_label in Boundary.SECTION_AGES.keys():
+    # for section_label in Geography.SECTION_AGES.keys():
     #     dimension = {"column": f"{section_label}-{scout_data.data["Year"].max()}", "tooltip": section_label, "legend": f"{scout_data.data["Year"].max()} {section_label} numbers"}
     #     section_map = Map(scout_data, boundary, dimension, map_name=f"uk_by_la_{section_label}", cluster_markers=True)
     #     section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)

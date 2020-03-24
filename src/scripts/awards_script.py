@@ -8,7 +8,7 @@ This script has no command line options.
 """
 
 from src.scout_data import ScoutData
-from src.boundary import Boundary
+from src.geography import Geography
 from src.map import Map
 
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
     scout_data.filter_records("D_ID", [10001886, 10001334, 10001332], mask=True)
 
-    boundary = Boundary("lad", scout_data)
+    boundary = Geography("lad", scout_data)
     boundary.create_boundary_report(options=["awards"], report_name="laua_awards_report")
 
     dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}

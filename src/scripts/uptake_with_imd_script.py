@@ -7,7 +7,7 @@ This script has no command line options.
 """
 
 from src.scout_data import ScoutData
-from src.boundary import Boundary
+from src.geography import Geography
 from src.map import Map
 
 if __name__ == "__main__":
@@ -18,13 +18,13 @@ if __name__ == "__main__":
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
-    pcon = Boundary("pcon", scout_data)
+    pcon = Geography("pcon", scout_data)
     pcon.filter_boundaries_near_scout_area("pcon" , "C_name", ["Hampshire"], exec_tm=True)
     pcon.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name="pcon_central_yorkshire", exec_tm=True)
     pcon.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
 
-    imd = Boundary("lsoa", scout_data)
-    pcon_list = pcon.boundary_regions_data[pcon.boundary_dict["codes"]["key"]]
+    imd = Geography("lsoa", scout_data)
+    pcon_list = pcon.geography_region_ids_mapping[pcon.geography_metadata_dict["codes"]["key"]]
     imd.filter_boundaries_regions_data("pcon", pcon_list)
     #lsoa_list = boundary.ons_from_scout_area("lsoa11", "pcon", pcon_list)
     #imd.filter_boundaries_regions_data("lsoa11", lsoa_list)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     map.save_map()
 
     # create_section_maps
-    #for section_label in Boundary.SECTION_AGES.keys():
+    #for section_label in Geography.SECTION_AGES.keys():
         #dimension = {"column": f"%-{section_label}-{max_year}", "tooltip": section_label, "legend": f"{max_year} {section_label} uptake (%)"}
         #section_map = Map(scout_data, boundary, dimension, map_name=f"pcon_uptake_report_{section_label}", static_scale=static_scale)
         #section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)

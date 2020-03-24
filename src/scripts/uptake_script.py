@@ -5,9 +5,9 @@ the percentage of young people.
 
 This script has no command line options.
 """
-
+from reports import Reports
 from src.scout_data import ScoutData
-from src.boundary import Boundary
+from src.geography import Geography
 from src.map import Map
 
 if __name__ == "__main__":
@@ -18,10 +18,12 @@ if __name__ == "__main__":
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
-    boundary = Boundary("pcon", scout_data)
-    boundary.filter_boundaries_near_scout_area("pcon" , "C_ID", [10000122], exec_tm=True)
-    boundary.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county", exec_tm=True)
-    boundary.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
+    boundary = Geography("pcon", scout_data.ons_pd)
+    boundary.filter_boundaries_near_scout_area(scout_data, "pcon" , "C_ID", [10000122], exec_tm=True)
+
+    reports = Reports(boundary, scout_data)
+    reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county", exec_tm=True)
+    reports.create_uptake_report(report_name="pcon_uptake_report", exec_tm=True)
 
     # % 6-17 pcon uptake from Jan-2019 Scout Census with May 2019 ONS
     static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     map.save_map()
 
     # create_section_maps
-    #for section_label in Boundary.SECTION_AGES.keys():
+    #for section_label in Geography.SECTION_AGES.keys():
         #dimension = {"column": f"%-{section_label}-{max_year}", "tooltip": section_label, "legend": f"{max_year} {section_label} uptake (%)"}
         #section_map = Map(scout_data, boundary, dimension, map_name=f"pcon_uptake_report_{section_label}", static_scale=static_scale)
         #section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)

@@ -1,5 +1,5 @@
 from src.scout_data import ScoutData
-from src.boundary import Boundary
+from src.geography import Geography
 from src.map import Map
 
 if __name__ == "__main__":
@@ -8,7 +8,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1])
     scout_data.add_imd_decile()
 
-    boundary = Boundary("lsoa", scout_data)
+    boundary = Geography("lsoa", scout_data)
     la_list = boundary.ons_from_scout_area("oslaua", "C_ID", [10000111, 10000119])
     scout_data.filter_records("oslaua", la_list)
     boundary.filter_boundaries_regions_data("oslaua", la_list)

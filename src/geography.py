@@ -8,40 +8,41 @@ from src.ons_pd import ONSPostcodeDirectory
 
 
 # noinspection PyUnresolvedReferences
-class Boundary(Base):
-    """Stores information about the geography type currently used and methods for manipulation
+class Geography(Base):
+    """Stores information about the (administrative) geography type currently used and methods for selecting and
+    excluding regions.
 
-    :var dict Boundary.SECTION_AGES: Holds information about scout sections
+    :var dict Geography.SECTION_AGES: Holds information about scout sections
     """
 
     def __init__(self, geography_name: str, ons_pd_object: ONSPostcodeDirectory):
         super().__init__(settings=True)
 
-        self.boundary_dict = None
-        self.boundary_regions_data = None
+        self.geography_metadata_dict = None
+        self.geography_region_ids_mapping = None
 
         self.set_boundary(geography_name, ons_pd_object)
 
     @property
     def shapefile_key(self):
-        return self.boundary_dict["boundary"]["key"].upper()  # TODO TEMP MEASURE DUE TO DATAFILE ERR
+        return self.geography_metadata_dict["boundary"]["key"].upper()  # TODO TEMP MEASURE DUE TO DATAFILE ERR
 
     @property
     def shapefile_name_column(self):
-        return self.boundary_dict["boundary"]["name"]
+        return self.geography_metadata_dict["boundary"]["name"]
 
     @property
     def shapefile(self):
-        return self.boundary_dict["boundary"]["shapefile"]
+        return self.geography_metadata_dict["boundary"]["shapefile"]
 
     def set_boundary(self, geography_name, ons_pd):
-        """Sets the boundary_dict and boundary_regions_data members
+        """Sets the geography_metadata_dict and geography_region_ids_mapping members
 
         :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
         :param ONSPostcodeDirectory ons_pd: An ONS Postcode Directory object
 
-        :var dict self.boundary_dict: information about the boundary type
-        :var self.boundary_regions_data: table of region codes and human-readable names for those codes
+        :var dict self.geography_metadata_dict: information about the boundary type
+        :var self.geography_region_ids_mapping: table of region codes and human-readable names for those codes
 
         :returns None: Nothing
         """
@@ -50,10 +51,10 @@ class Boundary(Base):
         # Combine the ONS and Scout boundaries directories
         boundaries_dict = {**ons_pd.BOUNDARIES, **self.settings["Scout Mappings"]}
         if geography_name in boundaries_dict.keys():
-            self.boundary_dict = boundaries_dict[geography_name]
-            boundary_codes_dict = self.boundary_dict["codes"]
+            self.geography_metadata_dict = boundaries_dict[geography_name]
+            boundary_codes_dict = self.geography_metadata_dict["codes"]
 
-            self.boundary_regions_data = pd.read_csv(
+            self.geography_region_ids_mapping = pd.read_csv(
                 boundary_codes_dict.get("path"),  # Names & Codes file path
                 dtype={
                     boundary_codes_dict["key"]: boundary_codes_dict["key_type"],
@@ -63,7 +64,7 @@ class Boundary(Base):
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 
     def filter_boundaries_regions_data(self, field, value_list, ons_pd_object):
-        """Filters the boundary_regions_data table by if the area code is within both value_list and the census_data table.
+        """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
         Requires set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
@@ -75,20 +76,20 @@ class Boundary(Base):
         :returns None: Nothing
         """
 
-        if not self.boundary_dict:
-            raise Exception("boundary_dict has not been set, or there is no data in it")  # Has Boundary.set_boundary() been called?
+        if not self.geography_metadata_dict:
+            raise Exception("geography_metadata_dict has not been set, or there is no data in it")  # Has Geography.set_boundary() been called?
 
-        name = self.boundary_dict["name"]
-        codes_key = self.boundary_dict["codes"]["key"]
+        name = self.geography_metadata_dict["name"]
+        codes_key = self.geography_metadata_dict["codes"]["key"]
 
-        self.logger.info(f"Filtering {len(self.boundary_regions_data.index)} {name} boundaries by {field} being in {value_list}")
+        self.logger.info(f"Filtering {len(self.geography_region_ids_mapping.index)} {name} boundaries by {field} being in {value_list}")
         # Filters ons data table if field column is in value_list. Returns ndarray of unique area codes
         boundary_subset = ons_pd_object.ons_field_mapping(field, value_list, name)
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
         # Filters the boundary names and codes table by areas within the boundary_subset list
-        self.boundary_regions_data = self.boundary_regions_data.loc[self.boundary_regions_data[codes_key].isin(boundary_subset)]
-        self.logger.info(f"Resulting in {len(self.boundary_regions_data.index)} {name} boundaries")
+        self.geography_region_ids_mapping = self.geography_region_ids_mapping.loc[self.geography_region_ids_mapping[codes_key].isin(boundary_subset)]
+        self.logger.info(f"Resulting in {len(self.geography_region_ids_mapping.index)} {name} boundaries")
 
     def filter_boundaries_by_scout_area(self, scout_data, boundary, column, value_list, ons_pd=None):
         """Filters the boundaries, to include only those boundaries which have
