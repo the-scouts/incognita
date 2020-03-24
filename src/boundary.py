@@ -471,7 +471,7 @@ class Boundary(Base):
         records = self.scout_data.data.loc[self.scout_data.data[column].isin(value_list)]
         self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
 
-        records = records[records != ScoutCensus.DEFAULT_VALUE]
+        records = records[records != scout_data.DEFAULT_VALUE]
         ons_codes = records[ons_code].drop_duplicates().dropna().to_list()
         self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
 

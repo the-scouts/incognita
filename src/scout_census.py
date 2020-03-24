@@ -69,7 +69,7 @@ class ScoutCensus:
         },
     }
 
-    DEFAULT_VALUE = "error"
+    DEFAULT_VALUE = "error"  # DEPR ScoutCensus.DEFAULT_VALUE is deprecated in favour of ScoutData.DEFAULT_VALUE
     UNIT_LEVEL_GROUP = "Group"
     UNIT_LEVEL_DISTRICT = "District"
 
