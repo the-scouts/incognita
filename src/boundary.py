@@ -417,45 +417,47 @@ class Boundary(Base):
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
         self.filter_boundaries(boundary, ons_value_list)
 
-    def filter_boundaries_near_scout_area(self, boundary, column, value_list):
-        """Filters the boundaries, to include only those boundaries which have
-        Sections that satisfy the requirement that the column is in the value_list,
-        or in a neighbouring boundary.
+    def filter_boundaries_near_scout_area(self, boundary, field, value_list):
+        """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
+        partially or fully within three kilometres of the external border (convex hull)
+
+        #TODO investigate some method of actually finding a boundry's neighbours.
 
         :param str boundary: ONS boundary to filter on
-        :param str column: Scout boundary (e.g. C_ID)
+        :param str field: Scout boundary (e.g. C_ID)
         :param list value_list: List of values in the Scout boundary
         """
-        # Filter sections on `Column`
         # Extend by 3000 metres
-        field = column
         distance = 3000
 
-        self.logger.info("Creates geometry")
-        data_with_points = gpd.GeoDataFrame(self.scout_data.data,
-                                            geometry=gpd.points_from_xy(self.scout_data.data.long, self.scout_data.data.lat))
+        # Reduce columns in dataset to minimum requirements
+        reduced_points = self.scout_data.data[[field, boundary, "lat", "long"]]
 
-        data_with_points.crs = {'init': 'epsg:4326'}
-        # Converts the co-ordinate reference system into OS36 which uses
+        self.logger.info("Creates geometry")
+        data_with_points = gpd.GeoDataFrame(reduced_points, geometry=gpd.points_from_xy(reduced_points.long, reduced_points.lat))
+        data_with_points = data_with_points.drop(['lat', 'long'], axis=1)
+
+        # Pivots the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
+        data_with_points.crs = {'init': 'epsg:4326'}
         data_with_points = data_with_points.to_crs({'init': 'epsg:27700'})
+        # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ords)
 
         self.logger.info(f"Filters for records that satify {field} in {value_list}")
         filtered_points = data_with_points.loc[data_with_points[field].isin(value_list)]
-        self.logger.info(f"Resulting in {len(filtered_points.index)} number of Sections")
+        self.logger.info(f"Resulting in {len(reduced_points.index)} number of Sections")
+
         self.logger.info(f"Creating area of interest")
-        in_area = shapely.geometry.MultiPoint(filtered_points["geometry"].tolist())
-        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}, now convex hull ...")
-        in_area = in_area.convex_hull
-        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}, now buffering ...")
-        in_area = in_area.buffer(distance)
-        self.logger.info(f"Result is valid {in_area.geom_type}: {in_area.is_valid} of area {in_area.area}")
+        # Finds the outer boundary of all selected scout units and extends by `distance` in all directions to
+        # incorporate nearby regions
+        in_area = shapely.geometry.MultiPoint(filtered_points["geometry"].to_list()).convex_hull.buffer(distance)
+        self.logger.info(f"Is result valid {in_area.geom_type}? {in_area.is_valid}. Area is {in_area.area}")
 
         self.logger.info(f"Finding Sections in buffered area of interest")
-        is_near = data_with_points.apply(lambda area: area.geometry.within(in_area), axis=1)
-        self.logger.info(f"Found {sum(is_near)} Sections nearby")
 
-        nearby_values = data_with_points[is_near][boundary].unique()
+        nearby_values = data_with_points[data_with_points.geometry.within(in_area)][boundary]
+        self.logger.info(f"Found {len(nearby_values)} Sections nearby")
+        nearby_values = nearby_values.drop_duplicates().to_list()
         self.logger.info(f"Found {nearby_values}")
 
         self.filter_boundaries(boundary, nearby_values)
