@@ -33,8 +33,6 @@ class Boundary(Base):
         self.boundary_regions_data = None
         self.boundary_report = {}
 
-        self.district_mapping = {}
-
         self.set_boundary(geography_name)
 
     @property
@@ -99,11 +97,9 @@ class Boundary(Base):
     def ons_to_district_mapping(self, ons_code):
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
-        :param ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
-        :type ons_code: str
+        :param str ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
 
-        :returns: Nothing
-        :rtype: None
+        :returns None: Nothing
         """
 
         self.logger.debug("Creating mapping from ons boundary to scout district")
@@ -128,10 +124,9 @@ class Boundary(Base):
         nested_dict = collections.defaultdict(dict)
         for keys, value in count_by_district_by_region["count"].iteritems():
             nested_dict[keys[0]][keys[1]] = value
-        mapping = dict(nested_dict)
 
-        self.district_mapping[ons_code] = mapping
         self.logger.debug("Finished mapping from ons boundary to district")
+        return dict(nested_dict)  # Return the mapping
 
     def create_boundary_report(self, options=None, historical=False, report_name=None):
         """Produces .csv file summarising by boundary provided.
@@ -285,8 +280,7 @@ class Boundary(Base):
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
             self.logger.debug(f"Creating awards mapping")
-            self.ons_to_district_mapping(geog_name)
-            awards_mapping = self.district_mapping.get(geog_name)
+            awards_mapping = self.ons_to_district_mapping(geog_name)
             district_nums = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
             awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region, district_nums).apply(pd.Series)
 
