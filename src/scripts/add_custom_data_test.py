@@ -9,7 +9,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     boundary = Boundary("lsoa", scout_data)
-    boundary.filter_boundaries("oslaua", ["E08000035"])
+    boundary.filter_boundaries_regions_data("oslaua", ["E08000035"])
     boundary.create_boundary_report(["Section numbers", False], report_name="leeds_sections")
 
     dimension = {"column": "Beavers-2019", "tooltip": "Beavers 2019", "legend": "# Beavers"}

@@ -25,9 +25,9 @@ if __name__ == "__main__":
 
     imd = Boundary("lsoa", scout_data)
     pcon_list = pcon.boundary_regions_data[pcon.boundary_dict["codes"]["key"]]
-    imd.filter_boundaries("pcon", pcon_list)
+    imd.filter_boundaries_regions_data("pcon", pcon_list)
     #lsoa_list = boundary.ons_from_scout_area("lsoa11", "pcon", pcon_list)
-    #imd.filter_boundaries("lsoa11", lsoa_list)
+    #imd.filter_boundaries_regions_data("lsoa11", lsoa_list)
 
     #imd.filter_boundaries_near_scout_area("imd", "C_ID", [10000112], exec_tm=True)
     #imd.filter_records_by_boundary(exec_tm=True)

@@ -378,7 +378,7 @@ class Boundary(Base):
 
         return uptake_report
 
-    def filter_boundaries(self, field, value_list):
+    def filter_boundaries_regions_data(self, field, value_list):
         """Filters the boundary_regions_data table by if the area code is within both value_list and the census_data table.
 
         Requires set_boundary to have been called.
@@ -415,7 +415,7 @@ class Boundary(Base):
         :param list value_list: List of values in the Scout boundary
         """
         ons_value_list = self.ons_from_scout_area(boundary, column, value_list)
-        self.filter_boundaries(boundary, ons_value_list)
+        self.filter_boundaries_regions_data(boundary, ons_value_list)
 
     def filter_boundaries_near_scout_area(self, boundary, field, value_list):
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
@@ -460,7 +460,7 @@ class Boundary(Base):
         nearby_values = nearby_values.drop_duplicates().to_list()
         self.logger.info(f"Found {nearby_values}")
 
-        self.filter_boundaries(boundary, nearby_values)
+        self.filter_boundaries_regions_data(boundary, nearby_values)
 
     def ons_from_scout_area(self, ons_code, column, value_list):
         """Produces list of ONS Geographical codes that exist within a subset
