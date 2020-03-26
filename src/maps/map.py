@@ -6,16 +6,16 @@ import geopandas as gpd
 import numpy as np
 
 import src.utility as utility
-from src.reports import Reports
-from src.scout_data import ScoutData
+from reports.reports import Reports
+from data.scout_data import ScoutData
 from src.base import Base
-from src.map_plotter import MapPlotter
-from src.scout_census import ScoutCensus
-from src.geography import Geography
+from maps.map_plotter import MapPlotter
+from data.scout_census import ScoutCensus
+from geographies.geography import Geography
 
 
 class Map(Base):
-    def __init__(self, scout_data_object: ScoutData, map_name, **kwargs):
+    def __init__(self, scout_data_object: ScoutData, map_name: str, **kwargs):
         super().__init__(settings=True)
 
         self.map_plotter = None

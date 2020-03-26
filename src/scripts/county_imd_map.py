@@ -1,6 +1,7 @@
-from src.scout_data import ScoutData
-from src.geography import Geography
-from src.map import Map
+from data.scout_data import ScoutData
+from geographies.geography import Geography
+from maps.map import Map
+from reports.reports import Reports
 
 if __name__ == "__main__":
     scout_data = ScoutData(load_ons_pd_data=True)
@@ -8,14 +9,17 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1])
     scout_data.add_imd_decile()
 
-    boundary = Geography("lsoa", scout_data)
-    la_list = boundary.ons_from_scout_area("oslaua", "C_ID", [10000111, 10000119])
+    boundary = Geography("lsoa", scout_data.ons_pd)
+    la_list = boundary.ons_from_scout_area(scout_data, "oslaua", "C_ID", [10000111, 10000119])
     scout_data.filter_records("oslaua", la_list)
-    boundary.filter_boundaries_regions_data("oslaua", la_list)
-    boundary.create_boundary_report(["Section numbers"], historical=True, report_name="shropshire_by_lsoa")   # TODO: before postcode filtering
+    boundary.filter_boundaries_regions_data("oslaua", la_list, scout_data.ons_pd)
+
+    reports = Reports(scout_data, boundary)
+    reports.create_boundary_report(["Section numbers"], historical=True, report_name="shropshire_by_lsoa")   # TODO: before postcode filtering
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    map = Map(scout_data, boundary, dimension, map_name="shropshire")
+    map = Map(scout_data, map_name="shropshire")
+    map.add_areas(dimension, boundary, reports, show=True)
     map.set_region_of_colour("C_ID", [10000111])
     map.add_sections_to_map(map.district_colour_mapping(), ["youth membership"])
     map.save_map()

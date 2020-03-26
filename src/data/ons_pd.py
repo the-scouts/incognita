@@ -1,7 +1,7 @@
 import pandas as pd
 
 from src.base import Base
-from src.scout_census import ScoutCensus
+from data.scout_census import ScoutCensus
 
 
 class ONSPostcodeDirectory(Base):

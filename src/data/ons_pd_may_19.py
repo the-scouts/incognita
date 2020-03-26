@@ -1,4 +1,4 @@
-from src.ons_pd import ONSPostcodeDirectory
+from data.ons_pd import ONSPostcodeDirectory
 
 
 class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
@@ -14,21 +14,23 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     :var dict ONSPostcodeDirectoryMay19.IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
     :var dict ONSPostcodeDirectoryMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
     """
-    fields = ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'oseast1m', 'osnrth1m', 'lat', 'long', 'imd', 'ctry', 'rgn', 'pcd']
-    index_column = 'pcd'
+    # fields = ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'oseast1m', 'osnrth1m', 'lat', 'long', 'imd', 'ctry', 'rgn', 'pcd']
+    fields = ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'imd', 'ctry', 'rgn']
+    # index_column = 'pcd'
+    index_column = None
     data_types = {
         'oscty': 'category',
         'oslaua': 'category',
         'osward': 'category',
-        'oseast1m': 'Int32',
-        'osnrth1m': 'Int32',
+        # 'oseast1m': 'Int32',
+        # 'osnrth1m': 'Int32',
         'ctry': 'category',
         'rgn': 'category',
         'pcon': 'category',
         'lsoa11': 'category',
         'msoa11': 'category',
-        'lat': 'float32',
-        'long': 'float32',
+        # 'lat': 'float32',
+        # 'long': 'float32',
         'imd': 'Int32',  # should be uint16 but not atm because the NaN thing
     }  # capitalise Int as of Optional Integer NA Support pandas 24 # Int capitalised as this ignores NaNs
 

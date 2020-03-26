@@ -1,6 +1,6 @@
-from src.scout_data import ScoutData
-from src.geography import Geography
-from src.map import Map
+from data.scout_data import ScoutData
+from geographies.geography import Geography
+from maps.map import Map
 
 if __name__ == "__main__":
     scout_data = ScoutData(csv_has_ons_pd_data=True, load_ons_pd_data=True)

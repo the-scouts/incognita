@@ -1,8 +1,8 @@
-from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
-from src.reports import Reports
-from src.scout_data import ScoutData
-from src.geography import Geography
-from src.map import Map
+from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from reports.reports import Reports
+from data.scout_data import ScoutData
+from geographies.geography import Geography
+from maps.map import Map
 
 if __name__ == "__main__":
 

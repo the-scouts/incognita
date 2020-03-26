@@ -5,10 +5,10 @@ the percentage of young people.
 
 This script has no command line options.
 """
-from reports import Reports
-from src.scout_data import ScoutData
-from src.geography import Geography
-from src.map import Map
+from reports.reports import Reports
+from data.scout_data import ScoutData
+from geographies.geography import Geography
+from maps.map import Map
 
 if __name__ == "__main__":
     scout_data = ScoutData(load_ons_pd_data=True)
@@ -32,7 +32,8 @@ if __name__ == "__main__":
 
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
-    map = Map(scout_data, boundary, dimension, map_name="pcon_uptake_map", static_scale=static_scale)
+    map = Map(scout_data, map_name="pcon_uptake_map", static_scale=static_scale)
+    map.add_areas(dimension, boundary, reports, show=True)
     map.set_region_of_colour("C_name", ["Central Yorkshire"])
     map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)
     map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)
@@ -41,10 +42,10 @@ if __name__ == "__main__":
     map.save_map()
 
     # create_section_maps
-    #for section_label in Geography.SECTION_AGES.keys():
-        #dimension = {"column": f"%-{section_label}-{max_year}", "tooltip": section_label, "legend": f"{max_year} {section_label} uptake (%)"}
-        #section_map = Map(scout_data, boundary, dimension, map_name=f"pcon_uptake_report_{section_label}", static_scale=static_scale)
-        #section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
-        #section_map.save_map()
+    # for section_label in Geography.SECTION_AGES.keys():
+    #     dimension = {"column": f"%-{section_label}-{max_year}", "tooltip": section_label, "legend": f"{max_year} {section_label} uptake (%)"}
+    #     section_map = Map(scout_data, boundary, dimension, map_name=f"pcon_uptake_report_{section_label}", static_scale=static_scale)
+    #     section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
+    #     section_map.save_map()
 
     scout_data.close()

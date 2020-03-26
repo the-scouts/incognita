@@ -1,4 +1,4 @@
-from src.scout_data import ScoutData
+from data.scout_data import ScoutData
 
 if __name__ == "__main__":
     scout_data = ScoutData()

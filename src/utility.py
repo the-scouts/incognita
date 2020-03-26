@@ -1,5 +1,5 @@
 import pandas as pd
-from src.scout_census import ScoutCensus
+from data.scout_census import ScoutCensus
 
 sections_dict = ScoutCensus.column_labels['sections']
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}

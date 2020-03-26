@@ -5,9 +5,9 @@ import geopandas as gpd
 import webbrowser
 import os
 
-from src.reports import Reports
+from reports.reports import Reports
 from src.base import Base
-from src.geography import Geography
+from geographies.geography import Geography
 
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
 # It is used by folium to plot the data.

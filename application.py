@@ -1,4 +1,4 @@
-from src.dashboard import Dashboard
+from maps.dashboard import Dashboard
 
 dashboard = Dashboard()
 

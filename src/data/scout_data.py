@@ -1,12 +1,10 @@
 from datetime import datetime
-import geopandas as gpd
-import shapely
 import time
 
 from src.base import Base
-from src.scout_census import ScoutCensus
-from src.census_merge_data import CensusMergeData
-from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from data.scout_census import ScoutCensus
+from data.census_merge_data import CensusMergeData
+from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import src.utility as utility
 
 

@@ -6,8 +6,8 @@ Directory.
 This script has no command line options.
 """
 
-from src.scout_data import ScoutData
-from src.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from data.scout_data import ScoutData
+from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 
 if __name__ == "__main__":
     scout_data = ScoutData(csv_has_ons_pd_data=False)

@@ -1,4 +1,4 @@
-from src.ons_pd import ONSPostcodeDirectory
+from data.ons_pd import ONSPostcodeDirectory
 
 
 class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):

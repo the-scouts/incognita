@@ -2,7 +2,7 @@ import pandas as pd
 import collections
 
 from src.base import Base
-from src.scout_census import ScoutCensus
+from data.scout_census import ScoutCensus
 import src.utility as utility
 
 
@@ -16,14 +16,14 @@ class Reports(Base):
     def data(self):
         return self.boundary_report[self.ons_column_name]
 
-    def __init__(self, boundary_object, scout_data_object):
+    def __init__(self, boundary_object, scout_data_object, ons_pd_object=None):
         super().__init__(settings=True)
 
-        self.boundary_dict = boundary_object.boundary_dict
-        self.boundary_regions_data = boundary_object.boundary_regions_data
+        self.boundary_dict = boundary_object.geography_metadata_dict
+        self.boundary_regions_data = boundary_object.geography_region_ids_mapping
 
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
-        self.ons_pd = scout_data_object.ons_pd
+        self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
 
         self.boundary_report = {}
 

@@ -2,11 +2,12 @@ import pandas as pd
 import geopandas as gpd
 import shapely
 
-from scout_data import ScoutData
+from data.scout_data import ScoutData
 from src.base import Base
-from src.scout_census import ScoutCensus
+from data.scout_census import ScoutCensus
 
 
+# noinspection PyUnresolvedReferences
 class DistrictBoundaries(Base):
     def __init__(self, scout_data_object):
         super().__init__()
