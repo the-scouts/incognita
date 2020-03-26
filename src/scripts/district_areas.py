@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     boundary = Geography("District", scout_data.ons_pd)
 
-    reports = Reports(scout_data, boundary)
+    reports = Reports(boundary, scout_data)
     reports.create_boundary_report(["Section numbers", "6 to 17 numbers", "awards"], report_name="scout_district_report")
 
     dimension = {"column": "%-Chief_Scout_Bronze_Awards", "tooltip": "% Bronze", "legend": "% Bronze"}

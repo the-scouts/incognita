@@ -43,7 +43,7 @@ class ONSPostcodeDirectory(Base):
         :param list start_values: list of values in the ONS PD
         :param str target_geography: must be a field in the ONS PD
 
-        :return: DataSeries of codes in the target_geography
+        :return pd.Series: Series of codes in the target_geography
         """
         # Maps the start geography to target geography
         try:

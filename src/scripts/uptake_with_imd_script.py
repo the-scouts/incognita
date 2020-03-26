@@ -29,7 +29,7 @@ if __name__ == "__main__":
     imd = Geography("lsoa", scout_data.ons_pd)
     pcon_list = pcon.geography_region_ids_mapping[pcon.geography_metadata_dict["codes"]["key"]]
     imd.filter_boundaries_regions_data("pcon", pcon_list)
-    # lsoa_list = boundary.ons_from_scout_area("lsoa11", "pcon", pcon_list)
+    # lsoa_list = boundary._ons_from_scout_area("lsoa11", "pcon", pcon_list)
     # imd.filter_boundaries_regions_data("lsoa11", lsoa_list)
     #
     # imd.filter_boundaries_near_scout_area("imd", "C_ID", [10000112], exec_tm=True)

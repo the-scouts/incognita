@@ -14,7 +14,7 @@ class HistorySummary(Base):
 
     def group_history_summary(self, years, report_name=None):
         self.logger.info("Beginning group_history_summary")
-        report = self.history_summary(years, "Group ID", ScoutCensus.column_labels['id']["GROUP"], unit_type="Group")
+        report = self._history_summary(years, "Group ID", ScoutCensus.column_labels['id']["GROUP"], unit_type="Group")
         if report_name:
             utility.save_report(report, self.settings["Output folder"], report_name, logger=self.logger)
         return report
@@ -22,12 +22,12 @@ class HistorySummary(Base):
     def section_history_summary(self, years, report_name=None):
         # Works effectively for years after 2017
         self.logger.info("Beginning section_history_summary")
-        report = self.history_summary(years, "compass ID", "compass")
+        report = self._history_summary(years, "compass ID", "compass")
         if report_name:
             utility.save_report(report, self.settings["Output folder"], report_name, logger=self.logger)
         return report
 
-    def history_summary(self, years, id_name, census_col, unit_type=None):
+    def _history_summary(self, years, id_name, census_col, unit_type=None):
         sections_dict = ScoutCensus.column_labels['sections']
 
         # Must have imd scores and deciles already in census_postcode_data.

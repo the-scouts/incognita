@@ -10,11 +10,11 @@ if __name__ == "__main__":
     scout_data.add_imd_decile()
 
     boundary = Geography("lsoa", scout_data.ons_pd)
-    la_list = boundary.ons_from_scout_area(scout_data, "oslaua", "C_ID", [10000111, 10000119])
-    scout_data.filter_records("oslaua", la_list)
-    boundary.filter_boundaries_regions_data("oslaua", la_list, scout_data.ons_pd)
 
-    reports = Reports(scout_data, boundary)
+    scout_data.filter_records("C_ID", [10000111, 10000119])
+    boundary.filter_boundaries_by_scout_area(scout_data, "oslaua", "C_ID", [10000111, 10000119])
+
+    reports = Reports(boundary, scout_data)
     reports.create_boundary_report(["Section numbers"], historical=True, report_name="shropshire_by_lsoa")   # TODO: before postcode filtering
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}

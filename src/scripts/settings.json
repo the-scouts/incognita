@@ -2,7 +2,7 @@
   "settings":
   {
     "Scout Census location":  "../../data/Scout Census Data/Census 2019 Prototype Extract (7) with May 2019 fields.csv",
-    "ONS PD location":        "../../data/ONSPD_reduced_no_postcodes_or_co_ordinates.csv",
+    "ONS PD location":        "../../data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv",
     "ONS Names and codes folder": "../../data/ONSPD_MAY_2019_UK/Documents/",
     "National Statistical folder": "../../data/National Statistical data/",
     "Output folder": "../../Output/",
@@ -23,7 +23,7 @@
       "imd_decile":
       {
           "name": "imd_decile",
-          "codes": {"path": "../../data/Scout Census Data/imd_names_and_codes.csv", "key": "IMD Decile", "key_type": "Object", "name": "Name"},
+          "codes": {"path": "../../data/Scout Census Data/imd_names_and_codes.csv", "key": "IMD Decile", "key_type": "Int32", "name": "Name"},
           "boundary": null,
           "age_profile": null
       }

@@ -34,7 +34,7 @@ class Reports(Base):
         'Explorers': {"ages": ["14", "15", "16", "17"]}
     }
 
-    def ons_to_district_mapping(self, ons_code: str) -> dict:
+    def _ons_to_district_mapping(self, ons_code: str) -> dict:
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
         :param str ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
@@ -71,7 +71,7 @@ class Reports(Base):
     def create_boundary_report(self, options=None, historical=False, report_name=None):
         """Produces .csv file summarising by boundary provided.
 
-        Requires self.boundary_data to be set, preferably by :meth:scout_data.set_boundary
+        Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
 
         :param list or None options: List of data to be included in report
         :param bool historical: Check to ensure that multiple years of data are intentional
@@ -107,7 +107,7 @@ class Reports(Base):
         geog_name = self.boundary_dict.get("name")  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
-            raise Exception("geography_metadata_dict has not been set. Try calling set_boundary")
+            raise Exception("geography_metadata_dict has not been set. Try calling _set_boundary")
         else:
             self.logger.info(
                 f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
@@ -225,7 +225,7 @@ class Reports(Base):
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
             self.logger.debug(f"Creating awards mapping")
-            awards_mapping = self.ons_to_district_mapping(geog_name)
+            awards_mapping = self._ons_to_district_mapping(geog_name)
             district_nums = {district_id: num for district_dict in awards_mapping.values() for district_id, num in
                              district_dict.items()}
             awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region,
@@ -258,7 +258,7 @@ class Reports(Base):
         self.boundary_report[geog_name] = output_data
 
         if report_name:
-            self.save_report(output_data, report_name)
+            self._save_report(output_data, report_name)
 
         return output_data
 
@@ -318,9 +318,9 @@ class Reports(Base):
         # TODO check edge cases - 0 population and 0 or more scouts
 
         if report_name:
-            self.save_report(uptake_report, report_name)
+            self._save_report(uptake_report, report_name)
 
         return uptake_report
 
-    def save_report(self, report_data, report_name):
+    def _save_report(self, report_data, report_name):
         utility.save_report(report_data, self.settings["Output folder"], report_name, logger=self.logger)

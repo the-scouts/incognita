@@ -62,7 +62,7 @@ class CensusMergeData(Base):
         census_data.to_csv(output_path, index=False, encoding='utf-8-sig')
 
     @staticmethod
-    def postcode_cleaner(postcode):
+    def _postcode_cleaner(postcode):
         """Cleans postcode to ONS postcode directory format.
 
         :param postcode: pandas series of postcodes
@@ -106,7 +106,7 @@ class CensusMergeData(Base):
         return postcode
 
     @staticmethod
-    def fill_unmerged_rows(census_data, row_has_merged, fields_data_types):
+    def _fill_unmerged_rows(census_data, row_has_merged, fields_data_types):
         """Fills rows that have not merged with default values
 
         Fills all passed fields in rows where there has been no data merged
@@ -145,7 +145,7 @@ class CensusMergeData(Base):
         valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
 
         self.logger.info("Cleaning postcodes")
-        cleaned_postcode_column = CensusMergeData.postcode_cleaner(census_data[postcode_column])
+        cleaned_postcode_column = CensusMergeData._postcode_cleaner(census_data[postcode_column])
 
         self.logger.info("Inserting columns")
         census_data.insert(cleaned_postcode_index, cleaned_postcode_label, cleaned_postcode_column)

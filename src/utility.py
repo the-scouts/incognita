@@ -91,8 +91,8 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
     imd_max = country_names.map(ons_object.IMD_MAX)
 
     # One of the two series must be of a 'normal' int dtype - excluding the new ones that can deal with NAs
-    imd_max = try_downcast(imd_max)
-    imd_ranks = try_downcast(imd_ranks)
+    imd_max = _try_downcast(imd_max)
+    imd_ranks = _try_downcast(imd_ranks)
 
     if not imd_max.empty:
         # upside down floor division to get ceiling
@@ -103,7 +103,7 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
         raise Exception("No IMD values found to calculate deciles from")
 
 
-def try_downcast(series):
+def _try_downcast(series):
     try:
         uint_series = series.astype('uint16')
         if series.equals(uint_series):
@@ -114,7 +114,7 @@ def try_downcast(series):
         return series
 
 
-def save_report(report, output_path, report_name, logger=None):
+def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger=None):
     if logger:
         logger.info(f"Writing to {report_name}")
     report.to_csv(output_path + report_name + ".csv", index=False, encoding='utf-8-sig')

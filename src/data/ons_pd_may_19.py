@@ -93,7 +93,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Lower Level Super Output Areas
                 "name": "lsoa11",
                 "codes": {"path": NAMES_AND_CODES_FOLDER + "LSOA (2011) names and codes UK as at 12_12.csv", "key": "LSOA11CD", "key_type": "object", "name": "LSOA11NM"},
-                "boundary": {"shapefile": shapefile_paths["LSOA"], "key": 'lsoa11cd', "name": 'lsoa11nm', },
+                "boundary": {"shapefile": shapefile_paths["LSOA"], "key": 'LSOA11CD', "name": 'LSOA11NM', },
                 "age_profile": {"path": None, "key": None},
             },
             "msoa": {

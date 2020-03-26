@@ -51,7 +51,7 @@ class MapPlotter(Base):
 
         self.map_data = reports.data
         self.CODE_COL = reports.ons_column_name
-        self.filter_shape_file(boundary.shapefile)
+        self._filter_shape_file(boundary.shapefile)
 
         self.logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
@@ -80,7 +80,7 @@ class MapPlotter(Base):
         else:
             self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
 
-    def filter_shape_file(self, shape_file_path):
+    def _filter_shape_file(self, shape_file_path):
         """Loads, filters and converts shapefiles for later use
 
         Loads shapefile from path into GeoPandas dataframe
@@ -126,7 +126,7 @@ class MapPlotter(Base):
             data=merged_data.to_json(),
             name=name,
             style_function=lambda x: {
-               'fillColor': self.map_colourmap(x['properties'], colourmap, boundary_name),
+               'fillColor': self._map_colourmap(x['properties'], colourmap, boundary_name),
                'color': 'black',
                'fillOpacity': 0.33,
                'weight': 0.5
@@ -140,7 +140,7 @@ class MapPlotter(Base):
         ).add_to(self.map)
         colourmap.add_to(self.map)
 
-    def map_colourmap(self, properties, colourmap, boundary_name):
+    def _map_colourmap(self, properties, colourmap, boundary_name):
         """Returns colour from colour map function and value
 
         :param properties: dictionary of properties

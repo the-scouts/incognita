@@ -30,7 +30,7 @@ class ScoutData(Base):
             self.logger.info("Loading ONS data")
             start_time = time.time()
 
-            if self.has_ons_pd_data():
+            if self._has_ons_pd_data():
                 self.ons_pd = ONSPostcodeDirectoryMay19(self.settings["ONS PD location"], load_data=load_ons_pd_data)
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
@@ -75,7 +75,7 @@ class ScoutData(Base):
 
         # fill unmerged rows with default values
         self.logger.info("filling unmerged rows")
-        self.data = merge.fill_unmerged_rows(
+        self.data = merge._fill_unmerged_rows(
             self.data,
             ScoutCensus.column_labels['VALID_POSTCODE'],
             ons_fields_data_types, )
@@ -86,7 +86,7 @@ class ScoutData(Base):
             self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv",
             "clean_postcode", )
 
-    def has_ons_pd_data(self):
+    def _has_ons_pd_data(self):
         """Finds whether ONS data has been added
 
         :return bool: Whether the Scout Census data has ONS data added

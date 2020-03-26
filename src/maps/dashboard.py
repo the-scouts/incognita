@@ -4,6 +4,7 @@ import dash_html_components as html
 
 from src.base import Base
 
+
 class Dashboard(Base):
     def __init__(self):
         self.app = dash.Dash(__name__,

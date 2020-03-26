@@ -21,7 +21,7 @@ class Geography(Base):
         self.geography_metadata_dict = None
         self.geography_region_ids_mapping = None
 
-        self.set_boundary(geography_name, ons_pd_object)
+        self._set_boundary(geography_name, ons_pd_object)
 
     @property
     def shapefile_key(self):
@@ -35,7 +35,7 @@ class Geography(Base):
     def shapefile(self):
         return self.geography_metadata_dict["boundary"]["shapefile"]
 
-    def set_boundary(self, geography_name, ons_pd):
+    def _set_boundary(self, geography_name, ons_pd):
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
 
         :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
@@ -66,24 +66,25 @@ class Geography(Base):
     def filter_boundaries_regions_data(self, field, value_list, ons_pd_object):
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
-        Requires set_boundary to have been called.
+        Requires _set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.
 
         :param str field: The field on which to filter
         :param list value_list: The values on which to filter
+        :param ons_pd_object:
 
         :returns None: Nothing
         """
 
         if not self.geography_metadata_dict:
-            raise Exception("geography_metadata_dict has not been set, or there is no data in it")  # Has Geography.set_boundary() been called?
+            raise Exception("geography_metadata_dict has not been set, or there is no data in it")  # Has Geography._set_boundary() been called?
 
         name = self.geography_metadata_dict["name"]
         codes_key = self.geography_metadata_dict["codes"]["key"]
 
         self.logger.info(f"Filtering {len(self.geography_region_ids_mapping.index)} {name} boundaries by {field} being in {value_list}")
-        # Filters ons data table if field column is in value_list. Returns ndarray of unique area codes
+        # Filters ons data table if field column is in value_list. Returns pd.Series of unique area codes
         boundary_subset = ons_pd_object.ons_field_mapping(field, value_list, name)
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
@@ -99,16 +100,17 @@ class Geography(Base):
         :param str boundary: ONS boundary to filter on
         :param str column: Scout boundary (e.g. C_ID)
         :param list value_list: List of values in the Scout boundary
+        :param ons_pd:
         """
         ons_pd = scout_data.ons_pd if ons_pd is None else ons_pd  # TODO Remove - Temporary hack
-        ons_value_list = self.ons_from_scout_area(scout_data, boundary, column, value_list)
+        ons_value_list = self._ons_from_scout_area(scout_data, boundary, column, value_list)
         self.filter_boundaries_regions_data(boundary, ons_value_list, ons_pd)
 
     def filter_boundaries_near_scout_area(self, scout_data, boundary, field, value_list):
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 
-        #TODO investigate some method of actually finding a boundry's neighbours.
+        #TODO investigate some method of actually finding a boundary's neighbours.
 
         :param ScoutData scout_data: ScoutData object with data to operate on
         :param str boundary: ONS boundary to filter on
@@ -129,9 +131,9 @@ class Geography(Base):
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
         data_with_points.crs = {'init': 'epsg:4326'}
         data_with_points = data_with_points.to_crs({'init': 'epsg:27700'})
-        # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ords)
+        # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ordinates)
 
-        self.logger.info(f"Filters for records that satify {field} in {value_list}")
+        self.logger.info(f"Filters for records that satisfy {field} in {value_list}")
         filtered_points = data_with_points.loc[data_with_points[field].isin(value_list)]
         self.logger.info(f"Resulting in {len(reduced_points.index)} number of Sections")
 
@@ -150,7 +152,7 @@ class Geography(Base):
 
         self.filter_boundaries_regions_data(boundary, nearby_values, scout_data.ons_pd)
 
-    def ons_from_scout_area(self, scout_data, ons_code, column, value_list):
+    def _ons_from_scout_area(self, scout_data, ons_code, column, value_list):
         """Produces list of ONS Geographical codes that exist within a subset
         of the Scout Census data.
 
