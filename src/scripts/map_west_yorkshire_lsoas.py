@@ -12,18 +12,17 @@ if __name__ == "__main__":
     scout_data.filter_records("C_ID", [10000122])
     scout_data.add_imd_decile()
 
+    map = Map(scout_data, map_name="central_yorkshire")
+
+    dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
     ons_pd = ONSPostcodeDirectoryMay19(scout_data.settings["ONS PD location"], load_data=True)
     boundary = Geography("lsoa", ons_pd)
     boundary.filter_boundaries_by_scout_area(scout_data, "oslaua", "C_ID", [10000122], ons_pd)
-
     reports = Reports(boundary, scout_data)
     reports.create_boundary_report(["Section numbers"], historical=True, report_name="central_yorkshire_by_lsoa8")   # TODO: before postcode filtering
-
-    map = Map(scout_data, map_name="central_yorkshire")
-    dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
     map.add_areas(dimension, boundary, reports, show=True)
 
-    map.add_sections_to_map(map.district_colour_mapping(), ["youth membership"])
+    map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"])
     map.save_map()
     map.show_map()
     scout_data.close()

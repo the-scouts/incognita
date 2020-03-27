@@ -25,7 +25,7 @@ class Geography(Base):
 
     @property
     def shapefile_key(self):
-        return self.geography_metadata_dict["boundary"]["key"].upper()  # TODO TEMP MEASURE DUE TO DATAFILE ERR
+        return self.geography_metadata_dict["boundary"]["key"]
 
     @property
     def shapefile_name_column(self):

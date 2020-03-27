@@ -10,7 +10,7 @@ class Reports(Base):
 
     @property
     def ons_column_name(self):
-        return self.boundary_dict["name"]  # TODO TEMP MEASURE DUE TO DATAFILE ERR
+        return self.boundary_dict["name"]
 
     @property
     def data(self):

@@ -17,10 +17,7 @@ WGS_84 = '4326'
 class MapPlotter(Base):
     """This class enables easy plotting of maps with a shape file.
 
-    :param dict shape_files_dict: dictionary of properties about the needed shapefiles
-    :param data_info: dictionary of information about the data and colourings on the map
     :param str out_file: path to save the map to
-    :param bool sections_clustered: If True, section markers cluster on the map.
 
     :var dictionary self.map_data: contains shapefile paths, and labels for region codes and names
     :var str self.CODE_COL: holds the name of the region class, e.g. oslaua, pcon
@@ -39,6 +36,11 @@ class MapPlotter(Base):
         self.SCORE_COL = {}
         self.layers = {}
 
+        self.score_col_label = None
+        self.code_name = None
+        self.CODE_COL = None
+        self.map_data = None
+
         self.geo_data = None
 
     def set_boundary(self, boundary: Geography, reports: Reports):
@@ -46,6 +48,7 @@ class MapPlotter(Base):
         Changes the boundary to a new boundary
 
         :param Geography boundary: contains details about the new boundary
+        :param reports:
         """
         self.code_name = boundary.shapefile_key
 
@@ -74,6 +77,7 @@ class MapPlotter(Base):
 
         :param str name: The name of the layer - appears in LayerControl on Map
         :param bool markers_clustered: Whether the markers should cluster or not
+        :param bool show:
         """
         if markers_clustered:
             self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # for section_label in Geography.SECTION_AGES.keys():
     #     dimension = {"column": f"%-{section_label}-{max_year}", "tooltip": section_label, "legend": f"{max_year} {section_label} uptake (%)"}
     #     section_map = Map(scout_data, boundary, dimension, map_name=f"pcon_uptake_report_{section_label}", static_scale=static_scale)
-    #     section_map.add_sections_to_map(section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
+    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
     #     section_map.save_map()
 
     scout_data.close()

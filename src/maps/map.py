@@ -39,11 +39,12 @@ class Map(Base):
         """
         self.map_plotter.set_boundary(boundary, reports)
         self.map_plotter.set_score_col(dimension, boundary)
+        shapefile_name = boundary.shapefile_name_column
 
-        non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]] != 0]
+        non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
         non_zero_score_col.dropna(inplace=True)
-        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]].min()
-        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[boundary.geography_metadata_dict['boundary']['name']]].max()
+        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
+        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].max()
         self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
 
         if not scale:
@@ -66,7 +67,7 @@ class Map(Base):
 
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
         colourmap.caption = dimension["legend"]
-        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=boundary.geography_metadata_dict["boundary"]["name"], colourmap=colourmap)
+        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=shapefile_name, colourmap=colourmap)
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: str = 'Sections', cluster_markers: bool = False):
         """Adds the sections provided as markers to map with the colour, and data
@@ -183,7 +184,7 @@ class Map(Base):
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
             self.map_plotter.add_marker(lat, long, popup, marker_colour, layer)
 
-    def add_sections_to_map(self, colour, marker_data, single_section=None, layer='Sections'):
+    def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section=None, layer='Sections'):
         """Filter sections and add to map.
 
         If a single section is specified, plots that section onto the map in
@@ -200,7 +201,7 @@ class Map(Base):
         :param str single_section: One of Beavers, Cubs, Scouts, Explorers, Network
         :param str layer: The layer of the map that the setions are added to
         """
-        data: pd.DataFrame = self.scout_data.data
+        data: pd.DataFrame = scout_data_object.data
         unit_type_label = ScoutCensus.column_labels['UNIT_TYPE']
 
         if single_section:
