@@ -1,6 +1,8 @@
 import pandas as pd
 import collections
 
+from data.scout_data import ScoutData
+from geographies.geography import Geography
 from src.base import Base
 from data.scout_census import ScoutCensus
 import src.utility as utility
@@ -9,21 +11,15 @@ import src.utility as utility
 class Reports(Base):
 
     @property
-    def ons_column_name(self):
-        return self.boundary_dict["name"]
-
-    @property
     def data(self):
-        return self.boundary_report[self.ons_column_name]
+        return self.boundary_report[self.geography.type]
 
-    def __init__(self, boundary_object, scout_data_object, ons_pd_object=None):
+    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object=None):
         super().__init__(settings=True)
 
-        self.boundary_dict = boundary_object.geography_metadata_dict
-        self.boundary_regions_data = boundary_object.geography_region_ids_mapping
-
-        self.scout_data = scout_data_object  # only uses are for self.scout_data.data
         self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
+        self.scout_data = scout_data_object  # only uses are for self.scout_data.data
+        self.geography = Geography(geography_name, self.ons_pd)
 
         self.boundary_report = {}
 
@@ -43,12 +39,11 @@ class Reports(Base):
         """
 
         self.logger.debug("Creating mapping from ons boundary to scout district")
-        codes_key = self.boundary_dict["codes"]["key"]
 
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
 
-        region_ids = self.boundary_regions_data[codes_key].dropna().drop_duplicates()
+        region_ids = self.geography.geography_region_ids_mapping[self.geography.codes_map_key].dropna().drop_duplicates()
 
         district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column, ]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
@@ -104,10 +99,10 @@ class Reports(Base):
         opt_waiting_list_totals = \
             True if "waiting list total" in options \
                 else False
-        geog_name = self.boundary_dict.get("name")  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography.type  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
-            raise Exception("geography_metadata_dict has not been set. Try calling _set_boundary")
+            raise Exception("Geography type has not been set. Try calling _set_boundary")
         else:
             self.logger.info(
                 f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
@@ -244,11 +239,11 @@ class Reports(Base):
             self.logger.debug(f"Adding IMD deciles")
             dataframes.append(grouped_data[["imd_decile"]].first())
 
-        renamed_cols_dict = {self.boundary_dict['codes']['name']: "Name", self.boundary_dict['codes']['key']: geog_name}
+        renamed_cols_dict = {self.geography.codes_map_name: "Name", self.geography.codes_map_key: geog_name}
 
         # areas_data holds area names and codes for each area
         # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = self.boundary_regions_data \
+        areas_data: pd.DataFrame = self.geography.geography_region_ids_mapping \
             .copy() \
             .rename(columns=renamed_cols_dict) \
             .reset_index(drop=True)
@@ -272,15 +267,17 @@ class Reports(Base):
 
         :returns pd.DataFrame: Uptake data of Scouts in the boundary
         """
-        geog_name: str = self.boundary_dict.get("name")
-        age_profile_path: str = self.boundary_dict.get("age_profile").get("path")
-        age_profile_key: str = self.boundary_dict.get("age_profile").get("key")
-        boundary_report: pd.DataFrame = self.boundary_report.get(geog_name)
-
-        if boundary_report is None:
-            raise AttributeError("Geography report doesn't exist")
-        elif age_profile_path is None:
+        geog_name: str = self.geography.type
+        try:
+            age_profile_path: str = self.geography.age_profile_path
+            age_profile_key: str = self.geography.age_profile_key
+        except KeyError:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
+
+        try:
+            boundary_report: pd.DataFrame = self.boundary_report[geog_name]
+        except KeyError:
+            raise AttributeError("Geography report doesn't exist")
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
         try:
