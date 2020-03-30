@@ -51,10 +51,10 @@ class MapPlotter(Base):
         :param reports:
         """
         self.code_name = boundary.shapefile_key
+        self.CODE_COL = boundary.type
 
         self.map_data = reports.data
-        self.CODE_COL = reports.ons_column_name
-        self._filter_shape_file(boundary.shapefile)
+        self._filter_shape_file(boundary.shapefile_path)
 
         self.logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
@@ -65,7 +65,7 @@ class MapPlotter(Base):
         :param dict dimension: specifies the score column to use int the data
         :param Geography boundary: specifies the geography to use
         """
-        shapefile_name_column = boundary.shapefile_name_column
+        shapefile_name_column = boundary.shapefile_name
 
         self.SCORE_COL[shapefile_name_column] = dimension["column"]
         self.score_col_label = dimension["tooltip"]

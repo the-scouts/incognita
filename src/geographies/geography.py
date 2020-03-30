@@ -24,18 +24,38 @@ class Geography(Base):
         self._set_boundary(geography_name, ons_pd_object)
 
     @property
+    def type(self):
+        return self.geography_metadata_dict.get("name")
+
+    @property
+    def codes_map_key(self):
+        return self.geography_metadata_dict['codes']['key']
+
+    @property
+    def codes_map_name(self):
+        return self.geography_metadata_dict['codes']['name']
+
+    @property
     def shapefile_key(self):
         return self.geography_metadata_dict["boundary"]["key"]
 
     @property
-    def shapefile_name_column(self):
+    def shapefile_name(self):
         return self.geography_metadata_dict["boundary"]["name"]
 
     @property
-    def shapefile(self):
+    def shapefile_path(self):
         return self.geography_metadata_dict["boundary"]["shapefile"]
 
-    def _set_boundary(self, geography_name, ons_pd):
+    @property
+    def age_profile_path(self):
+        return self.geography_metadata_dict["age_profile"]["path"]
+
+    @property
+    def age_profile_key(self):
+        return self.geography_metadata_dict["age_profile"]["key"]
+
+    def _set_boundary(self, geography_name: str, ons_pd):
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
 
         :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.

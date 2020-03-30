@@ -39,7 +39,7 @@ class Map(Base):
         """
         self.map_plotter.set_boundary(boundary, reports)
         self.map_plotter.set_score_col(dimension, boundary)
-        shapefile_name = boundary.shapefile_name_column
+        shapefile_name = boundary.shapefile_name
 
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
         non_zero_score_col.dropna(inplace=True)
