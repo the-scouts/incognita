@@ -83,6 +83,28 @@ class Geography(Base):
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 
+    def _ons_from_scout_area(self, scout_data, ons_code, column, value_list):
+        """Produces list of ONS Geographical codes that exist within a subset
+        of the Scout Census data.
+
+        :param ScoutData scout_data: ScoutData object with data to operate on
+        :param str ons_code: A field of the ONS Postcode Directory
+        :param str column: A field of the Scout Census data
+        :param list value_list: Values to accept
+
+        :returns list: List of ONS Geographical codes of type ons_code.
+        """
+        self.logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
+
+        records = scout_data.data.loc[scout_data.data[column].isin(value_list)]
+        self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
+
+        records = records[records != scout_data.DEFAULT_VALUE]
+        ons_codes = records[ons_code].drop_duplicates().dropna().to_list()
+        self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
+
+        return ons_codes
+
     def filter_boundaries_regions_data(self, field, value_list, ons_pd_object):
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
@@ -171,25 +193,3 @@ class Geography(Base):
         self.logger.info(f"Found {nearby_values}")
 
         self.filter_boundaries_regions_data(boundary, nearby_values, scout_data.ons_pd)
-
-    def _ons_from_scout_area(self, scout_data, ons_code, column, value_list):
-        """Produces list of ONS Geographical codes that exist within a subset
-        of the Scout Census data.
-
-        :param ScoutData scout_data: ScoutData object with data to operate on
-        :param str ons_code: A field of the ONS Postcode Directory
-        :param str column: A field of the Scout Census data
-        :param list value_list: Values to accept
-
-        :returns list: List of ONS Geographical codes of type ons_code.
-        """
-        self.logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
-
-        records = scout_data.data.loc[scout_data.data[column].isin(value_list)]
-        self.logger.debug(f"Found {len(records.index)} records that match {column} in {value_list}")
-
-        records = records[records != scout_data.DEFAULT_VALUE]
-        ons_codes = records[ons_code].drop_duplicates().dropna().to_list()
-        self.logger.debug(f"Found clean {len(ons_codes)} {ons_code}s that match {column} in {value_list}")
-
-        return ons_codes
