@@ -1,3 +1,4 @@
+from base import time_function
 from data.scout_data import ScoutData
 from geographies.geography import Geography
 from reports.reports import Reports
@@ -13,6 +14,6 @@ if __name__ == "__main__":
 
     boundary = Geography("imd_decile", scout_data.ons_pd)
     reports = Reports(boundary, scout_data)
-    reports.create_boundary_report(["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name="gt_london_south_2019_imd_report", exec_tm=True)
+    time_function(reports.create_boundary_report)(["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name="gt_london_south_2019_imd_report")
 
     scout_data.close()

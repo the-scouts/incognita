@@ -5,7 +5,7 @@ the percentage of young people.
 
 This script has no command line options.
 """
-
+from base import time_function
 from data.scout_data import ScoutData
 from geographies.geography import Geography
 from maps.map import Map
@@ -25,10 +25,10 @@ if __name__ == "__main__":
     max_year = scout_data.data["Year"].max()
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
     boundary = Geography("pcon", scout_data.ons_pd)
-    # boundary.filter_boundaries_near_scout_area("pcon" , "C_ID", [10000122], exec_tm=True)
+    # time_function(boundary.filter_boundaries_near_scout_area)("pcon" , "C_ID", [10000122])
     reports = Reports(boundary, scout_data)
-    reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county", exec_tm=True)
-    reports.create_uptake_report(report_name="pcon_uk_uptake_report", exec_tm=True)
+    time_function(reports.create_boundary_report)(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county")
+    time_function(reports.create_uptake_report)(report_name="pcon_uk_uptake_report")
     # create_6_to_17_map
     map.add_areas(dimension, boundary, reports, show=True)
 
