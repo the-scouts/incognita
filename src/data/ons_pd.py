@@ -33,22 +33,3 @@ class ONSPostcodeDirectory(Base):
             for field in data_types:
                 if data_types[field] == 'category':
                     self.data[field] = self.data[field].cat.add_categories([ScoutCensus.DEFAULT_VALUE])
-
-    def ons_field_mapping(self, start_geography, start_values, target_geography):
-        """Used to convert between ONS geographies.
-
-        E.g. can find all Lower Super Output Areas within a local authority
-
-        :param str start_geography: must be a field in the ONS PD
-        :param list start_values: list of values in the ONS PD
-        :param str target_geography: must be a field in the ONS PD
-
-        :return pd.Series: Series of codes in the target_geography
-        """
-        # Maps the start geography to target geography
-        try:
-            areas_mapped = self.data.loc[self.data[start_geography].isin(start_values), target_geography].drop_duplicates()
-        except AttributeError:
-            self.logger.error("No data in ONS PD object. Ensure ScoutData object is created with load_ons_pd_data being True")
-            raise
-        return areas_mapped

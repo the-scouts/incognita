@@ -119,20 +119,24 @@ class Geography(Base):
         :returns None: Nothing
         """
 
-        if not self.geography_metadata_dict:
-            raise Exception("geography_metadata_dict has not been set, or there is no data in it")  # Has Geography._set_boundary() been called?
+        boundary_subset = None
+        name = self.type
 
-        name = self.geography_metadata_dict["name"]
-        codes_key = self.geography_metadata_dict["codes"]["key"]
-
-        self.logger.info(f"Filtering {len(self.geography_region_ids_mapping.index)} {name} boundaries by {field} being in {value_list}")
-        # Filters ons data table if field column is in value_list. Returns pd.Series of unique area codes
-        boundary_subset = ons_pd_object.ons_field_mapping(field, value_list, name)
+        # Transforms codes from values_list in column 'field' to codes for the current geography
+        # 'field' is the start geography and 'name' is the target geography
+        # Returns a list
+        self.logger.info(f"Filtering {len(self.geography_region_ids_mapping)} {name} boundaries by {field} being in {value_list}")
+        try:
+            ons_records_in_value_list = ons_pd_object.data[field].isin(value_list)
+            boundary_subset = ons_pd_object.data.loc[ons_records_in_value_list, name].drop_duplicates().to_list()
+        except AttributeError:
+            self.logger.exception("No data in ONS PD object. Ensure ScoutData object is created with load_ons_pd_data being True")
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
-        # Filters the boundary names and codes table by areas within the boundary_subset list
-        self.geography_region_ids_mapping = self.geography_region_ids_mapping.loc[self.geography_region_ids_mapping[codes_key].isin(boundary_subset)]
-        self.logger.info(f"Resulting in {len(self.geography_region_ids_mapping.index)} {name} boundaries")
+        # Filters the boundary names and codes table to only areas within the boundary_subset list
+        geog_region_ids_in_boundary_subset = self.geography_region_ids_mapping[self.codes_map_key].isin(boundary_subset)
+        self.geography_region_ids_mapping = self.geography_region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
+        self.logger.info(f"Resulting in {len(self.geography_region_ids_mapping)} {name} boundaries")
 
     def filter_boundaries_by_scout_area(self, scout_data, boundary, column, value_list, ons_pd=None):
         """Filters the boundaries, to include only those boundaries which have
