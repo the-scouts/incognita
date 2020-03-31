@@ -7,7 +7,6 @@ This script has no command line options.
 """
 from base import time_function
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 from reports.reports import Reports
 
@@ -24,13 +23,12 @@ if __name__ == "__main__":
     # % 6-17 pcon uptake from Jan-2019 Scout Census with May 2019 ONS
     max_year = scout_data.data["Year"].max()
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
-    boundary = Geography("pcon", scout_data.ons_pd)
-    # time_function(boundary.filter_boundaries_near_scout_area)("pcon" , "C_ID", [10000122])
-    reports = Reports(boundary, scout_data)
+    reports = Reports("pcon", scout_data)
+    # time_function(reports.filter_boundaries)("pcon", "C_ID", [10000122])
     time_function(reports.create_boundary_report)(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county")
     time_function(reports.create_uptake_report)(report_name="pcon_uk_uptake_report")
     # create_6_to_17_map
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
 
     # map.set_region_of_colour("C_name", ["Central Yorkshire"])
     # map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)

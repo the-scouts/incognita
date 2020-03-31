@@ -1,5 +1,4 @@
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 from reports.reports import Reports
 
@@ -13,11 +12,10 @@ if __name__ == "__main__":
     map = Map(scout_data, map_name="shropshire")
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    boundary = Geography("lsoa", scout_data.ons_pd)
-    boundary.filter_boundaries_by_scout_area(scout_data, "oslaua", "C_ID", [10000111, 10000119])
-    reports = Reports(boundary, scout_data)
+    reports = Reports("lsoa", scout_data)
+    reports.filter_boundaries("C_ID", [10000111, 10000119], "oslaua")
     reports.create_boundary_report(["Section numbers"], historical=True, report_name="shropshire_by_lsoa")   # TODO: before postcode filtering
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
 
     map.set_region_of_colour("C_ID", [10000111])
     map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"])

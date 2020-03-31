@@ -7,7 +7,6 @@ import os
 
 from reports.reports import Reports
 from src.base import Base
-from geographies.geography import Geography
 
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
 # It is used by folium to plot the data.
@@ -43,30 +42,29 @@ class MapPlotter(Base):
 
         self.geo_data = None
 
-    def set_boundary(self, boundary: Geography, reports: Reports):
+    def set_boundary(self, reports: Reports):
         """
         Changes the boundary to a new boundary
 
-        :param Geography boundary: contains details about the new boundary
         :param reports:
         """
-        self.code_name = boundary.shapefile_key
-        self.CODE_COL = boundary.type
 
         self.map_data = reports.data
-        self._filter_shape_file(boundary.shapefile_path)
+        self.code_name = reports.shapefile_key
+        self.CODE_COL = reports.geography_type
+
+        # map_data, CODE_COL and code_name all must be set before calling _filter_shape_file()
+        self._filter_shape_file(reports.shapefile_path)
 
         self.logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
-    def set_score_col(self, dimension, boundary):
+    def set_score_col(self, shapefile_name_column: str, dimension: dict):
         """
         Sets the SCORE_COL to use for a particular boundary
 
+        :param str shapefile_name_column:
         :param dict dimension: specifies the score column to use int the data
-        :param Geography boundary: specifies the geography to use
         """
-        shapefile_name_column = boundary.shapefile_name
-
         self.SCORE_COL[shapefile_name_column] = dimension["column"]
         self.score_col_label = dimension["tooltip"]
         self.logger.info(f"Setting score column to {self.SCORE_COL[shapefile_name_column]} (displayed: {self.score_col_label})")

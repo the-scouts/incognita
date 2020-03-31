@@ -8,7 +8,6 @@ This script has no command line options.
 """
 
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 from reports.reports import Reports
 
@@ -22,10 +21,9 @@ if __name__ == "__main__":
     map = Map(scout_data, map_name="UK_QSA_awards2", cluster_markers=True)
 
     dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
-    boundary = Geography("lad", scout_data.ons_pd)
-    reports = Reports(boundary, scout_data)
+    reports = Reports("lad", scout_data)
     reports.create_boundary_report(options=["awards"], report_name="laua_awards_report")
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
 
     map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers")
     map.save_map()

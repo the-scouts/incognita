@@ -8,7 +8,6 @@ This script has no command line options.
 from base import time_function
 from reports.reports import Reports
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 
 if __name__ == "__main__":
@@ -19,10 +18,9 @@ if __name__ == "__main__":
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
-    boundary = Geography("pcon", scout_data.ons_pd)
-    time_function(boundary.filter_boundaries_near_scout_area)(scout_data, "pcon" , "C_ID", [10000122])
+    reports = Reports("pcon", scout_data)
+    time_function(reports.filter_boundaries)("pcon", "C_ID", [10000122])
 
-    reports = Reports(boundary, scout_data)
     time_function(reports.create_boundary_report)(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county")
     time_function(reports.create_uptake_report)(report_name="pcon_uptake_report")
 
@@ -34,7 +32,7 @@ if __name__ == "__main__":
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
     map = Map(scout_data, map_name="pcon_uptake_map", static_scale=static_scale)
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
     map.set_region_of_colour("C_name", ["Central Yorkshire"])
     map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)
     map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)

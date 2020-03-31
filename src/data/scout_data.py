@@ -13,6 +13,12 @@ class ScoutData(Base):
 
     """
 
+    @property
+    def columns(self):
+        id_cols = self.scout_census.column_labels['id'].values()
+        name_cols = self.scout_census.column_labels['name'].values()
+        return [*id_cols, *name_cols]
+
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
     def __init__(self, csv_has_ons_pd_data=True, load_ons_pd_data=False):

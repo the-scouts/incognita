@@ -11,7 +11,6 @@ from data.scout_data import ScoutData
 from src.base import Base
 from maps.map_plotter import MapPlotter
 from data.scout_census import ScoutCensus
-from geographies.geography import Geography
 
 
 class Map(Base):
@@ -27,19 +26,19 @@ class Map(Base):
 
         self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
 
-    def add_areas(self, dimension, boundary: Geography, reports: Reports, show=False, scale=None):
+    def add_areas(self, dimension, reports: Reports, show=False, scale=None):
         """
         Creates a 2D colouring with geometry specified by the boundary
 
         :param dict dimension: specifies the column of the data to score against
-        :param Geography boundary: specifies the geometry to be used
+        :param Reports reports:
         :param bool show: if True the colouring is shown by default
         :param dict scale: Allows a fixed value scale, default is boundaries at
                            0%, 20%, 40%, 60%, 80% and 100%.
         """
-        self.map_plotter.set_boundary(boundary, reports)
-        self.map_plotter.set_score_col(dimension, boundary)
-        shapefile_name = boundary.shapefile_name
+        shapefile_name = reports.shapefile_name
+        self.map_plotter.set_boundary(reports)
+        self.map_plotter.set_score_col(shapefile_name, dimension)
 
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
         non_zero_score_col.dropna(inplace=True)

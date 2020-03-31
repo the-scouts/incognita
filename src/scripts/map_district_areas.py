@@ -1,5 +1,4 @@
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 from geographies.district_boundaries import DistrictBoundaries
 from reports.reports import Reports
@@ -19,10 +18,9 @@ if __name__ == "__main__":
     map = Map(scout_data, map_name="UK_Bronze_district", cluster_markers=True)
 
     dimension = {"column": "%-Chief_Scout_Bronze_Awards", "tooltip": "% Bronze", "legend": "% Bronze"}
-    boundary = Geography("District", scout_data.ons_pd)
-    reports = Reports(boundary, scout_data)
+    reports = Reports("District", scout_data)
     reports.create_boundary_report(["Section numbers", "6 to 17 numbers", "awards"], report_name="scout_district_report")
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
 
     map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers")
     map.save_map()

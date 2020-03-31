@@ -1,6 +1,5 @@
 from base import time_function
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from reports.reports import Reports
 
 if __name__ == "__main__":
@@ -12,8 +11,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
     scout_data.add_imd_decile()
 
-    boundary = Geography("imd_decile", scout_data.ons_pd)
-    reports = Reports(boundary, scout_data)
+    reports = Reports("imd_decile", scout_data)
     time_function(reports.create_boundary_report)(["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name="gt_london_south_2019_imd_report")
 
     scout_data.close()

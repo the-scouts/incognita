@@ -11,8 +11,24 @@ import src.utility as utility
 class Reports(Base):
 
     @property
-    def data(self):
+    def data(self) -> pd.DataFrame:
         return self.boundary_report[self.geography.type]
+
+    @property
+    def shapefile_name(self) -> str:
+        return self.geography.shapefile_name
+
+    @property
+    def shapefile_key(self) -> str:
+        return self.geography.shapefile_key
+
+    @property
+    def shapefile_path(self) -> str:
+        return self.geography.shapefile_path
+
+    @property
+    def geography_type(self) -> str:
+        return self.geography.type
 
     def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object=None):
         super().__init__(settings=True)
@@ -29,6 +45,20 @@ class Reports(Base):
         'Scouts': {"halves": ["10"], "ages": ["11", "12", "13"]},
         'Explorers': {"ages": ["14", "15", "16", "17"]}
     }
+
+    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance=3000, near=False):
+
+        # Check if field (i.e. scout_data column) is a census column or ONS column
+        if field in self.ons_pd.fields:
+            self.geography.filter_boundaries_regions_data(field, value_list, self.ons_pd)
+        elif field in self.scout_data.columns:
+            # Chose which filter to use for scout areas
+            if near:
+                self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
+            else:
+                self.geography.filter_boundaries_by_scout_area(self.scout_data, self.ons_pd, boundary, field, value_list)
+        else:
+            raise ValueError(f"Field value {field} not valid. Valid values are {[*self.ons_pd.fields, *self.scout_data.columns]}")
 
     def _ons_to_district_mapping(self, ons_code: str) -> dict:
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
@@ -221,11 +251,8 @@ class Reports(Base):
 
             self.logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
-            district_nums = {district_id: num for district_dict in awards_mapping.values() for district_id, num in
-                             district_dict.items()}
-            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region,
-                                                                                                     district_nums).apply(
-                pd.Series)
+            district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
+            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region, district_numbers).apply(pd.Series)
 
             self.logger.debug(f"Adding awards data")
             awards_table: pd.DataFrame = grouped_data.apply(awards_groupby, awards_per_district_per_regions).apply(

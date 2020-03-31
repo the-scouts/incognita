@@ -1,5 +1,4 @@
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 from reports.reports import Reports
 
@@ -12,11 +11,10 @@ if __name__ == "__main__":
     map = Map(scout_data, map_name="Leeds")
 
     dimension = {"column": "Beavers-2019", "tooltip": "Beavers 2019", "legend": "# Beavers"}
-    boundary = Geography("lsoa", scout_data.ons_pd)
-    boundary.filter_boundaries_regions_data("oslaua", ["E08000035"], scout_data.ons_pd)
-    reports = Reports(boundary, scout_data)
+    reports = Reports("lsoa", scout_data)
+    reports.filter_boundaries("oslaua", ["E08000035"])  # Leeds LA code
     reports.create_boundary_report(["Section numbers", False], report_name="leeds_sections")
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
 
     map.add_custom_data("../../data/National Statistical data/leeds_primary_schools.csv",
                         "Primary Schools",

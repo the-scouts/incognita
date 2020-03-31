@@ -1,7 +1,6 @@
 from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from reports.reports import Reports
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 
 if __name__ == "__main__":
@@ -16,11 +15,10 @@ if __name__ == "__main__":
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
     ons_pd = ONSPostcodeDirectoryMay19(scout_data.settings["ONS PD location"], load_data=True)
-    boundary = Geography("lsoa", ons_pd)
-    boundary.filter_boundaries_by_scout_area(scout_data, "oslaua", "C_ID", [10000122], ons_pd)
-    reports = Reports(boundary, scout_data)
+    reports = Reports("lsoa", scout_data, ons_pd)
+    reports.filter_boundaries("C_ID", [10000122], "oslaua")
     reports.create_boundary_report(["Section numbers"], historical=True, report_name="central_yorkshire_by_lsoa8")   # TODO: before postcode filtering
-    map.add_areas(dimension, boundary, reports, show=True)
+    map.add_areas(dimension, reports, show=True)
 
     map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"])
     map.save_map()

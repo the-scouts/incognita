@@ -7,7 +7,6 @@ This script has no command line options.
 """
 from base import time_function
 from data.scout_data import ScoutData
-from geographies.geography import Geography
 from maps.map import Map
 from reports.reports import Reports
 
@@ -24,24 +23,19 @@ if __name__ == "__main__":
 
     max_year = scout_data.data["Year"].max()
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
-    pcon = Geography("pcon", scout_data.ons_pd)
-    time_function(pcon.filter_boundaries_near_scout_area)("pcon" , "C_name", ["Hampshire"])
-    pcon_reports = Reports(pcon, scout_data)
+    pcon_reports = Reports("pcon", scout_data)
+    time_function(pcon_reports.filter_boundaries)("pcon", "C_name", ["Hampshire"])
     time_function(pcon_reports.create_boundary_report)(["Section numbers", "6 to 17 numbers"], historical=False, report_name="pcon_central_yorkshire")
     time_function(pcon_reports.create_uptake_report)(report_name="pcon_uptake_report")
-    map.add_areas(dimension, pcon, pcon_reports, show=True)
+    map.add_areas(dimension, pcon_reports, show=True)
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    imd = Geography("lsoa", scout_data.ons_pd)
-    pcon_list = pcon.geography_region_ids_mapping[pcon.geography_metadata_dict["codes"]["key"]]
-    imd.filter_boundaries_regions_data("pcon", pcon_list)
-    # lsoa_list = boundary._ons_from_scout_area("lsoa11", "pcon", pcon_list)
-    # imd.filter_boundaries_regions_data("lsoa11", lsoa_list)
-    # time_function(imd.filter_boundaries_near_scout_area)("imd", "C_ID", [10000112])
-    # time_function(imd.filter_records_by_boundary)()
-    imd_reports = Reports(imd, scout_data)
+    imd_reports = Reports("lsoa", scout_data.ons_pd)
+    # pcon list is purely list of all constituency codes remaining
+    pcon_list = pcon_reports.geography.geography_region_ids_mapping[pcon_reports.geography.codes_map_key]
+    imd_reports.filter_boundaries("pcon", pcon_list)
     time_function(imd_reports.create_boundary_report)(["Section numbers", "6 to 17 numbers"], historical=False, report_name="imd_central_yorkshire")
-    map.add_areas(dimension, imd, imd_reports)
+    map.add_areas(dimension, imd_reports)
 
     # Plotting the sections
     map.set_region_of_colour("C_name", ["Hampshire"])
