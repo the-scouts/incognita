@@ -164,8 +164,7 @@ class Map(Base):
                 html += "</p>"
 
             # Fixes physical size of popup
-            iframe = folium.IFrame(html=html, width=350, height=100)
-            popup = folium.Popup(iframe, max_width=2650)
+            popup = folium.Popup(html, max_width=2650)
 
             if isinstance(colour, dict):
                 census_column = colour["census_column"]
