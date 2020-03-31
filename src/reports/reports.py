@@ -3,7 +3,7 @@ import collections
 
 from data.scout_data import ScoutData
 from geographies.geography import Geography
-from src.base import Base
+from src.base import Base, time_function
 from data.scout_census import ScoutCensus
 import src.utility as utility
 
@@ -46,6 +46,7 @@ class Reports(Base):
         'Explorers': {"ages": ["14", "15", "16", "17"]}
     }
 
+    @time_function
     def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance=3000, near=False):
 
         # Check if field (i.e. scout_data column) is a census column or ONS column
@@ -93,6 +94,7 @@ class Reports(Base):
         self.logger.debug("Finished mapping from ons boundary to district")
         return dict(nested_dict)  # Return the mapping
 
+    @time_function
     def create_boundary_report(self, options=None, historical=False, report_name=None):
         """Produces .csv file summarising by boundary provided.
 
@@ -284,6 +286,7 @@ class Reports(Base):
 
         return output_data
 
+    @time_function
     def create_uptake_report(self, report_name=None):
         """Creates a report of scouting uptake in geographic areas
 

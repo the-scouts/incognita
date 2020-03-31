@@ -46,10 +46,8 @@ def _finished_message(self, message, *args, **kwargs):
         self._log(FINISHED_LEVEL_NUM, f"{message} finished, {duration(start_time):.2f} seconds elapsed{ending}", args, **kwargs)
 
 
-def _duration_message(self, message, *args, **kwargs):
-    del message
+def _duration_message(self, method_name, *args, **kwargs):
     if self.isEnabledFor(DURATION_LEVEL_NUM):
-        method_name = kwargs.pop("method_name") if kwargs.get("method_name") else None
         start_time = kwargs.pop("start_time")
         self._log(FINISHED_LEVEL_NUM, f"{method_name} took {duration(start_time):.2f} seconds", args, **kwargs)
 

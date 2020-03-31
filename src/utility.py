@@ -1,8 +1,17 @@
 import pandas as pd
+from pathlib import Path
 from data.scout_census import ScoutCensus
 
 sections_dict = ScoutCensus.column_labels['sections']
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
+
+
+def get_proj_root() -> Path:
+    return Path(__file__).parent.parent
+
+
+SCRIPTS_ROOT = get_proj_root().joinpath('src/scripts')
+LOGS_ROOT = get_proj_root().joinpath('src/scripts/logs')
 
 
 def filter_records(data, field, value_list, logger, mask=False, exclusion_analysis=False):

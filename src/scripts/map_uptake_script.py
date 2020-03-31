@@ -5,7 +5,6 @@ the percentage of young people.
 
 This script has no command line options.
 """
-from base import time_function
 from reports.reports import Reports
 from data.scout_data import ScoutData
 from maps.map import Map
@@ -19,10 +18,10 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     reports = Reports("pcon", scout_data)
-    time_function(reports.filter_boundaries)("pcon", "C_ID", [10000122])
+    reports.filter_boundaries("C_ID", [10000122], "pcon", )
 
-    time_function(reports.create_boundary_report)(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county")
-    time_function(reports.create_uptake_report)(report_name="pcon_uptake_report")
+    reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county")
+    reports.create_uptake_report(report_name="pcon_uptake_report")
 
     # % 6-17 pcon uptake from Jan-2019 Scout Census with May 2019 ONS
     static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
