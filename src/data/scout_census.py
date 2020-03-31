@@ -33,6 +33,7 @@ class ScoutCensus:
             'COUNTRY': 'X_ID',
         },
         'name': {
+            'ITEM': 'name',
             'GROUP': "G_name",
             'DISTRICT': "D_name",
             'COUNTY': 'C_name',
