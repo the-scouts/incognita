@@ -17,6 +17,9 @@ def time_function(method):
     :param function method: method to wrap
     :return function: wrapped method with execution time functionality
     """
+    if not callable(method):
+        raise ValueError("time_function must be called with a function or callable to wrap")
+
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         # record a start time for the function
