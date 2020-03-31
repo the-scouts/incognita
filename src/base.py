@@ -3,6 +3,7 @@ import time
 from functools import wraps
 
 import src.log_util as log_util
+from utility import SCRIPTS_ROOT
 
 
 def time_function(method):
@@ -41,7 +42,7 @@ def time_function(method):
     return wrapper
 
 
-class Base():
+class Base:
     def __init__(self, settings=False, log_path=None):
         """Acts as a base class for most classes. Provides automatic logging, settings creation,
           and common methods
@@ -55,7 +56,7 @@ class Base():
 
         # Load the settings file
         if settings:
-            with open("settings.json", "r") as read_file:
+            with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
                 self.settings = json.load(read_file)["settings"]
 
         # The global logger is named log, which means there is only ever one instance
