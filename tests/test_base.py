@@ -1,7 +1,3 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.joinpath('src')))
-
 import json
 import logging
 import pytest
