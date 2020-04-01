@@ -7,5 +7,6 @@ setup(
     install_requires=['pandas', 'numpy', 'folium', 'branca', 'geopandas', 'shapely', 'dash'],
     extras_require={
         'dev': ['pytest', 'pytest-cov'],
-    }
+    },
+    python_requires='>=3.7',
 )
