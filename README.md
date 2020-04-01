@@ -2,6 +2,7 @@
 Mapping Scouts data to UK administrative regions.
 
 [![Build Status](https://travis-ci.com/the-scouts/geo_mapping.svg?branch=boundary-updates)](https://travis-ci.com/the-scouts/geo_mapping)
+[![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/boundary-updates/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
 
 ## Prerequisites:
 This is written and tested in Python 3.7.2.
