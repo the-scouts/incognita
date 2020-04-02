@@ -1,6 +1,6 @@
-from data.scout_data import ScoutData
-from maps.map import Map
-from reports.reports import Reports
+from src.data.scout_data import ScoutData
+from src.maps.map import Map
+from src.reports.reports import Reports
 
 if __name__ == "__main__":
 

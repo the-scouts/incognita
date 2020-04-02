@@ -2,7 +2,7 @@ from typing import List
 import pandas as pd
 
 from src.base import Base
-from data.scout_census import ScoutCensus
+from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
 

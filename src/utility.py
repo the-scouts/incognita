@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from data.scout_census import ScoutCensus
+from src.data.scout_census import ScoutCensus
 
 sections_dict = ScoutCensus.column_labels['sections']
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}

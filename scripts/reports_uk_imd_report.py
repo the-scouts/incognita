@@ -1,5 +1,5 @@
-from data.scout_data import ScoutData
-from reports.reports import Reports
+from src.data.scout_data import ScoutData
+from src.reports.reports import Reports
 
 if __name__ == "__main__":
     scout_data = ScoutData()

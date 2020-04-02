@@ -2,9 +2,9 @@ import pandas as pd
 import geopandas as gpd
 import shapely
 
-from data.scout_data import ScoutData
+from src.data.scout_data import ScoutData
 from src.base import Base
-from data.scout_census import ScoutCensus
+from src.data.scout_census import ScoutCensus
 
 
 # noinspection PyUnresolvedReferences

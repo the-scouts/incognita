@@ -1,7 +1,7 @@
-from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
-from reports.reports import Reports
-from data.scout_data import ScoutData
-from maps.map import Map
+from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.reports.reports import Reports
+from src.data.scout_data import ScoutData
+from src.maps.map import Map
 
 if __name__ == "__main__":
 

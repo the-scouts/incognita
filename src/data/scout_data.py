@@ -2,9 +2,9 @@ from datetime import datetime
 import time
 
 from src.base import Base
-from data.scout_census import ScoutCensus
-from data.census_merge_data import CensusMergeData
-from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.data.scout_census import ScoutCensus
+from src.data.census_merge_data import CensusMergeData
+from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import src.utility as utility
 
 

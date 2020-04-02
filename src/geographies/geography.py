@@ -4,7 +4,7 @@ import shapely
 
 from src.base import Base
 # For type hints
-from data.ons_pd import ONSPostcodeDirectory
+from src.data.ons_pd import ONSPostcodeDirectory
 
 
 # noinspection PyUnresolvedReferences

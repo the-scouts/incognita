@@ -3,7 +3,7 @@ import pandas as pd
 import re
 
 from src.base import Base
-from data.scout_census import ScoutCensus
+from src.data.scout_census import ScoutCensus
 
 
 class CensusMergeData(Base):

@@ -1,10 +1,10 @@
 import pandas as pd
 import collections
 
-from data.scout_data import ScoutData
-from geographies.geography import Geography
+from src.data.scout_data import ScoutData
+from src.geographies.geography import Geography
 from src.base import Base, time_function
-from data.scout_census import ScoutCensus
+from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
 

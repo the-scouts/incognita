@@ -1,4 +1,4 @@
-from data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 
 if __name__ == "__main__":
     print("Starting")

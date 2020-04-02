@@ -5,7 +5,7 @@ import geopandas as gpd
 import webbrowser
 import os
 
-from reports.reports import Reports
+from src.reports.reports import Reports
 from src.base import Base
 
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.

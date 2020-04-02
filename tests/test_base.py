@@ -2,8 +2,8 @@ import json
 import logging
 import pytest
 
-from base import Base, time_function
-from utility import LOGS_ROOT, SCRIPTS_ROOT
+from src.base import Base, time_function
+from src.utility import LOGS_ROOT, SCRIPTS_ROOT
 
 
 def example_function(number1, number2):

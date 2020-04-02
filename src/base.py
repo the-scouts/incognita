@@ -3,7 +3,7 @@ import time
 from functools import wraps
 
 import src.log_util as log_util
-from utility import SCRIPTS_ROOT
+from src.utility import SCRIPTS_ROOT
 
 
 def time_function(method):

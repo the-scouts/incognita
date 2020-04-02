@@ -7,9 +7,9 @@ and 31st January 2019 of the eligible Beavers. and percentage of QSAs.
 This script has no command line options.
 """
 
-from data.scout_data import ScoutData
-from maps.map import Map
-from reports.reports import Reports
+from src.data.scout_data import ScoutData
+from src.maps.map import Map
+from src.reports.reports import Reports
 
 if __name__ == "__main__":
     scout_data = ScoutData()

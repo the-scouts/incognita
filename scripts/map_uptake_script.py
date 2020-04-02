@@ -5,9 +5,9 @@ the percentage of young people.
 
 This script has no command line options.
 """
-from reports.reports import Reports
-from data.scout_data import ScoutData
-from maps.map import Map
+from src.reports.reports import Reports
+from src.data.scout_data import ScoutData
+from src.maps.map import Map
 
 if __name__ == "__main__":
     scout_data = ScoutData(load_ons_pd_data=True)

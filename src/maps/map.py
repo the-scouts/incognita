@@ -6,11 +6,11 @@ import geopandas as gpd
 import numpy as np
 
 import src.utility as utility
-from reports.reports import Reports
-from data.scout_data import ScoutData
+from src.reports.reports import Reports
+from src.data.scout_data import ScoutData
 from src.base import Base
-from maps.map_plotter import MapPlotter
-from data.scout_census import ScoutCensus
+from src.maps.map_plotter import MapPlotter
+from src.data.scout_census import ScoutCensus
 
 
 class Map(Base):
