@@ -10,8 +10,8 @@ def get_proj_root() -> Path:
     return Path(__file__).parent.parent
 
 
-SCRIPTS_ROOT = get_proj_root().joinpath('src/scripts')
-LOGS_ROOT = get_proj_root().joinpath('src/scripts/logs')
+SCRIPTS_ROOT = get_proj_root().joinpath('scripts')
+LOGS_ROOT = get_proj_root().joinpath('scripts/logs')
 
 
 def filter_records(data, field, value_list, logger, mask=False, exclusion_analysis=False):
