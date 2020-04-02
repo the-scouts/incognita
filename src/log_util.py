@@ -43,7 +43,9 @@ def _finished_message(self, message, *args, **kwargs):
         name = kwargs.pop("method_name") if kwargs.get("method_name") else None
         start_time = kwargs.pop("start_time")
         ending = f" in {name}." if name else "."
-        self._log(FINISHED_LEVEL_NUM, f"{message} finished, {duration(start_time):.2f} seconds elapsed{ending}", args, **kwargs)
+        self._log(
+            FINISHED_LEVEL_NUM, f"{message} finished, {duration(start_time):.2f} seconds elapsed{ending}", args, **kwargs,
+        )
 
 
 def _duration_message(self, method_name, *args, **kwargs):

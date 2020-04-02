@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 from src.data.scout_census import ScoutCensus
 
-sections_dict = ScoutCensus.column_labels['sections']
+sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
 
@@ -10,8 +10,8 @@ def get_proj_root() -> Path:
     return Path(__file__).parent.parent
 
 
-SCRIPTS_ROOT = get_proj_root().joinpath('scripts')
-LOGS_ROOT = get_proj_root().joinpath('scripts/logs')
+SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
+LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
 
 
 def filter_records(data, field, value_list, logger, mask=False, exclusion_analysis=False):
@@ -56,20 +56,19 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
             section_type = sections_dict[section]["type"]
             members_cols = [sections_dict[section]["male"], sections_dict[section]["female"]]
 
-            excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
+            excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
             logger.debug(f"Excluded sections\n{excluded_sections}")
             logger.debug(f"Finding number of excluded {section} by summing {' and '.join(members_cols)}")
             excluded_members = excluded_sections[members_cols].to_numpy().sum()
             logger.debug(f"{excluded_members} {section} excluded")
 
-            sections = data.loc[data[ScoutCensus.column_labels['UNIT_TYPE']] == section_type]
+            sections = data.loc[data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
             counted_members = sections[members_cols].to_numpy().sum()
 
             original_members = counted_members + excluded_members
 
             if original_members > 0:
-                logger.info(
-                    f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
+                logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
             else:
                 logger.info(f"There are no {section} members present in data")
 
@@ -114,7 +113,7 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
 
 def _try_downcast(series):
     try:
-        uint_series = series.astype('uint16')
+        uint_series = series.astype("uint16")
         if series.equals(uint_series):
             return uint_series
         else:
@@ -126,4 +125,4 @@ def _try_downcast(series):
 def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger=None):
     if logger:
         logger.info(f"Writing to {report_name}")
-    report.to_csv(output_path + report_name + ".csv", index=False, encoding='utf-8-sig')
+    report.to_csv(output_path + report_name + ".csv", index=False, encoding="utf-8-sig")

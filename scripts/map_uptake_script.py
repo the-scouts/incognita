@@ -18,7 +18,9 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     reports = Reports("pcon", scout_data)
-    reports.filter_boundaries("C_ID", [10000122], "pcon", )
+    reports.filter_boundaries(
+        "C_ID", [10000122], "pcon",
+    )
 
     reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=True, report_name="pcon_county")
     reports.create_uptake_report(report_name="pcon_uptake_report")
@@ -30,13 +32,17 @@ if __name__ == "__main__":
 
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake"}
-    map = Map(scout_data, map_name="pcon_uptake_map", static_scale=static_scale)
-    map.add_areas(dimension, reports, show=True)
+    map = Map(scout_data, map_name="pcon_uptake_map")
+    map.add_areas(dimension, reports, show=True, scale=static_scale)
     map.set_region_of_colour("C_name", ["Central Yorkshire"])
-    map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)
-    map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)
-    map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Central Yorkshire")], 'lightgray', ["youth membership"], 'Other Sections')
-    map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Central Yorkshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
+    map.map_plotter.add_layer(name="Your Sections", markers_clustered=False, show=True)
+    map.map_plotter.add_layer(name="Other Sections", markers_clustered=False, show=False)
+    map.add_meeting_places_to_map(
+        scout_data.data.loc[~(scout_data.data["C_name"] == "Central Yorkshire")], "lightgray", ["youth membership"], "Other Sections",
+    )
+    map.add_meeting_places_to_map(
+        scout_data.data.loc[scout_data.data["C_name"] == "Central Yorkshire"], map.district_colour_mapping(), ["youth membership"], "Your Sections",
+    )
     map.save_map()
 
     # create_section_maps

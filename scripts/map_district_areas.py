@@ -15,14 +15,16 @@ if __name__ == "__main__":
     district_boundaries = DistrictBoundaries(scout_data)
     district_boundaries.create_district_boundaries()
 
-    map = Map(scout_data, map_name="UK_Bronze_district", cluster_markers=True)
+    map = Map(scout_data, map_name="UK_Bronze_district")
 
     dimension = {"column": "%-Chief_Scout_Bronze_Awards", "tooltip": "% Bronze", "legend": "% Bronze"}
     reports = Reports("District", scout_data)
     reports.create_boundary_report(["Section numbers", "6 to 17 numbers", "awards"], report_name="scout_district_report")
     map.add_areas(dimension, reports, show=True)
 
-    map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers")
+    map.add_sections_to_map(
+        scout_data, map.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers", cluster_markers=True,
+    )
     map.save_map()
     map.show_map()
     scout_data.close()

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)
     # map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Central Yorkshire")], 'lightgray', ["youth membership"], 'Other Sections')
     # map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Central Yorkshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
-    map.add_meeting_places_to_map(scout_data.data, map.district_colour_mapping(), ["youth membership"], 'Sections', cluster_markers=True)
+    map.add_meeting_places_to_map(scout_data.data, map.district_colour_mapping(), ["youth membership"], "Sections", cluster_markers=True)
     map.save_map()
 
     # static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
     reports = Reports("lsoa", scout_data)
     reports.filter_boundaries("C_ID", [10000111, 10000119], "oslaua")
-    reports.create_boundary_report(["Section numbers"], historical=True, report_name="shropshire_by_lsoa")   # TODO: before postcode filtering
+    reports.create_boundary_report(["Section numbers"], historical=True, report_name="shropshire_by_lsoa")  # TODO: before postcode filtering
     map.add_areas(dimension, reports, show=True)
 
     map.set_region_of_colour("C_ID", [10000111])

@@ -3,8 +3,10 @@ import geopandas as gpd
 import shapely
 
 from src.base import Base
+
 # For type hints
 from src.data.ons_pd import ONSPostcodeDirectory
+from src.data.scout_data import ScoutData
 
 
 # noinspection PyUnresolvedReferences
@@ -29,11 +31,11 @@ class Geography(Base):
 
     @property
     def codes_map_key(self):
-        return self.geography_metadata_dict['codes']['key']
+        return self.geography_metadata_dict["codes"]["key"]
 
     @property
     def codes_map_name(self):
-        return self.geography_metadata_dict['codes']['name']
+        return self.geography_metadata_dict["codes"]["name"]
 
     @property
     def shapefile_key(self):
@@ -75,11 +77,8 @@ class Geography(Base):
             boundary_codes_dict = self.geography_metadata_dict["codes"]
 
             self.geography_region_ids_mapping = pd.read_csv(
-                boundary_codes_dict.get("path"),  # Names & Codes file path
-                dtype={
-                    boundary_codes_dict["key"]: boundary_codes_dict["key_type"],
-                    boundary_codes_dict["name"]: "object"
-                })
+                boundary_codes_dict.get("path"), dtype={boundary_codes_dict["key"]: boundary_codes_dict["key_type"], boundary_codes_dict["name"]: "object",},
+            )  # Names & Codes file path
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 
@@ -140,7 +139,7 @@ class Geography(Base):
         self.geography_region_ids_mapping = self.geography_region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
         self.logger.info(f"Resulting in {len(self.geography_region_ids_mapping)} {name} boundaries")
 
-    def filter_boundaries_by_scout_area(self, scout_data, ons_pd: ONSPostcodeDirectory, boundary: str, column: str, value_list: list):
+    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_pd: ONSPostcodeDirectory, boundary: str, column: str, value_list: list):
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -171,12 +170,12 @@ class Geography(Base):
 
         self.logger.info("Creates geometry")
         data_with_points = gpd.GeoDataFrame(reduced_points, geometry=gpd.points_from_xy(reduced_points.long, reduced_points.lat))
-        data_with_points = data_with_points.drop(['lat', 'long'], axis=1)
+        data_with_points = data_with_points.drop(["lat", "long"], axis=1)
 
         # Pivots the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        data_with_points.crs = {'init': 'epsg:4326'}
-        data_with_points = data_with_points.to_crs({'init': 'epsg:27700'})
+        data_with_points.crs = {"init": "epsg:4326"}
+        data_with_points = data_with_points.to_crs({"init": "epsg:27700"})
         # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ordinates)
 
         self.logger.info(f"Filters for records that satisfy {field} in {value_list}")

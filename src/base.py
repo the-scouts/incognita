@@ -44,6 +44,7 @@ def time_function(method):
 
         # return the output of the original function
         return output
+
     return wrapper
 
 
@@ -68,10 +69,10 @@ class Base:
         # if passed a path to output the log to, create the logger at that path
         # otherwise retrieve the standard logger
         if log_path:
-            self.logger = log_util.create_logger('log', log_path)
+            self.logger = log_util.create_logger("log", log_path)
         else:
             # if a logger already exists for script
-            self.logger = log_util.get_logger('log')
+            self.logger = log_util.get_logger("log")
 
     def close(self, start_time=None):
         """Outputs the duration of the programme """

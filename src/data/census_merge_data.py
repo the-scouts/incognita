@@ -9,12 +9,9 @@ from src.data.scout_census import ScoutCensus
 class CensusMergeData(Base):
     """Merges input data with ScoutCensus data on a given key
 
-        Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
-        The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
-
-        :param output_csv_path: path to where output data is saved.
-        :param error_path: path to where errors are saved (this is for merge errors)
-        """
+    Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
+    The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
+    """
 
     def __init__(self):
         super().__init__()
@@ -29,13 +26,13 @@ class CensusMergeData(Base):
         :return: Dataframe with merged data, and an indicator in each row signifying merge success
         """
         # Column heading denoting a valid postcode in the row
-        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
+        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
 
         self.logger.info("Merging data")
-        census_data = pd.merge(census_data, data_to_merge, how='left', left_on=census_index_column, right_index=True, sort=False)
+        census_data = pd.merge(census_data, data_to_merge, how="left", left_on=census_index_column, right_index=True, sort=False)
 
         # Checks whether ONS data exists for each row and stores in a column
-        census_data[valid_postcode_label] = (~census_data['ctry'].isnull()).astype(int)
+        census_data[valid_postcode_label] = (~census_data["ctry"].isnull()).astype(int)
 
         return census_data
 
@@ -50,16 +47,16 @@ class CensusMergeData(Base):
         :return: None
         """
         # Column heading denoting a valid postcode in the row
-        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
-        original_postcode_label = ScoutCensus.column_labels['POSTCODE']
-        compass_id_label = ScoutCensus.column_labels['id']["COMPASS"]
+        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
+        original_postcode_label = ScoutCensus.column_labels["POSTCODE"]
+        compass_id_label = ScoutCensus.column_labels["id"]["COMPASS"]
 
         # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
         self.logger.info("Writing merged data")
-        error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", ]
-        census_data.loc[census_data[valid_postcode_label] == 0, error_output_fields].to_csv('error_file.csv', index=False, encoding='utf-8-sig')
+        error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name"]
+        census_data.loc[census_data[valid_postcode_label] == 0, error_output_fields].to_csv("error_file.csv", index=False, encoding="utf-8-sig")
         # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
-        census_data.to_csv(output_path, index=False, encoding='utf-8-sig')
+        census_data.to_csv(output_path, index=False, encoding="utf-8-sig")
 
     @staticmethod
     def _postcode_cleaner(postcode):
@@ -84,29 +81,27 @@ class CensusMergeData(Base):
         # Remove any whitespace and most non-alphanumeric chars
         # Convert input to uppercase (ONS Postcode Directory uses upper case)
         # Pads length as we use the 7 long version from the Postcode Directory
-        postcode = postcode \
-            .str.replace(regex_clean, '') \
-            .str.upper() \
-            .apply(lambda single_postcode: pad_to_seven(single_postcode))
+        postcode = postcode.str.replace(regex_clean, "").str.upper().apply(lambda single_postcode: pad_to_seven(single_postcode))
 
         # Replaces shifted numbers with their number equivalents
-        postcode = postcode\
-            .str.replace('!', "1", regex=False)\
-            .str.replace('"', "2", regex=False)\
-            .str.replace('£', "3", regex=False)\
-            .str.replace('$', "4", regex=False)\
-            .str.replace('%', "5", regex=False)\
-            .str.replace('^', "6", regex=False)\
-            .str.replace('&', "7", regex=False)\
-            .str.replace('*', "8", regex=False)\
-            .str.replace('(', "9", regex=False)\
-            .str.replace(')', "0", regex=False)
+        postcode = (
+            postcode.str.replace("!", "1", regex=False)
+            .str.replace('"', "2", regex=False)
+            .str.replace("£", "3", regex=False)
+            .str.replace("$", "4", regex=False)
+            .str.replace("%", "5", regex=False)
+            .str.replace("^", "6", regex=False)
+            .str.replace("&", "7", regex=False)
+            .str.replace("*", "8", regex=False)
+            .str.replace("(", "9", regex=False)
+            .str.replace(")", "0", regex=False)
+        )
         # TODO: add macOS shift -> numbers conversion
 
         return postcode
 
     @staticmethod
-    def _fill_unmerged_rows(census_data, row_has_merged, fields_data_types):
+    def fill_unmerged_rows(census_data, row_has_merged, fields_data_types):
         """Fills rows that have not merged with default values
 
         Fills all passed fields in rows where there has been no data merged
@@ -117,9 +112,9 @@ class CensusMergeData(Base):
         :param dict fields_data_types: dict of data types containing lists of fields
         :return: dataframe with filled values
         """
-        for field in fields_data_types['categorical']:
+        for field in fields_data_types["categorical"]:
             census_data.loc[census_data[row_has_merged] == 0, field] = ScoutCensus.DEFAULT_VALUE
-        for field in fields_data_types['int']:
+        for field in fields_data_types["int"]:
             census_data.loc[census_data[row_has_merged] == 0, field] = 0
 
         return census_data
@@ -142,7 +137,7 @@ class CensusMergeData(Base):
 
         # Sets the labels for the columns to be inserted
         cleaned_postcode_label = "clean_postcode"
-        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
+        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
 
         self.logger.info("Cleaning postcodes")
         cleaned_postcode_column = CensusMergeData._postcode_cleaner(census_data[postcode_column])
@@ -171,14 +166,14 @@ class CensusMergeData(Base):
         self.logger.info("filling postcodes in sections with invalid postcodes")
 
         # Helper variables to store field headings for often used fields
-        entity_type_label = ScoutCensus.column_labels['UNIT_TYPE']
-        section_id_label = ScoutCensus.column_labels['id']["COMPASS"]
-        group_id_label = ScoutCensus.column_labels['id']["GROUP"]
-        district_id_label = ScoutCensus.column_labels['id']["DISTRICT"]
+        entity_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
+        section_id_label = ScoutCensus.column_labels["id"]["COMPASS"]
+        group_id_label = ScoutCensus.column_labels["id"]["GROUP"]
+        district_id_label = ScoutCensus.column_labels["id"]["DISTRICT"]
         clean_postcode_label = "clean_postcode"
-        valid_postcode_label = ScoutCensus.column_labels['VALID_POSTCODE']
-        year_label = ScoutCensus.column_labels['YEAR']
-        merge_test_column_label = 'ctry'
+        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
+        year_label = ScoutCensus.column_labels["YEAR"]
+        merge_test_column_label = "ctry"
 
         # Lists of entity types to match against in constructing section records tables
         section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
@@ -191,7 +186,9 @@ class CensusMergeData(Base):
 
         # Columns to return to the .apply function to reduce memory usage
         fields_for_postcode_lookup = [
+            # fmt: off
             valid_postcode_label, clean_postcode_label, year_label,
+            # fmt: on
             # Add to to items below if a new column is used in the fix process
             section_id_label,
             group_id_label,
@@ -207,18 +204,14 @@ class CensusMergeData(Base):
             # TODO change to use modal result instead of first (If section has no valid postcodes, use most common (mode) postcode from sections in group in that year, then try successive years)
             try:
                 # get all rows from the lookup with the same ID in the passed column
-                valid_postcodes = valid_postcode_lookup \
-                    .xs(row_object[column_label], level=index_level)
+                valid_postcodes = valid_postcode_lookup.xs(row_object[column_label], level=index_level)
 
                 # sets a dummy value to avoid errors
                 future_valid_postcode = None
 
                 try:
                     # get the first clean postcode from the year of the record or later
-                    future_valid_postcode = valid_postcodes\
-                        .query(f"{year_label} >= {row_object[year_label]}")\
-                        .reset_index(drop=True)\
-                        .iloc[0][clean_postcode_label]
+                    future_valid_postcode = valid_postcodes.query(f"{year_label} >= {row_object[year_label]}").reset_index(drop=True).iloc[0][clean_postcode_label]
 
                     # checks that the variable contains a postcode value
                     if future_valid_postcode:
@@ -228,9 +221,7 @@ class CensusMergeData(Base):
 
                 # if setting a postcode from the year of the record or after fails, try using all records
                 if not future_valid_postcode:
-                    valid_postcode = valid_postcodes\
-                        .reset_index(drop=True)\
-                        .iloc[0][clean_postcode_label]
+                    valid_postcode = valid_postcodes.reset_index(drop=True).iloc[0][clean_postcode_label]
 
                     # checks that the variable contains a postcode value
                     if valid_postcode:
@@ -243,16 +234,11 @@ class CensusMergeData(Base):
 
         def create_helper_tables(data, entity_type_list):
             # Filters records by type and returns a subset of columns to reduce memory usage
-            records_filtered_fields = data.loc[
-                data[entity_type_label].isin(entity_type_list),
-                fields_for_postcode_lookup
-            ]
+            records_filtered_fields = data.loc[data[entity_type_label].isin(entity_type_list), fields_for_postcode_lookup]
 
             # Creates loookup of all valid postcodes from filtered records, and
             # fully sorts the index to increase performance
-            lookup = records_filtered_fields.loc[
-                records_filtered_fields[valid_postcode_label] == 1
-            ].sort_index(level=[0, 1, 2, 3])
+            lookup = records_filtered_fields.loc[records_filtered_fields[valid_postcode_label] == 1].sort_index(level=[0, 1, 2, 3])
 
             return records_filtered_fields, lookup
 
@@ -260,46 +246,39 @@ class CensusMergeData(Base):
             valid_postcodes_start = data[valid_postcode_label].sum()
 
             # Returns a column with updated postcodes
-            changed_records = records.loc[records[valid_postcode_label] == 0]\
-                .apply(fill_invalid_section_postcodes, column_label=column_label, index_level=index_level, axis=1)
+            changed_records = records.loc[records[valid_postcode_label] == 0].apply(fill_invalid_section_postcodes, column_label=column_label, index_level=index_level, axis=1)
 
             # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
             data.update(changed_records)
 
             # Delete the Country column from the passed data as having this would prevent merging
             # Pass only the merge test column as a quick way to test that the postcode has merged
-            data = self.merge_data(
-                data.drop(merge_test_column_label, axis=1),
-                merge_test_column,
-                "clean_postcode",
-            )
+            data = self.merge_data(data.drop(merge_test_column_label, axis=1), merge_test_column, "clean_postcode",)
             self.logger.info(f"change in valid postcodes is: {data[valid_postcode_label].sum() - valid_postcodes_start}")
 
             return data
 
         self.logger.info("Fill invalid section postcodes with valid section postcodes from 2019")
         section_records, valid_postcode_lookup = create_helper_tables(census_data, section_types_list)
-        census_data = run_fixer(census_data, section_id_label, 2, section_records, )
+        census_data = run_fixer(census_data, section_id_label, 2, section_records,)
         section_records, valid_postcode_lookup = None, None
 
         self.logger.info("Fill invalid group-section postcodes with valid postcodes from same group")
         group_section_records, valid_postcode_lookup = create_helper_tables(census_data, group_section_types_list)
-        census_data = run_fixer(census_data, group_id_label, 1, group_section_records, )
+        census_data = run_fixer(census_data, group_id_label, 1, group_section_records,)
         group_section_records, valid_postcode_lookup = None, None
 
         self.logger.info("Fill invalid district-section postcodes with valid postcodes from same district")
         district_section_records, valid_postcode_lookup = create_helper_tables(census_data, district_section_types_list)
-        census_data = run_fixer(census_data, district_id_label, 0, district_section_records, )
+        census_data = run_fixer(census_data, district_id_label, 0, district_section_records,)
         district_section_records, valid_postcode_lookup = None, None
 
         self.logger.info("Fill invalid pre 2017 postcodes with valid postcodes from same entity")
         pre_2017_section_records, valid_postcode_lookup = create_helper_tables(census_data, pre_2017_types_list)
-        census_data = run_fixer(census_data, section_id_label, 2, pre_2017_section_records, )
+        census_data = run_fixer(census_data, section_id_label, 2, pre_2017_section_records,)
         pre_2017_section_records, valid_postcode_lookup = None, None
 
         # Undoes the changes made in this method by removing the MultiIndex and
         # removing the merge test column
-        census_data = census_data\
-            .reset_index(drop=True)\
-            .drop(merge_test_column_label, axis=1)
+        census_data = census_data.reset_index(drop=True).drop(merge_test_column_label, axis=1)
         return census_data

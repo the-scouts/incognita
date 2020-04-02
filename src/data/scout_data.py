@@ -15,14 +15,16 @@ class ScoutData(Base):
 
     @property
     def columns(self):
-        id_cols = self.scout_census.column_labels['id'].values()
-        name_cols = self.scout_census.column_labels['name'].values()
+        id_cols = self.scout_census.column_labels["id"].values()
+        name_cols = self.scout_census.column_labels["name"].values()
         return [*id_cols, *name_cols]
+
+    # TODO: Add column name properties (e.g. ScoutCensus.column_labels["valid_postcode"]
 
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
     def __init__(self, csv_has_ons_pd_data=True, load_ons_pd_data=False):
-        super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath('geo_mapping.log')))
+        super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
         self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
 
@@ -50,54 +52,42 @@ class ScoutData(Base):
         """
         # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
-            'categorical': ['lsoa11', 'msoa11', 'oslaua', 'osward', 'pcon', 'oscty', 'ctry', 'rgn'],
-            'int': ['oseast1m', 'osnrth1m', 'lat', 'long', 'imd'],
+            "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
+            "int": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
         }
 
         self.logger.debug("Initialising merge object")
         merge = CensusMergeData()
 
         self.logger.info("Cleaning the postcodes")
-        merge.clean_and_verify_postcode(self.data, ScoutCensus.column_labels['POSTCODE'])
+        merge.clean_and_verify_postcode(self.data, ScoutCensus.column_labels["POSTCODE"])
 
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
 
         # initially merge just Country column to test what postcodes can match
-        self.data = merge.merge_data(
-            self.data,
-            ons_pd.data['ctry'],
-            "clean_postcode", )
+        self.data = merge.merge_data(self.data, ons_pd.data["ctry"], "clean_postcode",)
 
         # attempt to fix invalid postcodes
-        self.data = merge.try_fix_invalid_postcodes(
-            self.data,
-            ons_pd.data['ctry'], )
+        self.data = merge.try_fix_invalid_postcodes(self.data, ons_pd.data["ctry"],)
 
         # fully merge the data
-        self.data = merge.merge_data(
-            self.data,
-            ons_pd.data,
-            "clean_postcode", )
+        self.data = merge.merge_data(self.data, ons_pd.data, "clean_postcode",)
 
         # fill unmerged rows with default values
         self.logger.info("filling unmerged rows")
-        self.data = merge._fill_unmerged_rows(
-            self.data,
-            ScoutCensus.column_labels['VALID_POSTCODE'],
-            ons_fields_data_types, )
+        self.data = merge.fill_unmerged_rows(self.data, ScoutCensus.column_labels["VALID_POSTCODE"], ons_fields_data_types,)
 
         # save the data to CSV and save invalid postcodes to an error file
         merge.output_data(
-            self.data,
-            self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv",
-            "clean_postcode", )
+            self.data, self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode",
+        )
 
     def _has_ons_pd_data(self):
         """Finds whether ONS data has been added
 
         :return bool: Whether the Scout Census data has ONS data added
         """
-        return ScoutCensus.column_labels['VALID_POSTCODE'] in list(self.data.columns.values)
+        return ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
 
     def filter_records(self, field, value_list, mask=False, exclusion_analysis=False):
         """Filters the Census records by any field in ONS PD.
