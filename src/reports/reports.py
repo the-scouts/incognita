@@ -161,13 +161,9 @@ class Reports(Base):
             # Converts all values to strings to make sure the string operations work
             # Removes leading and trailing whitespace
             # Concatenates the Series to a string with a newline separator
-            return group_series \
-                .dropna().drop_duplicates() \
-                .str.strip() \
-                .str.cat(sep='\n')
-
-            # boundary_data["Number of Groups"] = len(groups)
-            # TODO Number of Groups
+            # Calculates the number of groups
+            group_list: pd.Series = group_series.dropna().drop_duplicates().str.strip()
+            return group_list.str.cat(sep="\n"), group_list.size
 
         def young_people_numbers_groupby(group_df: pd.DataFrame):
             output = {}
@@ -187,6 +183,9 @@ class Reports(Base):
                 all_young_people += total_young_people
                 if opt_section_numbers:
                     output[f"{section}-{census_year}"] = total_young_people
+                if opt_number_of_sections:
+                    # TODO correct for pluralisation (e.g. Colony -> Colonys not Colonies)
+                    output[f"{sections_dict[section]['type']}s-{census_year}"] = group_df[sections_dict[section]["unit_label"]].sum()
                 if sections_dict[section].get("waiting_list"):
                     waiting_list += group_df[sections_dict[section]["waiting_list"]].sum()
 
@@ -194,10 +193,6 @@ class Reports(Base):
                 output[f"All-{census_year}"] = all_young_people
             if opt_waiting_list_totals:
                 output[f"Waiting List-{census_year}"] = waiting_list
-            if opt_number_of_sections:
-                _ = 1 + 1
-                # boundary_data[f"{sections_dict[section]['type']}s-{year}"] = len(year_records.loc[year_records["type"] == sections_dict[section]["type"]])
-                # TODO Number of Sections
             return output
 
         def awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame):
@@ -236,14 +231,13 @@ class Reports(Base):
 
         if opt_groups or opt_number_of_groups:
             self.logger.debug(f"Adding group data")
-            group_table: pd.Series = grouped_data[ScoutCensus.column_labels['name']["GROUP"]].apply(groups_groupby)
-            dataframes.append(group_table.rename("Groups"))
-            # TODO Num of Groups
+            group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(groups_groupby)
+            dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=['Groups', 'Number of Groups']))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
             self.logger.debug(f"Adding young people numbers")
-            dataframes.append(grouped_data.apply(young_people_numbers_groupby).apply(pd.Series))
-            # TODO Num of Sections
+            sections_table = grouped_data.apply(young_people_numbers_groupby)
+            dataframes.append(pd.DataFrame(sections_table.values.tolist(), index=sections_table.index))
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
@@ -254,11 +248,12 @@ class Reports(Base):
             self.logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region, district_numbers).apply(pd.Series)
+            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region, district_numbers)
+            awards_per_district_per_regions = pd.DataFrame(awards_per_district_per_regions.values.tolist(), index=awards_per_district_per_regions.index)
 
             self.logger.debug(f"Adding awards data")
-            awards_table: pd.DataFrame = grouped_data.apply(awards_groupby, awards_per_district_per_regions).apply(
-                pd.Series)
+            awards_table: pd.DataFrame = grouped_data.apply(awards_groupby, awards_per_district_per_regions)
+            awards_table: pd.DataFrame = pd.DataFrame(awards_table.values.tolist(), index=awards_table.index)
             top_award = awards_table[f"%-{sections_dict['Beavers']['top_award']}"]
             max_value = top_award.quantile(0.95)
             awards_table[f"%-{sections_dict['Beavers']['top_award']}"] = top_award.clip(upper=max_value)
