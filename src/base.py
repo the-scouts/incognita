@@ -7,7 +7,9 @@ from src.utility import SCRIPTS_ROOT
 
 
 def time_function(method):
-    """This method wraps every .
+    """This method wraps functions to determine the execution time (clock time) for the function
+
+    The function should be of a class with a self.logger logging object
 
     Incredible wrapping SO answer https://stackoverflow.com/a/1594484 (for future ref)
 
