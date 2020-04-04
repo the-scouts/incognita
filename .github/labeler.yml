@@ -1,0 +1,15 @@
+# Add 'repo' label to any root file changes
+repo:
+  - ./*
+
+# Add 'tests' to any changes within 'tests' folder or any subfolders
+tests:
+  - tests/**/*
+  
+# Add 'scripts' to any changes within 'scripts' folder
+scripts:
+  - scripts/*
+  
+# Add 'documentation' to any changes within 'docs' folder or any subfolders
+documentation:
+  - docs/**/*
