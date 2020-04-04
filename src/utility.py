@@ -1,8 +1,17 @@
 import pandas as pd
-from src.scout_census import ScoutCensus
+from pathlib import Path
+from src.data.scout_census import ScoutCensus
 
 sections_dict = ScoutCensus.column_labels['sections']
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
+
+
+def get_proj_root() -> Path:
+    return Path(__file__).parent.parent
+
+
+SCRIPTS_ROOT = get_proj_root().joinpath('scripts')
+LOGS_ROOT = get_proj_root().joinpath('scripts/logs')
 
 
 def filter_records(data, field, value_list, logger, mask=False, exclusion_analysis=False):
@@ -67,15 +76,6 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
     return data
 
 
-def years_of_return(records: pd.Series):
-    """
-
-    :param pd.Series records: a pandas series containing integer years
-    :return:
-    """
-    return records.min(), records.max()
-
-
 def section_from_type(section_type):
     """returns section from section types lookup dict"""
     return section_types[section_type]
@@ -85,7 +85,7 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
     """
 
     :param pd.Series imd_ranks:
-    :param pd.Series or str country_codes:
+    :param pd.Series country_codes:
     :param ons_object:
 
     :var pd.Series country_names:
@@ -96,19 +96,12 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
     :return:
     """
 
-    # to handle the one country case
-    if type(country_codes) is str:
-        temp_df = pd.DataFrame(imd_ranks)
-        temp_df["country"] = country_codes
-        country_codes = temp_df["country"]
-        del temp_df
-
     country_names = country_codes.map(ons_object.COUNTRY_CODES)
     imd_max = country_names.map(ons_object.IMD_MAX)
 
     # One of the two series must be of a 'normal' int dtype - excluding the new ones that can deal with NAs
-    imd_max = try_downcast(imd_max)
-    imd_ranks = try_downcast(imd_ranks)
+    imd_max = _try_downcast(imd_max)
+    imd_ranks = _try_downcast(imd_ranks)
 
     if not imd_max.empty:
         # upside down floor division to get ceiling
@@ -119,7 +112,7 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
         raise Exception("No IMD values found to calculate deciles from")
 
 
-def try_downcast(series):
+def _try_downcast(series):
     try:
         uint_series = series.astype('uint16')
         if series.equals(uint_series):
@@ -130,25 +123,7 @@ def try_downcast(series):
         return series
 
 
-def country_add_imd_decile(data, country, ons_object):
-    """Used to add IMD data to DataFrames that aren't the core census data
-
-    For example used to add IMD deciles to Lower Super Output Area boundary
-    reports.
-
-    All boundaries must be from the same country.
-
-    :param DataFrame data: Data to add IMD decile to. Must have 'imd' column
-    :param str country: Country code
-    :param ons_object:
-
-    :returns DataFrame: Original DataFrame with extra imd_decile column
-    """
-    data["imd_decile"] = calc_imd_decile(data["imd"], country, ons_object)
-    return data
-
-
-def save_report(report, output_path, report_name, logger=None):
+def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger=None):
     if logger:
         logger.info(f"Writing to {report_name}")
     report.to_csv(output_path + report_name + ".csv", index=False, encoding='utf-8-sig')

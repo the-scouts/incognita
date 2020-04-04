@@ -9,7 +9,7 @@ output/archive/*
 src/error_file.txt
 src/logs/*.log
 src/scripts/logs/*.log
-src/scripts/error_file.txt
+scripts/error_file.txt
 *egg-info*
-src/scripts/profile_output.txt
+scripts/profile_output.txt
 logs/*
