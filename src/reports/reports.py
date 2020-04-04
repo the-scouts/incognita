@@ -225,7 +225,7 @@ class Reports(Base):
         if opt_groups or opt_number_of_groups:
             self.logger.debug(f"Adding group data")
             group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(groups_groupby)
-            dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=['Groups', 'Number of Groups']))
+            dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=["Groups", "Number of Groups"]))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
             self.logger.debug(f"Adding young people numbers")
