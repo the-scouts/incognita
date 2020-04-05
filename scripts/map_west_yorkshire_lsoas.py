@@ -14,7 +14,7 @@ if __name__ == "__main__":
     map = Map(scout_data, map_name="central_yorkshire")
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    ons_pd = ONSPostcodeDirectoryMay19(scout_data.settings["ONS PD location"], load_data=True)
+    ons_pd = ONSPostcodeDirectoryMay19(scout_data.settings["Reduced ONS PD location"], load_data=True)
     reports = Reports("lsoa", scout_data, ons_pd)
     reports.filter_boundaries("C_ID", [10000122], "oslaua")
     reports.create_boundary_report(["Section numbers"], historical=True, report_name="central_yorkshire_by_lsoa8")  # TODO: before postcode filtering

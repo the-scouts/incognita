@@ -3,7 +3,7 @@ from src.maps.map import Map
 from src.reports.reports import Reports
 
 if __name__ == "__main__":
-    scout_data = ScoutData(csv_has_ons_pd_data=True, load_ons_pd_data=True)
+    scout_data = ScoutData(load_ons_pd_data=True)
     scout_data.filter_records("Year", [2019])
     scout_data.filter_records("oslaua", ["E08000035"])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
