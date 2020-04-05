@@ -243,6 +243,8 @@ class CensusMergeData(Base):
             return records_filtered_fields, lookup
 
         def run_fixer(data, column_label, index_level, records):
+            # Index level: 0=District; 1=Group; 2=Section; 3=Year
+
             valid_postcodes_start = data[valid_postcode_label].sum()
 
             # Returns a column with updated postcodes
