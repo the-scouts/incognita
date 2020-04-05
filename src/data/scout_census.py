@@ -108,7 +108,6 @@ class ScoutCensus:
         data_values_16 = {key: "Int16" for key in cols_int_16}
         data_values_sections = {**data_values_32, **data_values_cat, **data_values_16}
 
-        self.sections_file_path = file_path_csv
         self.data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding="utf-8")
 
     @staticmethod
