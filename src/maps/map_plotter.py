@@ -10,7 +10,7 @@ from src.base import Base
 
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
 # It is used by folium to plot the data.
-WGS_84 = '4326'
+WGS_84 = "4326"
 
 
 class MapPlotter(Base):
@@ -105,7 +105,7 @@ class MapPlotter(Base):
         self.logger.info(f"Resulting in {len(all_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
-        self.geo_data = all_shapes.to_crs({'init': f"epsg:{WGS_84}"})
+        self.geo_data = all_shapes.to_crs({"init": f"epsg:{WGS_84}"})
         # self.logger.debug(f"geo_data\n{self.geo_data}")
 
     def add_areas(self, name, show, boundary_name, colourmap):
@@ -127,18 +127,9 @@ class MapPlotter(Base):
         folium.GeoJson(
             data=merged_data.to_json(),
             name=name,
-            style_function=lambda x: {
-               'fillColor': self._map_colourmap(x['properties'], colourmap, boundary_name),
-               'color': 'black',
-               'fillOpacity': 0.33,
-               'weight': 0.5
-            },
-            tooltip=folium.GeoJsonTooltip(
-               fields=[boundary_name, self.SCORE_COL[boundary_name]],
-               aliases=['Name', self.score_col_label],
-               localize=True
-            ),
-            show=show
+            style_function=lambda x: {"fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name), "color": "black", "fillOpacity": 0.33, "weight": 0.5,},
+            tooltip=folium.GeoJsonTooltip(fields=[boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
+            show=show,
         ).add_to(self.map)
         colourmap.add_to(self.map)
 
@@ -153,13 +144,13 @@ class MapPlotter(Base):
         area_score = properties.get(self.SCORE_COL[boundary_name])
         if area_score is None:
             self.logger.debug("Colouring gray")
-            return '#cccccc'
+            return "#cccccc"
         elif float(area_score) == 0:
-            return '#555555'
+            return "#555555"
         else:
             return colourmap(area_score)
 
-    def add_marker(self, lat, long, popup, colour, layer_name='Sections'):
+    def add_marker(self, lat, long, popup, colour, layer_name="Sections"):
         """Adds a leaflet marker to the map using given values
 
         :param float lat: latitude of the marker
@@ -169,11 +160,7 @@ class MapPlotter(Base):
         :param string layer_name: name of the layer that markers are added to
         :return: None
         """
-        folium.Marker(
-            location=[lat, long],
-            popup=popup,
-            icon=folium.Icon(color=colour)
-        ).add_to(self.layers[layer_name])
+        folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)

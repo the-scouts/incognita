@@ -9,7 +9,6 @@ import src.utility as utility
 
 
 class Reports(Base):
-
     @property
     def data(self) -> pd.DataFrame:
         return self.boundary_report[self.geography.type]
@@ -40,10 +39,10 @@ class Reports(Base):
         self.boundary_report = {}
 
     SECTION_AGES = {
-        'Beavers': {"ages": ["6", "7"]},
-        'Cubs': {"ages": ["8", "9"], "halves": ["10"]},
-        'Scouts': {"halves": ["10"], "ages": ["11", "12", "13"]},
-        'Explorers': {"ages": ["14", "15", "16", "17"]}
+        "Beavers": {"ages": ["6", "7"]},
+        "Cubs": {"ages": ["8", "9"], "halves": ["10"]},
+        "Scouts": {"halves": ["10"], "ages": ["11", "12", "13"]},
+        "Explorers": {"ages": ["14", "15", "16", "17"]},
     }
 
     @time_function
@@ -72,17 +71,19 @@ class Reports(Base):
         self.logger.debug("Creating mapping from ons boundary to scout district")
 
         region_type = ons_code  # Census column heading for the region geography type
-        district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
+        district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
 
         region_ids = self.geography.geography_region_ids_mapping[self.geography.codes_map_key].dropna().drop_duplicates()
 
-        district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column, ]].dropna().drop_duplicates()
+        district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
         region_ids_by_district = self.scout_data.data.loc[self.scout_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
         region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == ScoutCensus.DEFAULT_VALUE)].dropna().drop_duplicates()
 
-        count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})  # count of how many regions the district occupies
+        count_regions_in_district = (
+            region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})
+        )  # count of how many regions the district occupies
         count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column)
 
         count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
@@ -107,52 +108,44 @@ class Reports(Base):
 
         # Set default option set for `options`
         if options is None:
-            options = ["Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers",
-                       "awards", "waiting list total"]
+            options = ["Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"]
 
+        # fmt: off
         opt_number_of_sections = \
-            True if "Number of Sections" in options \
-                else False
+            True if "Number of Sections" in options else False
         opt_number_of_groups = \
-            True if "Number of Groups" in options \
-                else False
+            True if "Number of Groups" in options else False
         opt_groups = \
-            True if "Groups" in options \
-                else False
+            True if "Groups" in options else False
         opt_section_numbers = \
-            True if "Section numbers" in options \
-                else False
+            True if "Section numbers" in options else False
         opt_6_to_17_numbers = \
-            True if "6 to 17 numbers" in options \
-                else False
+            True if "6 to 17 numbers" in options else False
         opt_awards = \
-            True if "awards" in options \
-                else False
+            True if "awards" in options else False
         opt_waiting_list_totals = \
-            True if "waiting list total" in options \
-                else False
+            True if "waiting list total" in options else False
+        # fmt: on
+
         geog_name = self.geography.type  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
         else:
-            self.logger.info(
-                f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
+            self.logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values().to_list()
         if len(years) > 1:
             if historical:
                 self.logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
             else:
-                self.logger.error(
-                    f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
+                self.logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
-        sections_dict = ScoutCensus.column_labels['sections']
-        district_id_column = ScoutCensus.column_labels['id']["DISTRICT"]
+        sections_dict = ScoutCensus.column_labels["sections"]
+        district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
         award_name = sections_dict["Beavers"]["top_award"]
         award_eligible = sections_dict["Beavers"]["top_award_eligible"]
-        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in
-                        sections_dict.keys() if section != "Network"}
+        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys() if section != "Network"}
 
         def groups_groupby(group_series: pd.Series):
             # Used to list the groups that operate within the boundary
@@ -167,7 +160,7 @@ class Reports(Base):
 
         def young_people_numbers_groupby(group_df: pd.DataFrame):
             output = {}
-            dicts: pd.Series = group_df.groupby(['Year'], sort=True).apply(year_groupby).to_list()
+            dicts: pd.Series = group_df.groupby(["Year"], sort=True).apply(year_groupby).to_list()
             for row in dicts:
                 output = {**output, **row}
             return output
@@ -196,7 +189,7 @@ class Reports(Base):
             return output
 
         def awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame):
-            summed = group_df[[award_name, award_eligible, ]].sum()
+            summed = group_df[[award_name, award_eligible,]].sum()
             output = summed.to_dict()
             if summed[award_eligible] > 0:
                 output[f"%-{award_name}"] = (summed[award_name] * 100) / summed[award_eligible]
@@ -223,7 +216,7 @@ class Reports(Base):
                 # QSAs achieved in district, divided by the number of regions the district is in
                 "QSA": district_records["Queens_Scout_Awards"].sum() / num_ons_regions_occupied_by_district,
                 # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
-                "qsa_eligible": district_records["Eligible4QSA"].sum() / num_ons_regions_occupied_by_district
+                "qsa_eligible": district_records["Eligible4QSA"].sum() / num_ons_regions_occupied_by_district,
             }
 
         grouped_data = self.scout_data.data.groupby([geog_name], sort=False)
@@ -232,7 +225,7 @@ class Reports(Base):
         if opt_groups or opt_number_of_groups:
             self.logger.debug(f"Adding group data")
             group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(groups_groupby)
-            dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=['Groups', 'Number of Groups']))
+            dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=["Groups", "Number of Groups"]))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
             self.logger.debug(f"Adding young people numbers")
@@ -241,7 +234,7 @@ class Reports(Base):
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
-            geog_names = [self.ons_pd.BOUNDARIES[boundary]['name'] for boundary in self.ons_pd.BOUNDARIES]
+            geog_names = [self.ons_pd.BOUNDARIES[boundary]["name"] for boundary in self.ons_pd.BOUNDARIES]
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
@@ -267,13 +260,10 @@ class Reports(Base):
 
         # areas_data holds area names and codes for each area
         # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = self.geography.geography_region_ids_mapping \
-            .copy() \
-            .rename(columns=renamed_cols_dict) \
-            .reset_index(drop=True)
+        areas_data: pd.DataFrame = (self.geography.geography_region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True))
 
         merged_dataframes = pd.concat(dataframes, axis=1)
-        output_data = areas_data.merge(merged_dataframes, how='left', left_on=geog_name, right_index=True, sort=False)
+        output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
         self.boundary_report[geog_name] = output_data
 
         if report_name:
@@ -306,23 +296,20 @@ class Reports(Base):
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
         try:
-            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path,
-                                         dtype=data_types)
+            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, dtype=data_types)
         except TypeError:
             self.logger.error("Age profiles must be integers in each age category")
             raise
 
         # population data
         for section, ages in Reports.SECTION_AGES.items():
-            age_profile_pd[f'Pop_{section}'] = age_profile_pd[ages["ages"]].sum(axis=1)
-            age_profile_pd[f'Pop_{section}'] += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get(
-                "halves") else 0
-        age_profile_pd['Pop_All'] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1)
+            age_profile_pd[f"Pop_{section}"] = age_profile_pd[ages["ages"]].sum(axis=1)
+            age_profile_pd[f"Pop_{section}"] += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
+        age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1)
 
         # merge population data
-        cols = [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ['Pop_All'] + [age_profile_key]
-        uptake_report = boundary_report.merge(age_profile_pd[cols], how='left', left_on=geog_name,
-                                              right_on=age_profile_key, sort=False)
+        cols = [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"] + [age_profile_key]
+        uptake_report = boundary_report.merge(age_profile_pd[cols], how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
         del uptake_report[age_profile_key]
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
@@ -330,10 +317,10 @@ class Reports(Base):
         # add uptake data
         for year in years:
             for section in Reports.SECTION_AGES.keys():
-                uptake_section = uptake_report[f"{section}-{year}"] / uptake_report[f'Pop_{section}']
+                uptake_section = uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
                 uptake_report[f"%-{section}-{year}"] = uptake_section.clip(upper=max_value)
-            uptake_all = uptake_report[f"All-{year}"] / uptake_report[f'Pop_All']
+            uptake_all = uptake_report[f"All-{year}"] / uptake_report[f"Pop_All"]
             max_value = uptake_all.quantile(0.975)
             uptake_report[f"%-All-{year}"] = uptake_all.clip(upper=max_value)
             # TODO explain 97.5th percentile clip

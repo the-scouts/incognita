@@ -13,7 +13,7 @@ def example_function(number1, number2):
 class ExampleClassLogger(Base):
     def __init__(self, path=True):
         if path:
-            super().__init__(log_path=str(LOGS_ROOT.joinpath('tests.log')))
+            super().__init__(log_path=str(LOGS_ROOT.joinpath("tests.log")))
         else:
             super().__init__()
 
@@ -31,8 +31,10 @@ class ExampleClassSettings(Base):
 @pytest.fixture
 def ec_logger():
     """Returns an ExampleClassLogger instance"""
+
     def _instantiator(path=True):
         return ExampleClassLogger(path)
+
     return _instantiator
 
 
@@ -49,7 +51,7 @@ def test_time_function_wraps_function():
 # noinspection PyTypeChecker
 def test_time_function_raises_exception_on_non_method_arguments():
     with pytest.raises(ValueError):
-        time_function('not a function or method')
+        time_function("not a function or method")
 
 
 def test_base_open_settings(ec_settings):
@@ -74,8 +76,8 @@ def test_time_function_logger_output(caplog, ec_logger):
     caplog.set_level(logging.INFO)
     ec_logger().example_function(2, 2)
 
-    assert 'Calling function example_function' in caplog.text
-    assert 'example_function took 0.0' in caplog.text
+    assert "Calling function example_function" in caplog.text
+    assert "example_function took 0.0" in caplog.text
 
 
 def test_base_logger_creation(ec_logger):
@@ -94,4 +96,4 @@ def test_base_close_script(caplog, ec_logger):
     caplog.set_level(logging.INFO)
     ec_logger().close()
 
-    assert 'Script finished, 0.00 seconds elapsed.' in caplog.text
+    assert "Script finished, 0.00 seconds elapsed." in caplog.text

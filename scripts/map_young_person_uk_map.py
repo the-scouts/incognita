@@ -11,14 +11,14 @@ if __name__ == "__main__":
     scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
     scout_data.filter_records("C_name", ["Cornwall"])
 
-    map = Map(scout_data, map_name="uk_by_la_map", cluster_markers=True)
+    map = Map(scout_data, map_name="uk_by_la_map")
 
     dimension = {"column": "All-2019", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
     reports = Reports("District", scout_data)
     reports.create_boundary_report(options=["Section numbers", "6 to 17 numbers"], report_name="uk_by_district")
     map.add_areas(dimension, reports, show=True)
 
-    map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"])
+    map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"], cluster_markers=True)
     map.save_map()
 
     # create_section_maps

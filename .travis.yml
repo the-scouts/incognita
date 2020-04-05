@@ -1,10 +1,27 @@
 language: python
-python: 3.7
+
+# speed up travis runs
+cache:
+  pip: true
+  directories:
+    - $HOME/.cache/pre-commit
+
+# run tests and linting separately
+matrix:
+  include:
+    - name: "3.7 lint"
+      python: 3.7
+      env:
+        - TEST_CMD="pre-commit run --all-files"
+    - name: "3.7 tests"
+      python: 3.7
+      env:
+        - TEST_CMD="pytest --cov=./"
 
 # command to install dependencies
 install:
   - pip install -r requirements.txt
-  - pip install codecov
+  - pip install codecov pre-commit
 
 # command to run tests
 script:

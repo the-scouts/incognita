@@ -38,10 +38,14 @@ if __name__ == "__main__":
 
     # Plotting the sections
     map.set_region_of_colour("C_name", ["Hampshire"])
-    map.map_plotter.add_layer(name='Your Sections', markers_clustered=False, show=True)
-    map.map_plotter.add_layer(name='Other Sections', markers_clustered=False, show=False)
-    map.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == "Hampshire")], 'lightgray', ["youth membership"], 'Other Sections')
-    map.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == "Hampshire"], map.district_colour_mapping(), ["youth membership"], 'Your Sections')
+    map.map_plotter.add_layer(name="Your Sections", markers_clustered=False, show=True)
+    map.map_plotter.add_layer(name="Other Sections", markers_clustered=False, show=False)
+    map.add_meeting_places_to_map(
+        scout_data.data.loc[~(scout_data.data["C_name"] == "Hampshire")], "lightgray", ["youth membership"], "Other Sections",
+    )
+    map.add_meeting_places_to_map(
+        scout_data.data.loc[scout_data.data["C_name"] == "Hampshire"], map.district_colour_mapping(), ["youth membership"], "Your Sections",
+    )
     map.save_map()
 
     # create_section_maps

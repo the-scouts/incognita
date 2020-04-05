@@ -3,6 +3,7 @@ Mapping Scouts data to UK administrative regions.
 
 [![Build Status](https://travis-ci.com/the-scouts/geo_mapping.svg?branch=master)](https://travis-ci.com/the-scouts/geo_mapping)
 [![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Prerequisites:
 This is written and tested in Python 3.7.2.

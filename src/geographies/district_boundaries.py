@@ -8,6 +8,7 @@ from src.data.scout_census import ScoutCensus
 
 
 # noinspection PyUnresolvedReferences
+# To solve warnings for shapely methods
 class DistrictBoundaries(Base):
     def __init__(self, scout_data_object):
         super().__init__()
@@ -27,25 +28,27 @@ class DistrictBoundaries(Base):
             raise Exception("Must have ons data added before creating district boundaries")
 
         # Find all the District IDs and names
-        districts = self.scout_data.data[[ScoutCensus.column_labels['id']["DISTRICT"], ScoutCensus.column_labels['name']["DISTRICT"]]].drop_duplicates()
+        districts = self.scout_data.data[[ScoutCensus.column_labels["id"]["DISTRICT"], ScoutCensus.column_labels["name"]["DISTRICT"]]].drop_duplicates()
 
         # Finds all the records with valid postcodes in the Scout Census
-        valid_locations = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels['VALID_POSTCODE']] == 1]
+        valid_locations = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row
         all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long", "clean_postcode"])
-        all_locations[["D_name", "Object_ID", "clean_postcode"]] = valid_locations[["D_name", "Object_ID", "clean_postcode"]]
-        all_locations[["D_ID", "lat", "long"]] = valid_locations[["D_ID", "lat", "long"]].apply(pd.to_numeric, errors='coerce')
+        cols_string = ["D_name", "Object_ID", "clean_postcode"]
+        cols_numeric = ["D_ID", "lat", "long"]
+        all_locations[cols_string] = valid_locations[cols_string]
+        all_locations[cols_numeric] = valid_locations[cols_numeric].apply(pd.to_numeric, errors="coerce")
         all_locations.drop_duplicates(subset=["lat", "long"], inplace=True)
 
         # Uses the lat and long co-ordinates from above to create a GeoDataFrame
         all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat))
-        all_points.crs = {'init': 'epsg:4326'}
+        all_points.crs = {"init": "epsg:4326"}
 
         # Converts the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        all_points = all_points.to_crs({'init': 'epsg:27700'})
+        all_points = all_points.to_crs({"init": "epsg:27700"})
         all_points.reset_index(inplace=True)
 
         self.logger.info(f"Found {len(all_points.index)} different Section points")
@@ -61,7 +64,7 @@ class DistrictBoundaries(Base):
         all_points["buffer_distance"] = all_points.apply(lambda row: self._buffer_distance(row, all_points), axis=1)
         self.logger.info(f"On first pass {sum(all_points['buffer_distance'] == 0)} missing buffer distance")
 
-        old_number = sum(all_points['buffer_distance'] == 0)
+        old_number = sum(all_points["buffer_distance"] == 0)
         new_number = 1
         # The algorithm is iterative, so stop when no more points have their
         # buffers identified
@@ -81,7 +84,7 @@ class DistrictBoundaries(Base):
                 district_nu += 1
                 data = {
                     "id": [district["D_ID"]],
-                    "name": [district["D_name"]]
+                    "name": [district["D_name"]],
                 }
                 self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
 
@@ -99,16 +102,16 @@ class DistrictBoundaries(Base):
                 data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon])
                 output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
 
-        output_gpd.crs = {'init': 'epsg:27700'}
+        output_gpd.crs = {"init": "epsg:27700"}
 
         # Convert co-ordinates back to WGS84, which uses latitude and longitude
-        output_gpd = output_gpd.to_crs({'init': 'epsg:4326'})
+        output_gpd = output_gpd.to_crs({"init": "epsg:4326"})
         output_gpd.reset_index(drop=True, inplace=True)
 
         self.logger.debug(f"output gpd\n{output_gpd}")
-        output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors='coerce')
+        output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors="coerce")
         self.logger.debug(f"output gpd\n{output_gpd}")
-        output_gpd.to_file("districts_buffered.geojson", driver='GeoJSON')
+        output_gpd.to_file("districts_buffered.geojson", driver="GeoJSON")
 
     @staticmethod
     def _buffer_distance(point_details, all_points):
@@ -163,7 +166,7 @@ class DistrictBoundaries(Base):
                                 if (not buffers.empty) and (max(buffers) > nearby_point["Distance"] / 2):
                                     valid = False
 
-                            if points_of_interest.loc[closest_unset['Index'], :]["index"].iloc[0] == point_details["index"]:
+                            if points_of_interest.loc[closest_unset["Index"], :]["index"].iloc[0] == point_details["index"]:
                                 # The closest unset point to this near point we are considering is the original point
                                 distance = nearby_point["Distance"] / 2
                             else:

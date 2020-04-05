@@ -11,6 +11,8 @@ if __name__ == "__main__":
     scout_data.add_imd_decile()
 
     reports = Reports("imd_decile", scout_data)
-    reports.create_boundary_report(["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name="gt_london_south_2019_imd_report")
+    reports.create_boundary_report(
+        ["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name="gt_london_south_2019_imd_report",
+    )
 
     scout_data.close()
