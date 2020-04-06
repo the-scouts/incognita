@@ -145,7 +145,7 @@ class Reports(Base):
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
         award_name = sections_dict["Beavers"]["top_award"]
         award_eligible = sections_dict["Beavers"]["top_award_eligible"]
-        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys() if section != "Network"}
+        section_cols = [sect for sect in sections_dict.keys() if sect != "Network"]
 
         def groups_groupby(group_series: pd.Series):
             # Used to list the groups that operate within the boundary
@@ -171,8 +171,8 @@ class Reports(Base):
             all_young_people = 0
             waiting_list = 0
 
-            for section, cols in section_cols.items():
-                total_young_people = group_df[cols].to_numpy().sum()
+            for section in section_cols:
+                total_young_people = group_df[sections_dict[section]["total"]].sum()
                 all_young_people += total_young_people
                 if opt_section_numbers:
                     output[f"{section}-{census_year}"] = total_young_people

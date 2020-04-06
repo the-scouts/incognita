@@ -44,25 +44,25 @@ class ScoutCensus:
         "sections": {
             "Beavers": {
                 "type": "Colony", "unit_label": "Beavers_Units", "level": "Group",
-                "male": "Beavers_m", "female": "Beavers_f",
+                "male": "Beavers_m", "female": "Beavers_f", "total": "Beavers_total",
                 "waiting_list": "WaitList_b",
                 "top_award": "Chief_Scout_Bronze_Awards", "top_award_eligible": "Eligible4Bronze",
             },
             "Cubs": {
                 "type": "Pack", "unit_label": "Cubs_Units", "level": "Group",
-                "male": "Cubs_m", "female": "Cubs_f",
+                "male": "Cubs_m", "female": "Cubs_f", "total": "Cubs_total",
                 "waiting_list": "WaitList_c",
                 "top_award": "Chief_Scout_Silver_Awards", "top_award_eligible": "Eligible4Silver",
             },
             "Scouts": {
                 "type": "Troop", "unit_label": "Scouts_Units", "level": "Group",
-                "male": "Scouts_m", "female": "Scouts_f",
+                "male": "Scouts_m", "female": "Scouts_f", "total": "Scouts_total",
                 "waiting_list": "WaitList_s",
                 "top_award": "Chief_Scout_Gold_Awards", "top_award_eligible": "Eligible4Gold",
             },
             "Explorers": {
                 "type": "Unit", "unit_label": "Explorers_Units", "level": "District",
-                "male": "Explorers_m", "female": "Explorers_f",
+                "male": "Explorers_m", "female": "Explorers_f", "total": "Explorers_total",
                 "waiting_list": "WaitList_e",
                 "is_yl_unit": "Young_Leader_Unit",
                 "top_award": [
@@ -74,7 +74,7 @@ class ScoutCensus:
             },
             "Network": {
                 "type": "Network", "unit_label": "Network_Units", "level": "District",
-                "male": "Network_m", "female": "Network_f",
+                "male": "Network_m", "female": "Network_f", "total": "Network_total",
                 "top_award": [
                     "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Queens_Scout_Awards",
                     "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold",
@@ -108,7 +108,6 @@ class ScoutCensus:
         data_values_16 = {key: "Int16" for key in cols_int_16}
         data_values_sections = {**data_values_32, **data_values_cat, **data_values_16}
 
-        self.sections_file_path = file_path_csv
         self.data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding="utf-8")
 
     @staticmethod

@@ -23,7 +23,7 @@ class ScoutData(Base):
 
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
-    def __init__(self, csv_has_ons_pd_data=True, load_ons_pd_data=False):
+    def __init__(self, merged_csv=True, load_ons_pd_data=False):
         super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
         self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
@@ -34,7 +34,7 @@ class ScoutData(Base):
         self.data = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
-        if csv_has_ons_pd_data:
+        if merged_csv:
             self.logger.info("Loading ONS data")
             start_time = time.time()
 
@@ -77,10 +77,22 @@ class ScoutData(Base):
         self.logger.info("filling unmerged rows")
         self.data = merge.fill_unmerged_rows(self.data, ScoutCensus.column_labels["VALID_POSTCODE"], ons_fields_data_types,)
 
+        # Filter to useful columns
+        # fmt: off
+        self.data = self.data[[
+            "Object_ID", "compass", "type", "name", "G_ID", "G_name", "D_ID", "D_name", "C_ID", "C_name", "R_ID", "R_name", "X_ID", "X_name",
+            "postcode", "clean_postcode", "postcode_is_valid", "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Young_Leader_Unit",
+            "Beavers_f", "Beavers_m", "Beavers_total", "Cubs_f", "Cubs_m", "Cubs_total", "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total",
+            "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults",
+            "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards",
+            "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "ScoutsOfTheWorldAward", "Queens_Scout_Awards",
+            "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA", "Eligible4SOWA",
+            "oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "lat", "long", "imd"
+        ]]
+        # fmt: on
+
         # save the data to CSV and save invalid postcodes to an error file
-        merge.output_data(
-            self.data, self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode",
-        )
+        merge.output_data(self.data, self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
 
     def _has_ons_pd_data(self):
         """Finds whether ONS data has been added

@@ -126,9 +126,7 @@ class Map(Base):
 
                     html += f"{name} : "
                     if "youth membership" in marker_data:
-                        male_yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels["sections"][section]["male"]])
-                        female_yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels["sections"][section]["female"]])
-                        yp = male_yp + female_yp
+                        yp = int(colocated_in_district.at[section_id, ScoutCensus.column_labels["sections"][section]["total"]])
                         html += f"{yp} {section}<br>"
                 html += "</p>"
 
@@ -147,9 +145,7 @@ class Map(Base):
 
                     html += f"{name} : "
                     if "youth membership" in marker_data:
-                        male_yp = int(colocated_in_group.at[section_id, ScoutCensus.column_labels["sections"][section]["male"]])
-                        female_yp = int(colocated_in_group.at[section_id, ScoutCensus.column_labels["sections"][section]["female"]])
-                        yp = male_yp + female_yp
+                        yp = int(colocated_in_group.at[section_id, ScoutCensus.column_labels["sections"][section]["total"]])
                         html += f"{yp} {section}<br>"
                     if "awards" in marker_data:
                         awards = int(colocated_in_group.at[section_id, ScoutCensus.column_labels["sections"][section]["top_award"]])

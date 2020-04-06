@@ -54,16 +54,16 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
         for section in sections_dict.keys():
             logger.debug(f"Analysis of {section} member exclusions")
             section_type = sections_dict[section]["type"]
-            members_cols = [sections_dict[section]["male"], sections_dict[section]["female"]]
+            members_col = sections_dict[section]["total"]
 
             excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
             logger.debug(f"Excluded sections\n{excluded_sections}")
-            logger.debug(f"Finding number of excluded {section} by summing {' and '.join(members_cols)}")
-            excluded_members = excluded_sections[members_cols].to_numpy().sum()
+            logger.debug(f"Finding number of excluded {section} by summing {' and '.join(members_col)}")
+            excluded_members = excluded_sections[members_col].sum()
             logger.debug(f"{excluded_members} {section} excluded")
 
             sections = data.loc[data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
-            counted_members = sections[members_cols].to_numpy().sum()
+            counted_members = sections[members_col].sum()
 
             original_members = counted_members + excluded_members
 

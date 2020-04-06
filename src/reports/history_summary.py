@@ -80,8 +80,8 @@ class HistorySummary(Base):
 
         # per year open, record the total young people per section and the number of adults
         # uses a nested groupby for efficiency
-        section_cols = {section: [sections_dict[section]["male"], sections_dict[section]["female"]] for section in sections_dict.keys() if section != "Explorers"}
-        adult_cols = ["Leaders", "SectAssistants", "OtherAdults"]
+        sections_list = [sect for sect in sections_dict.keys() if sect != "Explorers" or sect != "Network"]
+        adult_cols = ["Leaders", "SectAssistants", "OtherAdults"]  # TODO re add
 
         def year_groupby(df):
             dicts: pd.Series = df.groupby(["Year"], sort=True).apply(section_groupby).to_list()
@@ -93,12 +93,12 @@ class HistorySummary(Base):
         def section_groupby(df):
             census_year = df.name
             output = {}
-            for section, cols in section_cols.items():
-                output[f"{section}-{census_year}"] = df[cols].to_numpy().sum()
+            for section in sections_list:
+                output[f"{section}-{census_year}"] = df[sections_dict[section]["total"]].sum()
             output[f"Adults-{census_year}"] = df[adult_cols].to_numpy().sum()
             return output
 
-        # For each year, calculate and add number of beavers, cubs, scouts.  Explorers deliberately omitted.
+        # For each year, calculate and add number of beavers, cubs, scouts.  Explorers, Network deliberately omitted.
         # Expand series of dictionaries to a dataframe with the same index
         self.logger.info(f"Creating table of members by section and adults by year")
         member_numbers_table = grouped_data.apply(year_groupby)
@@ -289,10 +289,7 @@ class HistorySummary(Base):
                 raise Exception(f"{section} neither belongs to a Group or District. id = {new_sections_id}")
 
             for year in open_years:
-                members_cols = [
-                    sections_dict[section]["male"],
-                    sections_dict[section]["female"],
-                ]
+                members_cols = sections_dict[section]["total"]
                 year_records = records.loc[records["Year"] == year]
                 if year >= 2017:
                     compass_id = section_data.get("Object_ID")
@@ -300,7 +297,7 @@ class HistorySummary(Base):
 
                     if compass_id:
                         section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                        section_data[f"{year}_Members"] = section_record[sections_dict[section]["male"]].sum() + section_record[sections_dict[section]["female"]].sum()
+                        section_data[f"{year}_Members"] = section_record[sections_dict[section]["total"]].sum()
                     else:
                         section_year_ids: pd.Series = section_year_records["Object_ID"].drop_duplicates()
                         if open_years[0] >= 2017:
@@ -320,7 +317,7 @@ class HistorySummary(Base):
 
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
-                            section_data[f"{year}_Members"] = section_year_records.loc[section_year_records["Object_ID"] == compass_id, members_cols].to_numpy().sum()
+                            section_data[f"{year}_Members"] = section_year_records.loc[section_year_records["Object_ID"] == compass_id, members_cols].sum()
                         else:
                             compass_id = section_year_ids.max()
 
@@ -334,7 +331,7 @@ class HistorySummary(Base):
 
                             section_data["Object_ID"] = compass_id
                             used_compass_ids.add(compass_id)
-                            total_members = section_year_records.loc[section_year_records["Object_ID"] == compass_id, members_cols].to_numpy().sum()
+                            total_members = section_year_records.loc[section_year_records["Object_ID"] == compass_id, members_cols].sum()
 
                             self.logger.debug(f"{section} in {section_id} in {year} found {total_members} members")
                             section_data[f"{year}_Members"] = total_members
@@ -344,8 +341,8 @@ class HistorySummary(Base):
 
                     number_of_new_sections = new_sections_id["nu_sections"][open_years[0]] - new_sections_id["nu_sections"][year_before_section_opened]
 
-                    new_members = year_records[members_cols].to_numpy().sum()
-                    old_members = year_before_records[members_cols].to_numpy().sum()
+                    new_members = year_records[members_cols].sum()
+                    old_members = year_before_records[members_cols].sum()
 
                     additional_members = (new_members - old_members) / number_of_new_sections
                     if additional_members < 0:
