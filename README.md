@@ -44,7 +44,9 @@ However, to install geopandas using pip on windows, follow the following steps:
 * pip install geopandas
 
 ### Generating datafile
-To generate the datafile needed for most operations, run `add_ons_data_script.py` with clean prototype extract. 
+To generate the datafile needed for most operations, run `setup_data_file.py` with clean prototype extract.
+
+You may also run `setup_reduce_onspd.py` to produce a smaller ONS Postcode Directory file to speed up lookup operations and reduce memory consumption. 
 
 ## Resources:
 ### Postcode Directory:
@@ -52,7 +54,8 @@ To generate the datafile needed for most operations, run `add_ons_data_script.py
 
 ### Shapefiles:
 #### Administrative/Electoral Geographies:
-*Use the same boundary resolution for each of the following (BFE, BFC, BGC, BUC)*
+_Use the same boundary resolution for each of the following (BFE, BFC, BGC, BUC)_
+###### BFE: Full Extent of the Realm; BFC: Full Extent Clipped; BGC: Generalised Clipped; BSC: Super Generalised Clipped
  * Local Authority Districts Boundaries UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=bdy_lad))
  * Counties and Unitary Authorities Boundaries UK BGC ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_CTYUA))
  * Wards Generalised Clipped Boundaries UK ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=BDY_WD))
@@ -69,9 +72,9 @@ To generate the datafile needed for most operations, run `add_ons_data_script.py
 
 ### Single year of age profiles:
 #### Westminster Parliamentary Constituencies:
- * England and Wales ([link] https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/parliamentaryconstituencymidyearpopulationestimates)
- * Northern Ireland ([link] https://www.nisra.gov.uk/publications/2018-mid-year-population-estimates-northern-ireland)
- * Scotland ([link] https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/population/population-estimates/2011-based-special-area-population-estimates/ukpc-population-estimates)
+ * England and Wales ([link](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/parliamentaryconstituencymidyearpopulationestimates))
+ * Northern Ireland ([link](https://www.nisra.gov.uk/publications/2018-mid-year-population-estimates-northern-ireland))
+ * Scotland ([link](https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/population/population-estimates/2011-based-special-area-population-estimates/ukpc-population-estimates))
 
 ### Other useful data sources
  * School locations: https://get-information-schools.service.gov.uk/
@@ -80,16 +83,22 @@ To generate the datafile needed for most operations, run `add_ons_data_script.py
 The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk/search?collection=Document&sort=name&tags=DOC_BGG)) can be useful as an introduction for those new to GIS.
 
 ## Directory Structure:
-* data
-    * ONS_PD_*DATE*
-    * Scout Census Data
-        * Census Extract Files
-* docs
-    * Documentation Files
-* src
-    * scripts
-        * Script Files
-    * Source Files
+* data/
+    * ONS_PD_**DATE**/
+    * Scout Census Data/
+        * _Census Extract Files_
+* docs/
+    * _Documentation Files_
+* scripts/
+    * _Script Files_
+* src/
+    * _Source Files_
+    * data/
+    * geographies/
+    * maps/
+    * reports/
+* tests/
+    * _Testing Files_
 
 
 ## Notes
