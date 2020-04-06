@@ -8,21 +8,16 @@ Mapping Scouts data to UK administrative regions.
 ## Prerequisites:
 This is written and tested in Python 3.7.
 
-There are several python packages that are required to be installed, including:
- * pandas
-    * numpy
- * folium
-    * branca
- * geopandas
-    * shapely
+This project is largely dependent on `geopandas` and `pandas`, along with `folium`, `dash`, and `shapely`.
 
+For testing we use `pytest` and `coverage`, with `black` as our codestyle.
 
 ## Getting Started:
 You will need to obtain the latest version of the ONS Postcode Directory. Note
 that this has some open licences attached to it.
 
 If this is not May 2018, then you will need to create another child class of
-ONSPostcodeDirectory in ONS_data.py
+ONSPostcodeDirectory in `ONS_data.py`
 
 You will need to populate the settings.json file with the appropriate file paths
 
