@@ -39,7 +39,7 @@ class ScoutData(Base):
             start_time = time.time()
 
             if self._has_ons_pd_data():
-                self.ons_pd = ONSPostcodeDirectoryMay19(self.settings["ONS PD location"], load_data=load_ons_pd_data)
+                self.ons_pd = ONSPostcodeDirectoryMay19(self.settings["Reduced ONS PD location"], load_data=load_ons_pd_data)
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
