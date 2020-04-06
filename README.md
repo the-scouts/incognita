@@ -6,7 +6,7 @@ Mapping Scouts data to UK administrative regions.
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Prerequisites:
-This is written and tested in Python 3.7.2.
+This is written and tested in Python 3.7.
 
 There are several python packages that are required to be installed, including:
  * pandas
@@ -27,21 +27,36 @@ ONSPostcodeDirectory in ONS_data.py
 You will need to populate the settings.json file with the appropriate file paths
 
 ### Installing required packages:
-Use setup.py or environment.yml with pip or conda to install the required packages and their dependancies.
+It is highly recommended to use conda to install this project, however pip can be used with a number of manual installation steps listed below.
 
-#### geopandas:
+
+#### Installing with Conda:
+To install dependencies with Conda, run the following commands in the terminal
+
+`conda env update`
+
+`conda env list` (Check that `scouts_mapping` is listed)
+
+`conda activate scouts_mapping`
+
+#### Installing with Pip
+To install dependencies with Conda, run the following commands in the terminal
+
+`pip install -r requirements.txt`
+
+To install geopandas and its dependencies, follow below
+
+##### Installing geopandas:
 It is highly recommended to use conda to install geopandas.
 
 However, to install geopandas using pip on windows, follow the following steps:
-* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), [pyproj](http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyproj), [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree), and [Shapely](http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely). Choose the correct python version & platform (note as of Jun 19 Fiona doesn't support GDAL 3.x)
-* Install any prerequisites (e.g. C++ redistributables)
-* pip install the wheels in the following order (preferably in a VirtualEnv)
-    1. GDAL
-    2. Fiona
-    3. pyproj
-    4. Rtree
-    5. Shapely
-* pip install geopandas
+* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the correct python version (currently 3.7) and platform
+* Install any prerequisites listed on Gohlke's site (e.g. C++ redistributables)
+* `pip install` the wheels in the following order (preferably in a Virtual Environment)
+    1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+    2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
+    3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
+* `pip install geopandas`
 
 ### Generating datafile
 To generate the datafile needed for most operations, run `setup_data_file.py` with clean prototype extract.
