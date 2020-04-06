@@ -3,15 +3,19 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.7
+  - python>=3.7
+  - pip
+  # Core requirements
   - branca
   - dash
-  - dash-core-components
-  - dash-html-components
   - geopandas
   - numpy
   - pandas
   - shapely
+  # Development requirements:
+  - pytest
+  - pytest-cov
+  - pre-commit
+  # Requirements not on conda:
   - pip:
     - folium
-prefix: C:\Users\tyems\AppData\Local\conda\conda\envs\scouts_mapping
