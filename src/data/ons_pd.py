@@ -30,11 +30,13 @@ class ONSPostcodeDirectory(Base):
         if load_data:
             self.logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{self.fields}")
 
-            # Handle index column possibly not existing
+            # Handle index column possibly not existing (if the full ONS PD is loaded then the index column will exist, if using the reduced ONS PD it won't so use automatic index)
             try:
                 self.data = pd.read_csv(ons_pd_csv_path, index_col=index_column, usecols=lambda col: col in self.fields, dtype=data_types, encoding="utf-8")
             except ValueError:
+                self.logger.debug(f"Loading ONS data with given index colum ({index_column}) failed, trying with pandas-generated index")
                 self.data = pd.read_csv(ons_pd_csv_path, index_col=None, usecols=lambda col: col in self.fields, dtype=data_types, encoding="utf-8")
+
             for field in data_types:
                 if data_types[field] == "category":
                     self.data[field] = self.data[field].cat.add_categories([ScoutCensus.DEFAULT_VALUE])
