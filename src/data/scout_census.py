@@ -45,24 +45,28 @@ class ScoutCensus:
             "Beavers": {
                 "type": "Colony", "unit_label": "Beavers_Units", "level": "Group",
                 "male": "Beavers_m", "female": "Beavers_f", "total": "Beavers_total",
+                "youth_cols": ["Beavers_m", "Beavers_f", "Beavers_SelfIdentify", "Beavers_PreferNoToSay"],
                 "waiting_list": "WaitList_b",
                 "top_award": "Chief_Scout_Bronze_Awards", "top_award_eligible": "Eligible4Bronze",
             },
             "Cubs": {
                 "type": "Pack", "unit_label": "Cubs_Units", "level": "Group",
                 "male": "Cubs_m", "female": "Cubs_f", "total": "Cubs_total",
+                "youth_cols": ["Cubs_m", "Cubs_f", "Cubs_SelfIdentify", "Cubs_PreferNoToSay"],
                 "waiting_list": "WaitList_c",
                 "top_award": "Chief_Scout_Silver_Awards", "top_award_eligible": "Eligible4Silver",
             },
             "Scouts": {
                 "type": "Troop", "unit_label": "Scouts_Units", "level": "Group",
                 "male": "Scouts_m", "female": "Scouts_f", "total": "Scouts_total",
+                "youth_cols": ["Scouts_m", "Scouts_f", "Scouts_SelfIdentify", "Scouts_PreferNoToSay"],
                 "waiting_list": "WaitList_s",
                 "top_award": "Chief_Scout_Gold_Awards", "top_award_eligible": "Eligible4Gold",
             },
             "Explorers": {
                 "type": "Unit", "unit_label": "Explorers_Units", "level": "District",
                 "male": "Explorers_m", "female": "Explorers_f", "total": "Explorers_total",
+                "youth_cols": ["Explorers_m", "Explorers_f", "Explorers_SelfIdentify", "Explorers_PreferNoToSay"],
                 "waiting_list": "WaitList_e",
                 "is_yl_unit": "Young_Leader_Unit",
                 "top_award": [
@@ -75,6 +79,7 @@ class ScoutCensus:
             "Network": {
                 "type": "Network", "unit_label": "Network_Units", "level": "District",
                 "male": "Network_m", "female": "Network_f", "total": "Network_total",
+                "youth_cols": ["Network_m", "Network_f", "Network_SelfIdentify", "Network_PreferNoToSay"],
                 "top_award": [
                     "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Queens_Scout_Awards",
                     "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold",
