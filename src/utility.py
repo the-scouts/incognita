@@ -31,16 +31,18 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
     excluded_data = None
 
     # Filter records
-    if not mask:
-        logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
-        if exclusion_analysis:
-            excluded_data = data.loc[~data[field].isin(value_list)]
-        data = data.loc[data[field].isin(value_list)]
-    else:
+    if mask:
+        # Excluding records that match the filter criteria
         logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
         if exclusion_analysis:
             excluded_data = data.loc[data[field].isin(value_list)]
         data = data.loc[~data[field].isin(value_list)]
+    else:
+        # Including records that match the filter criteria
+        logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
+        if exclusion_analysis:
+            excluded_data = data.loc[~data[field].isin(value_list)]
+        data = data.loc[data[field].isin(value_list)]
 
     remaining_records = len(data.index)
     logger.info(f"Resulting in {remaining_records} records remaining.")
