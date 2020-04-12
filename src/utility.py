@@ -21,7 +21,7 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
     :param str field: The field on which to filter
     :param list value_list: The values on which to filter
     :param logger:
-    :param bool mask: If True, keep the values that match the filter. If False, keep the values that don't match the filter.
+    :param bool mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
     :param bool exclusion_analysis:
 
     :returns None: Nothing
