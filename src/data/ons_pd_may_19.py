@@ -15,7 +15,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     :var dict ONSPostcodeDirectoryMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
     """
 
-    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd"]
+    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile"]
     index_column = "pcd"
     data_types = {
         "oscty": "category",
@@ -28,7 +28,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         "msoa11": "category",
         "lat": "float32",
         "long": "float32",
-        "imd": "Int32",  # should be uint16 but not atm because the NaN thing
+        "imd": "UInt16",  # should be uint16 but not atm because the NaN thing
+        "imd_decile": "UInt8",  # should be uint8 but not atm because the NaN thing
     }  # capitalise Int as of Optional Integer NA Support pandas 24 # Int capitalised as this ignores NaNs
 
     # Date of ONS postcode directory
@@ -123,7 +124,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                     "key": "LSOA11CD", "key_type": "object",
                     "name": "LSOA11NM",
                 },
-                "boundary": {"shapefile": shapefile_paths["LSOA"], "key": "LSOA11CD", "name": "LSOA11NM", },
+                "boundary": {"shapefile": shapefile_paths["LSOA"], "key": "lsoa11cd", "name": "lsoa11nm", },
                 "age_profile": {"path": None, "key": None},
             },
             "msoa": {
