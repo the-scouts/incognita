@@ -61,7 +61,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
             "County": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
             "Ward": self.settings["Boundaries folder"] + r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp",
             "PCon": self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
-            "LSOA": self.settings["Boundaries folder"] + r"Lower Layer Super Output Areas (December 2011) Boundaries EW BGC\Lower Layer Super Output Areas (December 2011) Boundaries EW BGC.shp",
+            "LSOA": self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BGC\Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BGC.shp",
             "MSOA": self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
             "IZ": self.settings["Boundaries folder"] + r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp",
         }

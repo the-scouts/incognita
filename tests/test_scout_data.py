@@ -20,8 +20,8 @@ class ScoutDataStub(Base):
 
 def test_add_imd_decile():
     data = ScoutData.add_imd_decile(ScoutDataStub())
-    predicted_answer = pd.Series(data=[10, 1], index=['row_1', 'row_2'], name="imd_decile")
-    assert(data["imd_decile"].equals(predicted_answer))
+    predicted_result = pd.Series(data=[10, 1], index=['row_1', 'row_2'], name="imd_decile")
+    assert(data["imd_decile"].equals(predicted_result))
 
 
 def test_filter_records_inclusion():

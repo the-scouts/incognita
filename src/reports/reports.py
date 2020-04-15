@@ -317,7 +317,7 @@ class Reports(Base):
         # add uptake data
         for year in years:
             for section in Reports.SECTION_AGES.keys():
-                uptake_section = uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
+                uptake_section = 100 * uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
                 uptake_report[f"%-{section}-{year}"] = uptake_section.clip(upper=max_value)
             uptake_all = uptake_report[f"All-{year}"] / uptake_report[f"Pop_All"]
@@ -329,6 +329,7 @@ class Reports(Base):
         if report_name:
             self._save_report(uptake_report, report_name)
 
+        self.boundary_report[geog_name] = uptake_report
         return uptake_report
 
     def _save_report(self, report_data, report_name):
