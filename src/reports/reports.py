@@ -11,7 +11,7 @@ import src.utility as utility
 class Reports(Base):
     @property
     def data(self) -> pd.DataFrame:
-        return self.boundary_report[self.geography.type]
+        return self.boundary_report
 
     @property
     def shapefile_name(self) -> str:
@@ -36,7 +36,7 @@ class Reports(Base):
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name, self.ons_pd)
 
-        self.boundary_report = {}
+        self.boundary_report = None
 
     SECTION_AGES = {
         "Beavers": {"ages": ["6", "7"]},
@@ -264,7 +264,7 @@ class Reports(Base):
 
         merged_dataframes = pd.concat(dataframes, axis=1)
         output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
-        self.boundary_report[geog_name] = output_data
+        self.boundary_report = output_data
 
         if report_name:
             self._save_report(output_data, report_name)
@@ -290,7 +290,7 @@ class Reports(Base):
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 
         try:
-            boundary_report: pd.DataFrame = self.boundary_report[geog_name]
+            boundary_report: pd.DataFrame = self.boundary_report
         except KeyError:
             raise AttributeError("Geography report doesn't exist")
 
@@ -329,7 +329,7 @@ class Reports(Base):
         if report_name:
             self._save_report(uptake_report, report_name)
 
-        self.boundary_report[geog_name] = uptake_report
+        self.boundary_report = uptake_report
         return uptake_report
 
     def _save_report(self, report_data, report_name):
