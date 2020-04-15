@@ -14,14 +14,14 @@ SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
 LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
 
 
-def filter_records(data, field, value_list, logger, mask=False, exclusion_analysis=False):
+def filter_records(data: pd.DataFrame, field: str, value_list: list, logger, mask=False, exclusion_analysis=False):
     """Filters the Census records by any field in ONS PD.
 
     :param data:
     :param str field: The field on which to filter
     :param list value_list: The values on which to filter
     :param logger:
-    :param bool mask: If True, keep the values that match the filter. If False, keep the values that don't match the filter.
+    :param bool mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
     :param bool exclusion_analysis:
 
     :returns None: Nothing
@@ -31,16 +31,18 @@ def filter_records(data, field, value_list, logger, mask=False, exclusion_analys
     excluded_data = None
 
     # Filter records
-    if not mask:
-        logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
-        if exclusion_analysis:
-            excluded_data = data.loc[~data[field].isin(value_list)]
-        data = data.loc[data[field].isin(value_list)]
-    else:
+    if mask:
+        # Excluding records that match the filter criteria
         logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
         if exclusion_analysis:
             excluded_data = data.loc[data[field].isin(value_list)]
         data = data.loc[~data[field].isin(value_list)]
+    else:
+        # Including records that match the filter criteria
+        logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
+        if exclusion_analysis:
+            excluded_data = data.loc[~data[field].isin(value_list)]
+        data = data.loc[data[field].isin(value_list)]
 
     remaining_records = len(data.index)
     logger.info(f"Resulting in {remaining_records} records remaining.")

@@ -1,7 +1,7 @@
 {
   "settings":
   {
-    "Scout Census location":  "../data/Scout Census Data/Census 2020 Extract (0).csv",
+    "Scout Census location":  "../data/Scout Census Data/Census 2020 Extract (0) with May 2019 fields.csv",
     "Full ONS PD location":        "../data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv",
     "Reduced ONS PD location": "../data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced.csv",
     "ONS Names and codes folder": "../data/ONSPD_MAY_2019_UK/Documents/",
