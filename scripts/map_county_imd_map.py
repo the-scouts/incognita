@@ -7,7 +7,6 @@ if __name__ == "__main__":
     scout_data.filter_records("C_ID", [10000111, 10000119])
     scout_data.filter_records("Year", [2015, 2016, 2017, 2018, 2019])
     scout_data.filter_records("postcode_is_valid", [1])
-    scout_data.add_imd_decile()
 
     map = Map(scout_data, map_name="shropshire")
 
