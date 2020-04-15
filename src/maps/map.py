@@ -26,7 +26,7 @@ class Map(Base):
 
         self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
 
-    def add_areas(self, dimension, reports: Reports, show=False, scale=None):
+    def add_areas(self, dimension: dict, reports: Reports, show=False, scale=None):
         """
         Creates a 2D colouring with geometry specified by the boundary
 
