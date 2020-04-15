@@ -23,14 +23,16 @@ class ScoutData(Base):
 
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
-    def __init__(self, merged_csv=True, load_ons_pd_data=False):
+    def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None):
         super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
         self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
 
         self.logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
-        self.scout_census = ScoutCensus(self.settings["Scout Census location"])
+        # We assume no custom path has been passed, but allow for one to be used
+        census_path = self.settings["Scout Census location"] if not census_path else census_path
+        self.scout_census = ScoutCensus(census_path)
         self.data = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
@@ -90,6 +92,9 @@ class ScoutData(Base):
             "oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "lat", "long", "imd"
         ]]
         # fmt: on
+
+        # Add IMD decile column
+        self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], ons_pd).astype("UInt8")
 
         # save the data to CSV and save invalid postcodes to an error file
         merge.output_data(self.data, self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
