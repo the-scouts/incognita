@@ -118,8 +118,3 @@ class ScoutData(Base):
         """
         data = self.data
         self.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
-
-    def add_imd_decile(self):
-        self.logger.info("Adding Index of Multiple Deprivation Decile")
-        self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], self.ons_pd)
-        return self.data
