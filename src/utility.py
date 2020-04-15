@@ -14,7 +14,7 @@ SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
 LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
 
 
-def filter_records(data, field, value_list, logger, mask=False, exclusion_analysis=False):
+def filter_records(data: pd.DataFrame, field: str, value_list: list, logger, mask=False, exclusion_analysis=False):
     """Filters the Census records by any field in ONS PD.
 
     :param data:
