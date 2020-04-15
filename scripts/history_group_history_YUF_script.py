@@ -10,6 +10,5 @@ if __name__ == "__main__":
     group_ids = groups["G_ID"].drop_duplicates().dropna().to_list()
 
     scout_data.filter_records("G_ID", [group_ids])
-    scout_data.add_imd_decile()
     history_summary = HistorySummary(scout_data)
     history_summary.group_history_summary([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], report_name="YUF_group_history")

@@ -8,7 +8,6 @@ if __name__ == "__main__":
     # scout_data.filter_records("oslaua", ["E08000025","E08000026","E08000027","E08000028",
     #                                     "E08000029","E08000030","E08000031"])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
-    scout_data.add_imd_decile()
 
     reports = Reports("imd_decile", scout_data)
     reports.create_boundary_report(
