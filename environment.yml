@@ -16,6 +16,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pre-commit
+  - black
   # Requirements not on conda:
   - pip:
     - folium
