@@ -25,13 +25,13 @@ if __name__ == "__main__":
     # % 6-17 pcon uptake from Jan-2020 Scout Census with May 2019 ONS
     pcon_reports = Reports("pcon", scout_data)
     pcon_reports.filter_boundaries("C_name", [county_name], "pcon")
-    pcon_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name=f"{county_name} - westminster constituencies")
+    pcon_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - westminster constituencies")
     pcon_reports.create_uptake_report(report_name=f"{county_name} - westminster constituencies (uptake)")
 
     # 6-17 IMD from Jan-2020 Scout Census with May 2019 ONS
     imd_reports = Reports("lsoa", scout_data)
     imd_reports.filter_boundaries("C_name", [county_name], "pcon")
-    imd_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], historical=False, report_name=f"{county_name} - IMD")
+    imd_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - IMD")
 
     # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
     # lad_reports = Reports("lad", scout_data)
