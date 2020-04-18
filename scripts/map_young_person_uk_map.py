@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     scout_data = ScoutData()
     scout_data.filter_records("Year", [year])
-    scout_data.filter_records("R_Name", [region_name])
+    scout_data.filter_records("R_name", [region_name])
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
     scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
     scout_data.filter_records("postcode_is_valid", [1])
