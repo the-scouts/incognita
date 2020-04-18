@@ -97,7 +97,7 @@ class ScoutData(Base):
         self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], ons_pd).astype("UInt8")
 
         # save the data to CSV and save invalid postcodes to an error file
-        merge.output_data(self.data, self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
+        merge.output_data(self.data, self.settings["Raw Census Extract location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
 
     def _has_ons_pd_data(self):
         """Finds whether ONS data has been added
