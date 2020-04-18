@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # Plot
     dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
     mapper.add_areas(dimension, reports, show=True)
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers", cluster_markers=True)
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership", "awards"], single_section="Explorers", cluster_markers=True)
 
     # Save the map and display
     mapper.save_map()
