@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     mapper = Map(scout_data, map_name="uk_by_la_map")
 
-    dimension = {"column": "All-2019", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
+    dimension = {"column": f"All-{year}", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
     mapper.add_areas(dimension, reports, show=True)
     mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"], cluster_markers=True)
 
