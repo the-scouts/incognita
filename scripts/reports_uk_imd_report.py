@@ -2,16 +2,15 @@ from src.data.scout_data import ScoutData
 from src.reports.reports import Reports
 
 if __name__ == "__main__":
+    county_name = "Gt. London South"
+    year = 2020
+
     scout_data = ScoutData()
-    scout_data.filter_records("Year", [2019])
-    scout_data.filter_records("C_name", ["Gt. London South"])
-    # scout_data.filter_records("oslaua", ["E08000025","E08000026","E08000027","E08000028",
-    #                                     "E08000029","E08000030","E08000031"])
+    scout_data.filter_records("Year", [year])
+    scout_data.filter_records("C_name", [county_name])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     reports = Reports("imd_decile", scout_data)
-    reports.create_boundary_report(
-        ["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name="gt_london_south_2019_imd_report",
-    )
+    reports.create_boundary_report(["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name=f"{county_name} - {year} IMD report")
 
     scout_data.close()
