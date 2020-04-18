@@ -96,7 +96,7 @@ class ScoutCensus:
     UNIT_LEVEL_DISTRICT = "District"
 
     def __init__(self, file_path_csv):
-        cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "eastings", "northings"]
+        cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
         cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "Young_Leader_Unit"]
         # fmt: off
         cols_int_16 = [
@@ -104,7 +104,7 @@ class ScoutCensus:
             "Explorers_f", "Explorers_m", "Network_f", "Network_m", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "SectAssistants", "OtherAdults",
             "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards",
             "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze",
-            "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA"
+            "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA", "imd_decile"
         ]
         # fmt: on
 
