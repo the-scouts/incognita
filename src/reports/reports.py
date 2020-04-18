@@ -252,10 +252,6 @@ class Reports(Base):
             awards_table[f"%-{sections_dict['Beavers']['top_award']}"] = top_award.clip(upper=max_value)
             dataframes.append(awards_table)
 
-        if geog_name == "lsoa11":
-            self.logger.debug(f"Adding IMD deciles")
-            dataframes.append(grouped_data[["imd_decile"]].first())
-
         renamed_cols_dict = {self.geography.codes_map_name: "Name", self.geography.codes_map_key: geog_name}
 
         # areas_data holds area names and codes for each area
@@ -264,6 +260,11 @@ class Reports(Base):
 
         merged_dataframes = pd.concat(dataframes, axis=1)
         output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
+
+        if geog_name == "lsoa11":
+            self.logger.debug(f"Adding IMD deciles")
+            output_data = output_data.merge(self.ons_pd.data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
+
         self.boundary_report = output_data
 
         if report_name:

@@ -3,7 +3,6 @@ from src.reports.history_summary import HistorySummary
 
 if __name__ == "__main__":
     scout_data = ScoutData()
-    scout_data.add_imd_decile()
     scout_data.filter_records("imd_decile", [1, 2])
     scout_data.filter_records("C_name", ["Shropshire"])
 

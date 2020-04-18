@@ -23,14 +23,16 @@ class ScoutData(Base):
 
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
-    def __init__(self, merged_csv=True, load_ons_pd_data=False):
+    def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None):
         super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
         self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
 
         self.logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
-        self.scout_census = ScoutCensus(self.settings["Scout Census location"])
+        # We assume no custom path has been passed, but allow for one to be used
+        census_path = self.settings["Scout Census location"] if not census_path else census_path
+        self.scout_census = ScoutCensus(census_path)
         self.data = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
@@ -91,8 +93,11 @@ class ScoutData(Base):
         ]]
         # fmt: on
 
+        # Add IMD decile column
+        self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], ons_pd).astype("UInt8")
+
         # save the data to CSV and save invalid postcodes to an error file
-        merge.output_data(self.data, self.settings["Scout Census location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
+        merge.output_data(self.data, self.settings["Raw Census Extract location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
 
     def _has_ons_pd_data(self):
         """Finds whether ONS data has been added
@@ -113,8 +118,3 @@ class ScoutData(Base):
         """
         data = self.data
         self.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
-
-    def add_imd_decile(self):
-        self.logger.info("Adding Index of Multiple Deprivation Decile")
-        self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], self.ons_pd)
-        return self.data

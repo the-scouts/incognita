@@ -12,7 +12,6 @@ from src.maps.map import Map
 
 if __name__ == "__main__":
     scout_data = ScoutData(load_ons_pd_data=True)
-    scout_data.add_imd_decile()
     scout_data.filter_records("X_name", ["Wales"])
     scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
     scout_data.filter_records("Year", [2019])
@@ -39,7 +38,7 @@ if __name__ == "__main__":
 
     # create_6_to_17_map
     dimension = {"column": f"%-All-{max_year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (pcon)"}
-    map = Map(scout_data, map_name="all_wales_uptake_map")
+    map = Map(scout_data, map_name="all_wales_uptake_map6")
     map.add_areas(dimension, pcon, show=True)
 
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
