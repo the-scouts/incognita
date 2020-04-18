@@ -77,15 +77,17 @@ class Map(Base):
         """
         self.logger.info("Adding section markers to map")
 
+        # check that sections dataframe has data
+        if sections.empty:
+            return
+
         if not self.map_plotter.layers.get(layer):
             self.map_plotter.add_layer(layer, cluster_markers)
 
         valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
 
         # Sets the map so it opens in the right area
-        self.map_plotter.set_bounds(
-            [[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()],]
-        )
+        self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
 
         postcodes = sections[ScoutCensus.column_labels["POSTCODE"]].drop_duplicates().dropna().astype(str).to_list()
 
@@ -174,9 +176,7 @@ class Map(Base):
             self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
             self.map_plotter.add_marker(lat, long, popup, marker_colour, layer)
 
-    def add_sections_to_map(
-        self, scout_data_object: ScoutData, colour, marker_data: list, single_section=None, layer="Sections", cluster_markers: bool = False,
-    ):
+    def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section=None, layer="Sections", cluster_markers: bool = False):
         """Filter sections and add to map.
 
         If a single section is specified, plots that section onto the map in
@@ -209,9 +209,7 @@ class Map(Base):
             filtered_data = latest_year_records
             section_types = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
 
-        self.add_meeting_places_to_map(
-            filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer, cluster_markers=cluster_markers,
-        )
+        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer, cluster_markers=cluster_markers)
 
     def add_custom_data(self, csv_file_path, layer_name, location_cols, markers_clustered=False, marker_data=None):
         """Function to add custom data as markers on map
