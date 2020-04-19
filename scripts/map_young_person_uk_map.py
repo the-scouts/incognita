@@ -1,31 +1,35 @@
 from src.data.scout_data import ScoutData
-from src.maps.map import Map
+from src.geographies.district_boundaries import DistrictBoundaries
 from src.reports.reports import Reports
+from src.maps.map import Map
 
 if __name__ == "__main__":
+    region_name = "South West"
+    year = 2020
 
     scout_data = ScoutData()
-    scout_data.filter_records("Year", [2019])
-    scout_data.filter_records("postcode_is_valid", [1])
-    scout_data.filter_records("X_name", ["England", "Wales", "Scotland", "Northern Ireland"])
+    scout_data.filter_records("Year", [year])
+    scout_data.filter_records("R_name", [region_name])
+    # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
     scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
-    scout_data.filter_records("C_name", ["Cornwall"])
+    scout_data.filter_records("postcode_is_valid", [1])
 
-    map = Map(scout_data, map_name="uk_by_la_map")
+    # generate district boundaries
+    district_boundaries = DistrictBoundaries(scout_data)
+    district_boundaries.create_district_boundaries()
 
-    dimension = {"column": "All-2019", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
+    # generate boundary report
     reports = Reports("District", scout_data)
-    reports.create_boundary_report(options=["Section numbers", "6 to 17 numbers"], report_name="uk_by_district")
-    map.add_areas(dimension, reports, show=True)
+    reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="uk_by_district")
 
-    map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"], cluster_markers=True)
-    map.save_map()
+    mapper = Map(scout_data, map_name="uk_by_la_map")
 
-    # create_section_maps
-    # for section_label in Geography.SECTION_AGES.keys():
-    #     dimension = {"column": f"{section_label}-{scout_data.data["Year"].max()}", "tooltip": section_label, "legend": f"{scout_data.data["Year"].max()} {section_label} numbers"}
-    #     section_map = Map(scout_data, boundary, dimension, map_name=f"uk_by_la_{section_label}", cluster_markers=True)
-    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
-    #     section_map.save_map()
+    dimension = {"column": f"All-{year}", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
+    mapper.add_areas(dimension, reports, show=True)
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"], cluster_markers=True)
+
+    # Save the map and display
+    mapper.save_map()
+    mapper.show_map()
 
     scout_data.close()

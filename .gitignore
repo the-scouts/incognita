@@ -2,7 +2,6 @@ Output/
 data/
 logs/
 .idea/
-error_file.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -8,26 +8,31 @@ This script has no command line options.
 """
 
 from src.data.scout_data import ScoutData
-from src.maps.map import Map
 from src.reports.reports import Reports
+from src.maps.map import Map
 
 if __name__ == "__main__":
+    year = 2020
+
     scout_data = ScoutData()
     # scout_data.filter_records("postcode_is_valid", [1])
-    scout_data.filter_records("Year", [2019])
+    scout_data.filter_records("Year", [year])
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
-    scout_data.filter_records("D_ID", [10001886, 10001334, 10001332], mask=True)
+    scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
 
-    map = Map(scout_data, map_name="UK_QSA_awards2")
-
-    dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
+    # Generate boundary report
     reports = Reports("lad", scout_data)
-    reports.create_boundary_report(options=["awards"], report_name="laua_awards_report")
-    map.add_areas(dimension, reports, show=True)
+    reports.create_boundary_report(["awards"], report_name="laua_awards_report")
 
-    map.add_sections_to_map(
-        scout_data, map.district_colour_mapping(), ["youth membership", "awards"], single_section="Beavers", cluster_markers=True,
-    )
-    map.save_map()
-    map.show_map()
+    # Create map object
+    mapper = Map(scout_data, map_name="UK_QSA_awards")
+
+    # Plot
+    dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
+    mapper.add_areas(dimension, reports, show=True)
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership", "awards"], single_section="Explorers", cluster_markers=True)
+
+    # Save the map and display
+    mapper.save_map()
+    mapper.show_map()
     scout_data.close()

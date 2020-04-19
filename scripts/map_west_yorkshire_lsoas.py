@@ -1,25 +1,31 @@
-from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
-from src.reports.reports import Reports
 from src.data.scout_data import ScoutData
+from src.reports.reports import Reports
 from src.maps.map import Map
 
 if __name__ == "__main__":
+    county_name = "Central Yorkshire"
+    year = 2020
 
-    scout_data = ScoutData(load_ons_pd_data=False)
-    scout_data.filter_records("Year", [2015, 2016, 2017, 2018, 2019])
+    scout_data = ScoutData(load_ons_pd_data=True)
+    scout_data.filter_records("Year", [year])  # 2016, 2017, 2018, 2019, 2020
+    scout_data.filter_records("C_name", [county_name])  # "Shropshire", "West Mercia"
     scout_data.filter_records("postcode_is_valid", [1])
-    scout_data.filter_records("C_ID", [10000122])
 
-    map = Map(scout_data, map_name="central_yorkshire")
+    reports = Reports("lsoa", scout_data)
+    reports.filter_boundaries("C_name", [county_name], "oslaua")
+    reports.create_boundary_report(["Section numbers"], report_name=f"{county_name} by LSOA")  # TODO: before postcode filtering
+    # reports.create_boundary_report(["Section numbers"], historical=True, report_name=f"{county_name}_by_lsoa")  # TODO: before postcode filtering
 
+    # Create map object
+    mapper = Map(scout_data, map_name=f"{county_name}")
+
+    # Plot
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    ons_pd = ONSPostcodeDirectoryMay19(scout_data.settings["Reduced ONS PD location"], load_data=True)
-    reports = Reports("lsoa", scout_data, ons_pd)
-    reports.filter_boundaries("C_ID", [10000122], "oslaua")
-    reports.create_boundary_report(["Section numbers"], historical=True, report_name="central_yorkshire_by_lsoa8")  # TODO: before postcode filtering
-    map.add_areas(dimension, reports, show=True)
+    mapper.add_areas(dimension, reports, show=True)
+    mapper.set_region_of_colour("C_name", [county_name])
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"])
 
-    map.add_sections_to_map(scout_data, map.district_colour_mapping(), ["youth membership"])
-    map.save_map()
-    map.show_map()
+    # Save the map and display
+    mapper.save_map()
+    mapper.show_map()
     scout_data.close()
