@@ -7,6 +7,9 @@ from src.data.census_merge_data import CensusMergeData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import src.utility as utility
 
+# type hints
+from src.data.ons_pd import ONSPostcodeDirectory
+
 
 class ScoutData(Base):
     """Provides access to manipulate and process data
@@ -40,19 +43,20 @@ class ScoutData(Base):
             self.logger.info("Loading ONS data")
             start_time = time.time()
 
-            if self._has_ons_pd_data():
+            has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
+
+            if has_ons_pd_data:
                 self.ons_pd = ONSPostcodeDirectoryMay19(self.settings["Reduced ONS PD location"], load_data=load_ons_pd_data)
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
             self.logger.finished(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data ", start_time=start_time)
 
-    def merge_ons_postcode_directory(self, ons_pd):
-        """Merges ScoutCensus object with ONSPostcodeDirectory object and outputs to csv
+    def merge_ons_postcode_directory(self, ons_pd: ONSPostcodeDirectory):
+        """Merges census extract data with ONS data
 
-        :param ONSPostcodeDirectoryMay19 ons_pd: Refers to the ONS Postcode Directory
+        :param ONSPostcodeDirectory ons_pd: Refers to the ONS Postcode Directory
         """
-        # Modifies self.census_postcode_data with the ONS fields info, and saves the output
         ons_fields_data_types = {
             "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
             "int": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
@@ -96,17 +100,30 @@ class ScoutData(Base):
         # Add IMD decile column
         self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], ons_pd).astype("UInt8")
 
-        # save the data to CSV and save invalid postcodes to an error file
-        merge.output_data(self.data, self.settings["Raw Census Extract location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv", "clean_postcode")
+    def save_merged_data(self, ons_pd: ONSPostcodeDirectory):
+        """Save passed dataframe to csv file.
 
-    def _has_ons_pd_data(self):
-        """Finds whether ONS data has been added
+        Also output list of errors in the merge process to a text file
 
-        :return bool: Whether the Scout Census data has ONS data added
+        :param ONSPostcodeDirectory ons_pd: Refers to the ONS Postcode Directory
         """
-        return ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
+        output_path = self.settings["Raw Census Extract location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv"
+        error_output_path = self.settings["Output folder"] + "error_file.csv"
 
-    def filter_records(self, field, value_list, mask=False, exclusion_analysis=False):
+        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
+        postcode_merge_column = "clean_postcode"
+        original_postcode_label = ScoutCensus.column_labels["POSTCODE"]
+        compass_id_label = ScoutCensus.column_labels["id"]["COMPASS"]
+
+        # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
+        error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "year"]
+        self.data.loc[self.data[valid_postcode_label] == 0, error_output_fields].to_csv(error_output_path, index=False, encoding="utf-8-sig")
+
+        # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
+        self.logger.info("Writing merged data")
+        self.data.to_csv(output_path, index=False, encoding="utf-8-sig")
+
+    def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
         """Filters the Census records by any field in ONS PD.
 
         :param str field: The field on which to filter
@@ -116,5 +133,4 @@ class ScoutData(Base):
 
         :returns None: Nothing
         """
-        data = self.data
-        self.data = utility.filter_records(data, field, value_list, self.logger, mask, exclusion_analysis)
+        self.data = utility.filter_records(self.data, field, value_list, self.logger, mask, exclusion_analysis)
