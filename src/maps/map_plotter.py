@@ -2,6 +2,7 @@ import folium
 from folium.plugins import MarkerCluster
 from folium.map import FeatureGroup
 import geopandas as gpd
+import pandas as pd
 import webbrowser
 import os
 
@@ -38,7 +39,7 @@ class MapPlotter(Base):
         self.score_col_label = None
         self.code_name = None
         self.CODE_COL = None
-        self.map_data = None
+        self.map_data: pd.DataFrame = None
 
         self.geo_data = None
 
@@ -103,8 +104,8 @@ class MapPlotter(Base):
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
         self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
 
-        list_codes = [str(code) for code in self.map_data[self.CODE_COL].tolist()]
-        all_shapes = all_shapes[all_shapes[self.code_name].isin(list_codes)]
+        list_codes = self.map_data[self.CODE_COL].astype(str).to_list()
+        all_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
         self.logger.info(f"Resulting in {len(all_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
@@ -121,7 +122,7 @@ class MapPlotter(Base):
         :return: None
         """
         self.logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
-        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL)
+        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
         self.logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
             self.logger.error("Data unsuccesfully merged resulting in zero records")
