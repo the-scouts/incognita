@@ -25,27 +25,22 @@ if __name__ == "__main__":
 
     lsoa.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="lsoa_ew")
 
-    #iz = Reports("iz", scout_data)
-    #iz.filter_boundaries(field="ctry", value_list=["S92000003"])
-    #iz.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="iz_all")
+    # iz = Reports("iz", scout_data)
+    # iz.filter_boundaries(field="ctry", value_list=["S92000003"])
+    # iz.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="iz_all")
 
     max_year = scout_data.data["Year"].max()
 
     # create_6_to_17_map
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "Index of Multiple Deprivation Decile"}
-    map = Map(scout_data, map_name="lsoa_ew_map")
+    mapper = Map(scout_data, map_name="lsoa_ew_map")
     scale = {"min": 1, "max": 10, "index": [1, 3, 7, 10]}
-    map.add_areas(dimension, lsoa, show=True, scale=scale)
-    #map.add_areas(dimension, iz, show=True)
-    map.set_region_of_colour("X_name", countries)
-    map.map_plotter.add_layer(name="Sections", markers_clustered=True, show=True)
+    mapper.add_areas(dimension, lsoa, show=True, scale=scale)
+    # map.add_areas(dimension, iz, show=True)
+    mapper.set_region_of_colour("X_name", countries)
+    mapper.map_plotter.add_layer(name="Sections", markers_clustered=True, show=True)
 
-    map.add_meeting_places_to_map(
-        sections=scout_data.data,
-        colour=map.district_colour_mapping(),
-        marker_data=["youth membership"],
-        layer="Sections",
-    )
-    map.save_map()
+    mapper.add_meeting_places_to_map(sections=scout_data.data, colour=mapper.district_colour_mapping(), marker_data=["youth membership"], layer="Sections")
+    mapper.save_map()
 
     scout_data.close()

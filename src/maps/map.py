@@ -41,8 +41,7 @@ class Map(Base):
         self.map_plotter.set_score_col(shapefile_name, dimension)
 
         if self.map_plotter.SCORE_COL[shapefile_name] not in self.map_plotter.map_data.columns:
-            raise KeyError(f"{self.map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. "
-                           f"Valid columns include {self.map_plotter.map_data.columns}")
+            raise KeyError(f"{self.map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. \n" f"Valid columns include {self.map_plotter.map_data.columns}")
 
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
         non_zero_score_col.dropna(inplace=True)
