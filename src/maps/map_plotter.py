@@ -96,6 +96,9 @@ class MapPlotter(Base):
         # Read a shape file
         all_shapes = gpd.GeoDataFrame.from_file(shape_file_path)
 
+        if self.code_name not in all_shapes.columns:
+            raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+
         original_number_of_shapes = len(all_shapes.index)
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
         self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")

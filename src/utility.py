@@ -60,7 +60,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: list, logger, mas
 
             excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
             logger.debug(f"Excluded sections\n{excluded_sections}")
-            logger.debug(f"Finding number of excluded {section} by summing {' and '.join(members_col)}")
+            logger.debug(f"Finding number of excluded {section} by summing {members_col}")
             excluded_members = excluded_sections[members_col].sum()
             logger.debug(f"{excluded_members} {section} excluded")
 

@@ -40,6 +40,10 @@ class Map(Base):
         self.map_plotter.set_boundary(reports)
         self.map_plotter.set_score_col(shapefile_name, dimension)
 
+        if self.map_plotter.SCORE_COL[shapefile_name] not in self.map_plotter.map_data.columns:
+            raise KeyError(f"{self.map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. "
+                           f"Valid columns include {self.map_plotter.map_data.columns}")
+
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
         non_zero_score_col.dropna(inplace=True)
         min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
@@ -119,7 +123,7 @@ class Map(Base):
             districts = colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates()
             for district in districts:
                 district_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels["name"]["DISTRICT"]] + " District"
-                html += f'<h3 align="center">{district_name}</h3><p align="center">' f"<br>"
+                html += f'<h3 align="center">{district_name}</h3><p align="center"><br>'
                 colocated_in_district = colocated_district_sections.loc[colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district]
                 for section_id in colocated_in_district.index:
                     unit_type = colocated_in_district.at[section_id, ScoutCensus.column_labels["UNIT_TYPE"]]
@@ -138,7 +142,7 @@ class Map(Base):
                 colocated_in_group = colocated_group_sections.loc[colocated_group_sections[ScoutCensus.column_labels["id"]["GROUP"]] == group]
                 group_name = colocated_in_group.iloc[0][ScoutCensus.column_labels["name"]["GROUP"]] + " Group"
 
-                html += f'<h3 align="center">{group_name}</h3><p align="center">' f"<br>"
+                html += f'<h3 align="center">{group_name}</h3><p align="center"><br>'
                 for section_id in colocated_in_group.index:
                     # district_id = colocated_in_group.at[section_id, ScoutCensus.column_labels['id']["DISTRICT"]]
                     unit_type = colocated_in_group.at[section_id, ScoutCensus.column_labels["UNIT_TYPE"]]
