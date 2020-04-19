@@ -44,26 +44,26 @@ class Map(Base):
             raise KeyError(f"{self.map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. \n" f"Valid columns include {self.map_plotter.map_data.columns}")
 
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
-        non_zero_score_col.dropna(inplace=True)
-        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
-        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].max()
-        self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
+        non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
 
         if not scale:
-            colourmap = branca.colormap.LinearColormap(
-                colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]), vmin=min_value, vmax=max_value,
-            )
+            colourmap_index = non_zero_score_col.quantile([0, 0.25, 0.75, 1])
+            colourmap_min = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
+            colourmap_max = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].max()
 
-            non_zero_score_col.sort_values(axis=0, inplace=True)
-            colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+            quantiles = [0, 20, 40, 60, 80, 100]
+            colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
         else:
-            colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=scale["index"], vmin=scale["min"], vmax=scale["max"],).to_step(
-                index=scale["index"]
-            )
-            colourmap.caption = dimension["legend"] + " (static)"
+            colourmap_index = scale["index"]
+            colourmap_min = scale["min"]
+            colourmap_max = scale["max"]
+            colourmap_step_index = colourmap_index
+
+        colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
+        colourmap = colourmap.to_step(index=colourmap_step_index)
+        colourmap.caption = dimension["legend"]
 
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
-        colourmap.caption = dimension["legend"]
         self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=shapefile_name, colourmap=colourmap)
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: str = "Sections", cluster_markers: bool = False):
