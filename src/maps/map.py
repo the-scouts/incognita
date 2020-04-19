@@ -59,7 +59,7 @@ class Map(Base):
             colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
         else:
             colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=scale["index"], vmin=scale["min"], vmax=scale["max"],).to_step(
-                index=scale["boundaries"]
+                index=scale["index"]
             )
             colourmap.caption = dimension["legend"] + " (static)"
 

@@ -23,7 +23,7 @@ if __name__ == "__main__":
     lsoa = Reports("lsoa", scout_data)
     lsoa.filter_boundaries(field="ctry", value_list=["E92000001", "W92000004"])
 
-    lsoa.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="lsoa_all")
+    lsoa.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="lsoa_ew")
 
     #iz = Reports("iz", scout_data)
     #iz.filter_boundaries(field="ctry", value_list=["S92000003"])
@@ -33,8 +33,9 @@ if __name__ == "__main__":
 
     # create_6_to_17_map
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "Index of Multiple Deprivation Decile"}
-    map = Map(scout_data, map_name="lsoa_all_bgc_map")
-    map.add_areas(dimension, lsoa, show=True)
+    map = Map(scout_data, map_name="lsoa_ew_map")
+    scale = {"min": 1, "max": 10, "index": [1, 3, 7, 10]}
+    map.add_areas(dimension, lsoa, show=True, scale=scale)
     #map.add_areas(dimension, iz, show=True)
     map.set_region_of_colour("X_name", countries)
     map.map_plotter.add_layer(name="Sections", markers_clustered=True, show=True)
