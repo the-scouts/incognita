@@ -131,7 +131,7 @@ class MapPlotter(Base):
         folium.GeoJson(
             data=merged_data.to_json(),
             name=name,
-            style_function=lambda x: {"fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name), "color": "black", "fillOpacity": 0.33, "weight": 0.5,},
+            style_function=lambda x: {"fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name), "color": "black", "fillOpacity": 0.33, "weight": 0.30,},
             tooltip=folium.GeoJsonTooltip(fields=[boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
             show=show,
         ).add_to(self.map)
@@ -164,7 +164,7 @@ class MapPlotter(Base):
         :param string layer_name: name of the layer that markers are added to
         :return: None
         """
-        folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
+        folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)
