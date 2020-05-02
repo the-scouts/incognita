@@ -57,7 +57,7 @@ class Map(Base):
             colourmap_index = scale["index"]
             colourmap_min = scale["min"]
             colourmap_max = scale["max"]
-            colourmap_step_index = colourmap_index
+            colourmap_step_index = scale["boundaries"]
 
         colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
         colourmap = colourmap.to_step(index=colourmap_step_index)
