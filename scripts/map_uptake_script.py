@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # Create 6 to 17 map - Local Authorities
     # dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (LAs)"}
-    # map.add_areas(dimension, lad_reports)
+    # mapper.add_areas(dimension, lad_reports)
 
     # Plot sections
     mapper.set_region_of_colour("C_name", [county_name])
