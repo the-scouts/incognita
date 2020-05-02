@@ -321,7 +321,7 @@ class Reports(Base):
                 uptake_section = 100 * uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
                 uptake_report[f"%-{section}-{year}"] = uptake_section.clip(upper=max_value)
-            uptake_all = uptake_report[f"All-{year}"] / uptake_report[f"Pop_All"]
+            uptake_all = 100 * uptake_report[f"All-{year}"] / uptake_report[f"Pop_All"]
             max_value = uptake_all.quantile(0.975)
             uptake_report[f"%-All-{year}"] = uptake_all.clip(upper=max_value)
             # TODO explain 97.5th percentile clip

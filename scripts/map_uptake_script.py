@@ -15,12 +15,12 @@ if __name__ == "__main__":
 
     # setup data
     scout_data = ScoutData(load_ons_pd_data=True)
-    scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
+    scout_data.filter_records("Year", [year])
     scout_data.filter_records("X_name", ["England", "Scotland", "Wales", "Northern Ireland"])
     scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
     scout_data.filter_records("C_name", [county_name])
-    scout_data.filter_records("Year", [year])
+    scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     # % 6-17 pcon uptake from Jan-2020 Scout Census with May 2019 ONS
     pcon_reports = Reports("pcon", scout_data)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # Create 6 to 17 map - Local Authorities
     # dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (LAs)"}
-    # map.add_areas(dimension, lad_reports)
+    # mapper.add_areas(dimension, lad_reports)
 
     # Plot sections
     mapper.set_region_of_colour("C_name", [county_name])

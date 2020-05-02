@@ -40,27 +40,30 @@ class Map(Base):
         self.map_plotter.set_boundary(reports)
         self.map_plotter.set_score_col(shapefile_name, dimension)
 
+        if self.map_plotter.SCORE_COL[shapefile_name] not in self.map_plotter.map_data.columns:
+            raise KeyError(f"{self.map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. \n" f"Valid columns include {self.map_plotter.map_data.columns}")
+
         non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
-        non_zero_score_col.dropna(inplace=True)
-        min_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
-        max_value = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].max()
-        self.logger.info(f"Minimum data value: {min_value}. Maximum data value: {max_value}")
+        non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
 
         if not scale:
-            colourmap = branca.colormap.LinearColormap(
-                colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=non_zero_score_col.quantile([0, 0.25, 0.75, 1]), vmin=min_value, vmax=max_value,
-            )
+            colourmap_index = non_zero_score_col.quantile([0, 0.25, 0.75, 1])
+            colourmap_min = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
+            colourmap_max = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].max()
 
-            non_zero_score_col.sort_values(axis=0, inplace=True)
-            colourmap = colourmap.to_step(data=non_zero_score_col, quantiles=[0, 0.2, 0.4, 0.6, 0.8, 1])
+            quantiles = [0, 20, 40, 60, 80, 100]
+            colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
         else:
-            colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=scale["index"], vmin=scale["min"], vmax=scale["max"],).to_step(
-                index=scale["boundaries"]
-            )
-            colourmap.caption = dimension["legend"] + " (static)"
+            colourmap_index = scale["index"]
+            colourmap_min = scale["min"]
+            colourmap_max = scale["max"]
+            colourmap_step_index = scale["boundaries"]
+
+        colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
+        colourmap = colourmap.to_step(index=colourmap_step_index)
+        colourmap.caption = dimension["legend"]
 
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
-        colourmap.caption = dimension["legend"]
         self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=shapefile_name, colourmap=colourmap)
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: str = "Sections", cluster_markers: bool = False):
@@ -118,8 +121,9 @@ class Map(Base):
 
             districts = colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates()
             for district in districts:
+                county_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels["name"]["COUNTY"]]
                 district_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels["name"]["DISTRICT"]] + " District"
-                html += f'<h3 align="center">{district_name}</h3><p align="center">' f"<br>"
+                html += f'<h3 align="center">{district_name} ({county_name})</h3><p align="center"><br>'
                 colocated_in_district = colocated_district_sections.loc[colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district]
                 for section_id in colocated_in_district.index:
                     unit_type = colocated_in_district.at[section_id, ScoutCensus.column_labels["UNIT_TYPE"]]
@@ -138,7 +142,7 @@ class Map(Base):
                 colocated_in_group = colocated_group_sections.loc[colocated_group_sections[ScoutCensus.column_labels["id"]["GROUP"]] == group]
                 group_name = colocated_in_group.iloc[0][ScoutCensus.column_labels["name"]["GROUP"]] + " Group"
 
-                html += f'<h3 align="center">{group_name}</h3><p align="center">' f"<br>"
+                html += f'<h3 align="center">{group_name}</h3><p align="center"><br>'
                 for section_id in colocated_in_group.index:
                     # district_id = colocated_in_group.at[section_id, ScoutCensus.column_labels['id']["DISTRICT"]]
                     unit_type = colocated_in_group.at[section_id, ScoutCensus.column_labels["UNIT_TYPE"]]
@@ -265,14 +269,20 @@ class Map(Base):
     def set_region_of_colour(self, column, value_list):
         self.region_of_colour = {"column": column, "value_list": value_list}
 
-    def district_colour_mapping(self):
+    def generic_colour_mapping(self, grouping_column: str):
         # fmt: off
         colours = cycle([
             "cadetblue", "lightblue", "blue", "beige", "red",  "darkgreen", "lightgreen", "purple",
             "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
         ])
         # fmt: on
-        district_ids = self.scout_data.data[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates()
-        mapping = {district_id: next(colours) for district_id in district_ids}
-        colour_mapping = {"census_column": ScoutCensus.column_labels["id"]["DISTRICT"], "mapping": mapping}
+        grouping_ids = self.scout_data.data[grouping_column].drop_duplicates()
+        mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
+        colour_mapping = {"census_column": grouping_column, "mapping": mapping}
         return colour_mapping
+
+    def district_colour_mapping(self):
+        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["DISTRICT"])
+
+    def county_colour_mapping(self):
+        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])

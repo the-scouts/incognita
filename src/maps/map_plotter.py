@@ -2,6 +2,7 @@ import folium
 from folium.plugins import MarkerCluster
 from folium.map import FeatureGroup
 import geopandas as gpd
+import pandas as pd
 import webbrowser
 import os
 
@@ -38,7 +39,7 @@ class MapPlotter(Base):
         self.score_col_label = None
         self.code_name = None
         self.CODE_COL = None
-        self.map_data = None
+        self.map_data: pd.DataFrame = None
 
         self.geo_data = None
 
@@ -96,12 +97,15 @@ class MapPlotter(Base):
         # Read a shape file
         all_shapes = gpd.GeoDataFrame.from_file(shape_file_path)
 
+        if self.code_name not in all_shapes.columns:
+            raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+
         original_number_of_shapes = len(all_shapes.index)
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
         self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
 
-        list_codes = [str(code) for code in self.map_data[self.CODE_COL].tolist()]
-        all_shapes = all_shapes[all_shapes[self.code_name].isin(list_codes)]
+        list_codes = self.map_data[self.CODE_COL].astype(str).to_list()
+        all_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
         self.logger.info(f"Resulting in {len(all_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
@@ -118,19 +122,26 @@ class MapPlotter(Base):
         :return: None
         """
         self.logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
-        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL)
+        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
         self.logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
             self.logger.error("Data unsuccesfully merged resulting in zero records")
             raise Exception("Data unsuccesfully merged resulting in zero records")
 
+        # fmt: off
         folium.GeoJson(
             data=merged_data.to_json(),
             name=name,
-            style_function=lambda x: {"fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name), "color": "black", "fillOpacity": 0.33, "weight": 0.5,},
+            style_function=lambda x: {
+                "fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name),
+                "color": "black",
+                "fillOpacity": 0.33,
+                "weight": 0.30,
+            },
             tooltip=folium.GeoJsonTooltip(fields=[boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
             show=show,
         ).add_to(self.map)
+        # fmt: on
         colourmap.add_to(self.map)
 
     def _map_colourmap(self, properties, colourmap, boundary_name):
@@ -160,7 +171,7 @@ class MapPlotter(Base):
         :param string layer_name: name of the layer that markers are added to
         :return: None
         """
-        folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
+        folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
 
     def set_bounds(self, bounds):
         self.map.fit_bounds(bounds)
