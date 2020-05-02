@@ -121,8 +121,9 @@ class Map(Base):
 
             districts = colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates()
             for district in districts:
+                county_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels["name"]["COUNTY"]]
                 district_name = colocated_district_sections.iloc[0][ScoutCensus.column_labels["name"]["DISTRICT"]] + " District"
-                html += f'<h3 align="center">{district_name}</h3><p align="center"><br>'
+                html += f'<h3 align="center">{district_name} ({county_name})</h3><p align="center"><br>'
                 colocated_in_district = colocated_district_sections.loc[colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district]
                 for section_id in colocated_in_district.index:
                     unit_type = colocated_in_district.at[section_id, ScoutCensus.column_labels["UNIT_TYPE"]]
@@ -268,14 +269,20 @@ class Map(Base):
     def set_region_of_colour(self, column, value_list):
         self.region_of_colour = {"column": column, "value_list": value_list}
 
-    def district_colour_mapping(self):
+    def generic_colour_mapping(self, grouping_column: str):
         # fmt: off
         colours = cycle([
             "cadetblue", "lightblue", "blue", "beige", "red",  "darkgreen", "lightgreen", "purple",
             "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
         ])
         # fmt: on
-        district_ids = self.scout_data.data[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates()
-        mapping = {district_id: next(colours) for district_id in district_ids}
-        colour_mapping = {"census_column": ScoutCensus.column_labels["id"]["DISTRICT"], "mapping": mapping}
+        grouping_ids = self.scout_data.data[grouping_column].drop_duplicates()
+        mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
+        colour_mapping = {"census_column": grouping_column, "mapping": mapping}
         return colour_mapping
+
+    def district_colour_mapping(self):
+        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["DISTRICT"])
+
+    def county_colour_mapping(self):
+        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])

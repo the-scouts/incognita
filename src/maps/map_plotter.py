@@ -128,13 +128,20 @@ class MapPlotter(Base):
             self.logger.error("Data unsuccesfully merged resulting in zero records")
             raise Exception("Data unsuccesfully merged resulting in zero records")
 
+        # fmt: off
         folium.GeoJson(
             data=merged_data.to_json(),
             name=name,
-            style_function=lambda x: {"fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name), "color": "black", "fillOpacity": 0.33, "weight": 0.30,},
+            style_function=lambda x: {
+                "fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name),
+                "color": "black",
+                "fillOpacity": 0.33,
+                "weight": 0.30,
+            },
             tooltip=folium.GeoJsonTooltip(fields=[boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
             show=show,
         ).add_to(self.map)
+        # fmt: on
         colourmap.add_to(self.map)
 
     def _map_colourmap(self, properties, colourmap, boundary_name):
