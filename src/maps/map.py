@@ -106,8 +106,7 @@ class Map(Base):
 
             self.logger.debug(postcode)
             # Find all the sections with the same postcode
-            colocated_sections = sections.loc[((sections["G_ID"] == 10012975) | (sections["G_ID"] == 10015089)).fillna(False)]
-            # colocated_sections = sections.loc[sections[ScoutCensus.column_labels["POSTCODE"]] == postcode]
+            colocated_sections = sections.loc[sections[ScoutCensus.column_labels["POSTCODE"]] == postcode]
             colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(ScoutCensus.get_section_type("District"))]
             colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(ScoutCensus.get_section_type("Group"))]
 
