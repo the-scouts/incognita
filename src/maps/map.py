@@ -106,7 +106,7 @@ class Map(Base):
 
             self.logger.debug(postcode)
             # Find all the sections with the same postcode
-            colocated_sections = sections.loc[sections[ScoutCensus.column_labels["POSTCODE"]] == postcode]
+            colocated_sections = sections.loc[sections[ScoutCensus.column_labels["POSTCODE"]] == postcode].sort_values("Object_ID")
             colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(ScoutCensus.get_section_type("District"))]
             colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(ScoutCensus.get_section_type("Group"))]
 
@@ -117,74 +117,94 @@ class Map(Base):
             # District sections first followed by Group sections
             html = ""
 
-            districts = colocated_sections[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates().dropna()
-            for district in districts:
-                name_row = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district].iloc[0]
-                county_name = name_row[ScoutCensus.column_labels["name"]["COUNTY"]]
-                district_name = name_row[ScoutCensus.column_labels["name"]["DISTRICT"]]
-                html += f"<h3>{district_name} ({county_name})</h3>"
+            group_names = colocated_group_sections[ScoutCensus.column_labels["name"]["GROUP"]]
+            district_ids = colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]]
+            group_ids = colocated_group_sections[ScoutCensus.column_labels["id"]["GROUP"]]
 
-                colocated_in_district = colocated_district_sections.loc[colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district]
+            # IDs for iteration
+            ids = colocated_sections[[ScoutCensus.column_labels["id"]["GROUP"], ScoutCensus.column_labels["id"]["DISTRICT"]]].drop_duplicates().dropna(subset=["D_ID"])
+            districts = ids[ScoutCensus.column_labels["id"]["DISTRICT"]].to_list()
 
-                if not colocated_in_district[ScoutCensus.column_labels["UNIT_TYPE"]].dropna().empty:
-                    html += f'<h4>District</h4><p align="center">'
+            # Initialise variables
+            district_info_table = pd.DataFrame()
+            group_info_table = pd.DataFrame()
 
-                    unit_type = colocated_in_district[ScoutCensus.column_labels["UNIT_TYPE"]]
-                    section = utility.section_from_type_vector(unit_type)
-                    names = colocated_in_district["name"].astype("string")
-                    yp = colocated_in_district[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["total"])].sum(axis=1)
-
-                    section_member_info = names + " : " + yp.astype(str) + " " + section + "<br>"
-                    if "youth membership" in marker_data:
-                        html += "".join(section_member_info)
-                    else:
-                        html += "".join(names + "<br>")
-
-                    html += "</p>"
-
-                # Groups within this district
-                groups = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district, ScoutCensus.column_labels["id"]["GROUP"]]
-                groups = groups.drop_duplicates().dropna()
-                if groups.empty:
-                    continue
-
-                colocated_in_group = colocated_group_sections.loc[colocated_group_sections[ScoutCensus.column_labels["id"]["GROUP"]].isin(groups)].sort_values("Object_ID")
-                group_names = colocated_in_group[ScoutCensus.column_labels["name"]["GROUP"]]
-                group_ids = colocated_in_group[ScoutCensus.column_labels["id"]["GROUP"]]
-
-                unit_type = colocated_in_group[ScoutCensus.column_labels["UNIT_TYPE"]]
+            # Test for if there are any district sections at this postcode
+            if not district_ids.dropna().empty:
+                unit_type = colocated_district_sections[ScoutCensus.column_labels["UNIT_TYPE"]]
                 section = utility.section_from_type_vector(unit_type)
-                section_names = colocated_in_group["name"].astype("string")
-                yp = colocated_in_group[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["total"])].sum(axis=1)
-                awards = colocated_in_group[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award"])].sum(axis=1).astype("Int32")
-                eligible = colocated_in_group[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award_eligible"])].sum(axis=1).astype("Int32")
+                section_names = colocated_district_sections["name"].astype("string")
+                yp = colocated_district_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["total"])].sum(axis=1)
+                section_member_info = section_names + " : " + yp.astype(str) + " " + section + "<br>"
+
+                # fmt: off
+                district_info_table = pd.DataFrame({
+                    "ID": district_ids,
+                    "section_name": section_names,
+                    "member_info": section_member_info,
+                })
+                # fmt: on
+
+            # Test for if there are any group sections at this postcode
+            if not group_ids.dropna().empty:
+                unit_type = colocated_group_sections[ScoutCensus.column_labels["UNIT_TYPE"]]
+                section = utility.section_from_type_vector(unit_type)
+                section_names = colocated_group_sections["name"].astype("string")
+                yp = colocated_group_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["total"])].sum(axis=1)
+                awards = colocated_group_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award"])].sum(axis=1).astype("Int32")
+                eligible = colocated_group_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award_eligible"])].sum(axis=1).astype("Int32")
                 section_member_info = section_names + " : " + yp.astype(str) + " " + section + "<br>"
                 section_awards_info = section_names + " : " + awards.astype(str) + " Top Awards out of " + eligible.astype(str) + " eligible<br>"
 
-                columns = {
+                # fmt: off
+                group_info_table = pd.DataFrame({
                     "ID": group_ids,
                     "group_name": group_names,
                     "section_name": section_names,
                     "member_info": section_member_info,
                     "awards_info": section_awards_info,
-                }
+                })
+                # fmt: on
 
-                group_info = {}
-                group_info_table = pd.DataFrame(columns)
+            district_info = {}
+            for district in districts:
+                district_metadata = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district]
+                county_name = district_metadata[ScoutCensus.column_labels["name"]["COUNTY"]].to_list()[0]
+                district_name = district_metadata[ScoutCensus.column_labels["name"]["DISTRICT"]].to_list()[0]
+
+                # Initialise info dict. Note usage of '$' in the County key, this is as districts must only have letters in their names.
+                district_info[district_name] = {"$County": county_name}
+
+                if not district_info_table.empty:
+                    sub_table = district_info_table.loc[district_info_table["ID"] == district]
+
+                    district_info[district_name]["District"] = {
+                        "sect_names": "".join(sub_table["section_name"] + "<br>"),
+                        "member_info": "".join(sub_table["member_info"]),
+                    }
+
+                groups = ids.loc[ids[ScoutCensus.column_labels["id"]["DISTRICT"]] == district, ScoutCensus.column_labels["id"]["GROUP"]].dropna()
+                if groups.empty:
+                    continue
+
                 for group in groups:
                     sub_table = group_info_table.loc[group_info_table["ID"] == group]
                     group_name = sub_table["group_name"].to_list()[0]
-                    group_info[group_name] = {
+                    district_info[district_name][group_name] = {
                         "sect_names": "".join(sub_table["section_name"] + "<br>"),
                         "member_info": "".join(sub_table["member_info"]),
                         "awards_info": "<br>" + "".join(sub_table["awards_info"]),
                     }
 
-                for group_name, group_dict in group_info.items():
-                    html += f"<h4>{group_name}</h4><p align='center'>"
-                    html += group_dict["member_info"] if "youth membership" in marker_data else group_dict["sect_names"]
-                    if "awards" in marker_data:
-                        html += group_dict["awards_info"]
+            for district_name, district_dict in district_info.items():
+                county_name = district_dict.pop("$County")
+                html += f"<h3>{district_name} ({county_name})</h3>"
+
+                for child, child_dict in district_dict.items():
+                    html += f"<h4>{child}</h4><p align='center'>"
+                    html += child_dict["member_info"] if "youth membership" in marker_data else child_dict["sect_names"]
+                    if "awards" in marker_data and child != "District":
+                        html += child_dict["awards_info"]
                     html += "</p>"
 
             # Fixes physical size of popup
