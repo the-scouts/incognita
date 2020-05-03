@@ -82,6 +82,10 @@ def section_from_type(section_type):
     return section_types[section_type]
 
 
+def section_from_type_vector(section_type: pd.Series):
+    return section_type.map(section_types)
+
+
 def calc_imd_decile(imd_ranks, country_codes, ons_object):
     """
 
