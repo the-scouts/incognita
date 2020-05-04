@@ -36,9 +36,9 @@ class MapPlotter(Base):
         self.SCORE_COL = {}
         self.layers = {}
 
-        self.score_col_label = None
-        self.code_name = None
-        self.CODE_COL = None
+        self.score_col_label: str = None
+        self.code_name: str = None
+        self.CODE_COL: str = None
         self.map_data: pd.DataFrame = None
 
         self.geo_data = None
@@ -136,7 +136,7 @@ class MapPlotter(Base):
                 "fillColor": self._map_colourmap(x["properties"], colourmap, boundary_name),
                 "color": "black",
                 "fillOpacity": 0.33,
-                "weight": 0.30,
+                "weight": 0.60,
             },
             tooltip=folium.GeoJsonTooltip(fields=[boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
             show=show,
