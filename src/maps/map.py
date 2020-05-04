@@ -12,6 +12,8 @@ from src.base import Base
 from src.maps.map_plotter import MapPlotter
 from src.data.scout_census import ScoutCensus
 
+from typing import Dict, Union
+
 
 class Map(Base):
     def __init__(self, scout_data_object: ScoutData, map_name: str):
@@ -84,119 +86,121 @@ class Map(Base):
         if sections.empty:
             return
 
+        # Sort sections dataframe
+        sections = sections.sort_values("Object_ID").reset_index(drop=True)
+
         if not self.map_plotter.layers.get(layer):
             self.map_plotter.add_layer(layer, cluster_markers)
 
+        # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
-
-        # Sets the map so it opens in the right area
         self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
 
-        postcodes = sections[ScoutCensus.column_labels["POSTCODE"]].drop_duplicates().dropna().astype(str).to_list()
+        # IDs for finding sections
+        district_sections_group_code = -1
+        postcodes_ids = sections[ScoutCensus.column_labels["POSTCODE"]]
+        district_ids = sections[ScoutCensus.column_labels["id"]["DISTRICT"]]
+        # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
+        group_ids = sections[ScoutCensus.column_labels["id"]["GROUP"]].fillna(district_sections_group_code)
 
-        increment = len(postcodes) / 100
-        count = 1
-        old_percentage = 0
+        # IDs for iteration
+        postcodes = postcodes_ids.drop_duplicates().dropna().astype(str).to_list()
+
+        # Initialise variables
+        sections_info_table = pd.DataFrame()
+
+        # Test for if there are any sections
+        if not group_ids.dropna().empty or district_ids.dropna().empty:
+            unit_type = sections[ScoutCensus.column_labels["UNIT_TYPE"]]
+            sections["section"] = utility.section_from_type_vector(unit_type)
+            section_names = sections["name"].astype("string")
+            sections["yp"] = sections.lookup(sections.index, sections["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["total"]))
+            section_member_info = section_names + " : " + sections["yp"].astype(str) + " " + sections["section"] + "<br>"
+
+            # Awful, awful workaround as Units & Network top awards are lists not strings. Effectivley we only tabluate for groups.
+            grp_sects = sections[sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(["Colony", "Pack", "Troop"])]
+            sections["awards"] = pd.Series(
+                grp_sects[grp_sects["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award"])].values.diagonal(), grp_sects.index
+            ).astype("Int32")
+            sections["eligible"] = pd.Series(
+                grp_sects[grp_sects["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award_eligible"])].values.diagonal(), grp_sects.index
+            ).astype("Int32")
+            section_awards_info = section_names + " : " + sections["awards"].astype(str) + " Top Awards out of " + sections["eligible"].astype(str) + " eligible<br>"
+
+            if isinstance(colour, dict):
+                census_column = colour["census_column"]
+                colour_mapping = colour["mapping"]
+                sections["marker_colour"] = sections[census_column].map(colour_mapping)
+            else:
+                sections["marker_colour"] = colour
+
+            # Areas outside the region_of_colour have markers coloured grey
+            if self.region_of_colour:
+                sections.loc[~sections[self.region_of_colour["column"]].isin(self.region_of_colour["value_list"]), "marker_colour"] = "gray"
+
+            # fmt: off
+            sections_info_table = pd.DataFrame({
+                "postcode": postcodes_ids,
+                "lat": sections["lat"],
+                "long": sections["long"],
+                "marker_colour": sections["marker_colour"],
+                "district_ID": district_ids,
+                "group_ID": group_ids,
+                "county_name": sections[ScoutCensus.column_labels["name"]["COUNTY"]],
+                "district_name": sections[ScoutCensus.column_labels["name"]["DISTRICT"]],
+                "group_name": sections[ScoutCensus.column_labels["name"]["GROUP"]],
+                "section_name": section_names,
+                "member_info": section_member_info,
+                "awards_info": section_awards_info,
+            })
+            # fmt: on
+            sections_info_table = sections_info_table.reset_index().set_index(["postcode", "district_ID", "group_ID", "index"], drop=False).drop("index", axis=1)
+            sections_info_table = sections_info_table.dropna(subset=["district_ID"]).sort_index(level=[0, 1, 2, 3])
+
+        _sect_info_type = Dict[str, str]
+        _group_info_type = Dict[str, Union[str, _sect_info_type]]
+        _district_info_type = Dict[str, Union[str, float, _group_info_type]]
+        _postcode_info_type = Dict[str, _district_info_type]
+        postcode_info: _postcode_info_type = {}
         for postcode in postcodes:
-            new_percentage = round(count / increment)
-            if new_percentage > old_percentage:
-                self.logger.info(f"{new_percentage}% of sections added to map ")
-                old_percentage = new_percentage
-            count += 1
-
-            self.logger.debug(postcode)
             # Find all the sections with the same postcode
-            colocated_sections = sections.loc[sections[ScoutCensus.column_labels["POSTCODE"]] == postcode].sort_values("Object_ID")
-            colocated_district_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(ScoutCensus.get_section_type("District"))]
-            colocated_group_sections = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(ScoutCensus.get_section_type("Group"))]
+            colocated_sections = sections_info_table.loc[(postcode,)]
+            location_row = colocated_sections.iloc[0].to_dict()
+            postcode_info[postcode] = {
+                "$lat": float(location_row["lat"]),
+                "$long": float(location_row["long"]),
+                "$marker_colour": str(location_row["marker_colour"]),
+            }
 
-            lat = float(colocated_sections.iloc[0]["lat"])
-            long = float(colocated_sections.iloc[0]["long"])
-
-            # Construct the html to form the marker popup
-            # District sections first followed by Group sections
-            html = ""
-
-            group_names = colocated_group_sections[ScoutCensus.column_labels["name"]["GROUP"]]
-            district_ids = colocated_district_sections[ScoutCensus.column_labels["id"]["DISTRICT"]]
-            group_ids = colocated_group_sections[ScoutCensus.column_labels["id"]["GROUP"]]
-
-            # IDs for iteration
-            ids = colocated_sections[[ScoutCensus.column_labels["id"]["GROUP"], ScoutCensus.column_labels["id"]["DISTRICT"]]].drop_duplicates().dropna(subset=["D_ID"])
-            districts = ids[ScoutCensus.column_labels["id"]["DISTRICT"]].to_list()
-
-            # Initialise variables
-            district_info_table = pd.DataFrame()
-            group_info_table = pd.DataFrame()
-
-            # Test for if there are any district sections at this postcode
-            if not district_ids.dropna().empty:
-                unit_type = colocated_district_sections[ScoutCensus.column_labels["UNIT_TYPE"]]
-                section = utility.section_from_type_vector(unit_type)
-                section_names = colocated_district_sections["name"].astype("string")
-                yp = colocated_district_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["total"])].sum(axis=1)
-                section_member_info = section_names + " : " + yp.astype(str) + " " + section + "<br>"
-
-                # fmt: off
-                district_info_table = pd.DataFrame({
-                    "ID": district_ids,
-                    "section_name": section_names,
-                    "member_info": section_member_info,
-                })
-                # fmt: on
-
-            # Test for if there are any group sections at this postcode
-            if not group_ids.dropna().empty:
-                unit_type = colocated_group_sections[ScoutCensus.column_labels["UNIT_TYPE"]]
-                section = utility.section_from_type_vector(unit_type)
-                section_names = colocated_group_sections["name"].astype("string")
-                yp = colocated_group_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["total"])].sum(axis=1)
-                awards = colocated_group_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award"])].sum(axis=1).astype("Int32")
-                eligible = colocated_group_sections[section.map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award_eligible"])].sum(axis=1).astype("Int32")
-                section_member_info = section_names + " : " + yp.astype(str) + " " + section + "<br>"
-                section_awards_info = section_names + " : " + awards.astype(str) + " Top Awards out of " + eligible.astype(str) + " eligible<br>"
-
-                # fmt: off
-                group_info_table = pd.DataFrame({
-                    "ID": group_ids,
-                    "group_name": group_names,
-                    "section_name": section_names,
-                    "member_info": section_member_info,
-                    "awards_info": section_awards_info,
-                })
-                # fmt: on
-
-            district_info = {}
-            for district in districts:
-                district_metadata = colocated_sections.loc[colocated_sections[ScoutCensus.column_labels["id"]["DISTRICT"]] == district]
-                county_name = district_metadata[ScoutCensus.column_labels["name"]["COUNTY"]].to_list()[0]
-                district_name = district_metadata[ScoutCensus.column_labels["name"]["DISTRICT"]].to_list()[0]
+            district_ids = colocated_sections["district_ID"].drop_duplicates()
+            for district_id in district_ids:
+                district_metadata = sections_info_table.loc[(postcode, district_id)]
+                county_name = district_metadata["county_name"].to_list()[0]
+                district_name = district_metadata["district_name"].to_list()[0]
 
                 # Initialise info dict. Note usage of '$' in the County key, this is as districts must only have letters in their names.
-                district_info[district_name] = {"$County": county_name}
+                postcode_info[postcode][district_name] = {"$County": county_name}
 
-                if not district_info_table.empty:
-                    sub_table = district_info_table.loc[district_info_table["ID"] == district]
-
-                    district_info[district_name]["District"] = {
-                        "sect_names": "".join(sub_table["section_name"] + "<br>"),
-                        "member_info": "".join(sub_table["member_info"]),
-                    }
-
-                groups = ids.loc[ids[ScoutCensus.column_labels["id"]["DISTRICT"]] == district, ScoutCensus.column_labels["id"]["GROUP"]].dropna()
-                if groups.empty:
-                    continue
-
-                for group in groups:
-                    sub_table = group_info_table.loc[group_info_table["ID"] == group]
-                    group_name = sub_table["group_name"].to_list()[0]
-                    district_info[district_name][group_name] = {
+                # Loop through sections in group-likes
+                group_ids = district_metadata["group_ID"].drop_duplicates()
+                for group_id in group_ids:
+                    sub_table = sections_info_table.loc[(postcode, district_id, group_id)]
+                    group_name = sub_table["group_name"].to_list()[0] if group_id != district_sections_group_code else "District"
+                    postcode_info[postcode][district_name][group_name] = {
                         "sect_names": "".join(sub_table["section_name"] + "<br>"),
                         "member_info": "".join(sub_table["member_info"]),
                         "awards_info": "<br>" + "".join(sub_table["awards_info"]),
                     }
 
-            for district_name, district_dict in district_info.items():
+        for postcode_name, postcode_dict in postcode_info.items():
+            lat = postcode_dict.pop("$lat")
+            long = postcode_dict.pop("$long")
+            marker_colour = postcode_dict.pop("$marker_colour")
+            html = ""
+
+            for district_name, district_dict in postcode_dict.items():
+                # Construct the html to form the marker popup
+                # District sections first followed by Group sections
                 county_name = district_dict.pop("$County")
                 html += f"<h3>{district_name} ({county_name})</h3>"
 
@@ -209,21 +213,6 @@ class Map(Base):
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-
-            if isinstance(colour, dict):
-                census_column = colour["census_column"]
-                colour_mapping = colour["mapping"]
-                value = colocated_sections.iloc[0][census_column]
-                marker_colour = colour_mapping[value]
-            else:
-                marker_colour = colour
-
-            # Areas outside the region_of_colour have markers coloured grey
-            if self.region_of_colour:
-                if colocated_sections.iloc[0][self.region_of_colour["column"]] not in self.region_of_colour["value_list"]:
-                    marker_colour = "gray"
-
-            self.logger.debug(f"Placing {marker_colour} marker at {lat},{long}")
             self.map_plotter.add_marker(lat, long, popup, marker_colour, layer)
 
     def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section=None, layer="Sections", cluster_markers: bool = False):
@@ -318,7 +307,7 @@ class Map(Base):
     def generic_colour_mapping(self, grouping_column: str):
         # fmt: off
         colours = cycle([
-            "cadetblue", "lightblue", "blue", "beige", "red",  "darkgreen", "lightgreen", "purple",
+            "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
             "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
         ])
         # fmt: on
