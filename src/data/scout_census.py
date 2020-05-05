@@ -123,23 +123,21 @@ class ScoutCensus:
             raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
 
     @staticmethod
-    def get_section_names(level):
+    def get_section_names(level: list) -> list:
         """Return list of section names that exist within a particular organisational level.
 
-        :param level: Organisational level. Usually Group or District.
-        :type level: str or list
+        :param list level: Organisational level. Usually Group or District.
         :return: List of section names.
         """
-        section_dict: Dict
+        section_dict: dict
         sections_labels = ScoutCensus.column_labels["sections"].items()
         return [section_name for section_name, section_dict in sections_labels if section_dict["level"] in level]
 
     @staticmethod
-    def get_section_type(level):
+    def get_section_type(level: list) -> list:
         """Return list of section types that exist within a particular organisational level.
 
-        :param level: Organisational level. Usually Group or District.
-        :type level: str or list
+        :param list level: Organisational level. Usually Group or District.
         :return: List of section types
         """
         section_names_list = ScoutCensus.get_section_names(level)

@@ -1,4 +1,5 @@
 from src.data.ons_pd import ONSPostcodeDirectory
+from pathlib import Path
 
 
 class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
@@ -53,18 +54,19 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         )
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
-        names_codes_root = self.settings["ONS Names and codes folder"]
+        names_codes_root = Path(self.settings["ONS Names and codes folder"]).resolve()
+        boundaries_dir = Path(self.settings["Boundaries folder"]).resolve()
 
         # Paths to all shapefiles within the Boundaries folder
         # fmt: off
         shapefile_paths = {
-            "LADs": self.settings["Boundaries folder"] + r"Local_Authority_Districts_April_2019_Boundaries_UK_BUC\Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
-            "County": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
-            "Ward": self.settings["Boundaries folder"] + r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp",
-            "PCon": self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
-            "LSOA": self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC\Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
-            "MSOA": self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
-            "IZ": self.settings["Boundaries folder"] + r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp",
+            "LADs": boundaries_dir / "Local_Authority_Districts_April_2019_Boundaries_UK_BUC/Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
+            "County": boundaries_dir / "Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "Ward": boundaries_dir / "Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp",
+            "PCon": boundaries_dir / "Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
+            "LSOA": boundaries_dir / "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC/Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
+            "MSOA": boundaries_dir / "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
+            "IZ": boundaries_dir / "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp",
         }
         # fmt: on
 
@@ -75,7 +77,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Local Authority Districts
                 "name": "oslaua",
                 "codes": {
-                    "path": names_codes_root + "LA_UA names and codes UK as at 12_19.csv",
+                    "path": names_codes_root / "LA_UA names and codes UK as at 12_19.csv",
                     "key": "LAD19CD", "key_type": "object",
                     "name": "LAD19NM",
                 },
@@ -86,7 +88,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Counties
                 "name": "oslaua",
                 "codes": {
-                    "path": names_codes_root + "LA_UA names and codes UK as at 12_19.csv",
+                    "path": names_codes_root / "LA_UA names and codes UK as at 12_19.csv",
                     "key": "LAD19CD", "key_type": "object",
                     "name": "LAD19NM",
                 },
@@ -97,7 +99,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Council Wards
                 "name": "osward",
                 "codes": {
-                    "path": names_codes_root + "Ward names and codes UK as at 05_19_NSPD.csv",
+                    "path": names_codes_root / "Ward names and codes UK as at 05_19_NSPD.csv",
                     "key": "WD19CD", "key_type": "object",
                     "name": "WD19NM",
                 },
@@ -108,8 +110,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Parliamentary Constituencies
                 "name": "pcon",
                 "codes": {
-                    "path": names_codes_root
-                    + "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv",
+                    "path": names_codes_root / "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv",
                     "key": "PCON14CD", "key_type": "object",
                     "name": "PCON14NM",
                 },
@@ -120,7 +121,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Lower Level Super Output Areas
                 "name": "lsoa11",
                 "codes": {
-                    "path": names_codes_root + "LSOA (2011) names and codes UK as at 12_12.csv",
+                    "path": names_codes_root / "LSOA (2011) names and codes UK as at 12_12.csv",
                     "key": "LSOA11CD", "key_type": "object",
                     "name": "LSOA11NM",
                 },
@@ -131,7 +132,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 # Middle Layer Super Output Areas
                 "name": "msoa",
                 "codes": {
-                    "path": names_codes_root + "MSOA (2011) names and codes UK as at 12_12.csv",
+                    "path": names_codes_root / "MSOA (2011) names and codes UK as at 12_12.csv",
                     "key": "MSOA11CD", "key_type": "object",
                     "name": "MSOA11NM",
                 },
