@@ -34,6 +34,6 @@ if __name__ == "__main__":
 
     # merge the census extract and ONS postcode directory, and save the data to file
     scout_data.merge_ons_postcode_directory(ons_pd)
-    scout_data.save_merged_data(ons_pd)
+    scout_data.save_merged_data(ons_pd.PUBLICATION_DATE)
 
     scout_data.close()

@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Dict
+from pathlib import Path
 
 
 class ScoutCensus:
@@ -10,7 +11,7 @@ class ScoutCensus:
     All column labels from the Census report are set in column_labels and can be
         changed to reflect the input census file.
 
-    :param str file_path_csv: path to input file with Census data.
+    :param str census_file_path: path to input file with Census data.
 
     :var ScoutCensus.column_labels: holds strings of all census csv column headings, structured to help access
     :var ScoutCensus.DEFAULT_VALUE: holds value for NaN values
@@ -95,7 +96,7 @@ class ScoutCensus:
     UNIT_LEVEL_GROUP = "Group"
     UNIT_LEVEL_DISTRICT = "District"
 
-    def __init__(self, file_path_csv):
+    def __init__(self, census_file_path: Path):
         cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
         cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "Young_Leader_Unit"]
         # fmt: off
@@ -107,13 +108,19 @@ class ScoutCensus:
             "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA", "imd_decile"
         ]
         # fmt: on
+        # TODO add yp total columns, clean postcode/valid postcode, Asst leaders, SOWA/SOWA eligible, ONS PD fields
 
         data_values_32 = {key: "Int32" for key in cols_int_32}
         data_values_cat = {key: "category" for key in cols_categorical}
         data_values_16 = {key: "Int16" for key in cols_int_16}
         data_values_sections = {**data_values_32, **data_values_cat, **data_values_16}
 
-        self.data = pd.read_csv(file_path_csv, dtype=data_values_sections, encoding="utf-8")
+        if census_file_path.suffix == ".csv":
+            self.data = pd.read_csv(census_file_path, dtype=data_values_sections, encoding="utf-8")
+        elif census_file_path.suffix == ".feather":
+            self.data = pd.read_feather(census_file_path)
+        else:
+            raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
 
     @staticmethod
     def get_section_names(level):
