@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Dict
 from pathlib import Path
+from pyarrow import feather
 
 
 class ScoutCensus:
@@ -118,7 +119,7 @@ class ScoutCensus:
         if census_file_path.suffix == ".csv":
             self.data = pd.read_csv(census_file_path, dtype=data_values_sections, encoding="utf-8")
         elif census_file_path.suffix == ".feather":
-            self.data = pd.read_feather(census_file_path)
+            self.data = feather.read_feather(census_file_path)
         else:
             raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
 
