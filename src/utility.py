@@ -10,6 +10,7 @@ def get_proj_root() -> Path:
     return Path(__file__).parent.parent
 
 
+DATA_ROOT = get_proj_root().joinpath("data")
 SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
 LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
 
