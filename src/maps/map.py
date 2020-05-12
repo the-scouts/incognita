@@ -76,7 +76,8 @@ class Map(Base):
         :param list marker_data: List of strings which determines content for popup, including:
             - youth membership
             - awards
-        :param str layer: Name of layer on map to add meeting places to
+        :param dict layer: Name & properties of layer on map to add meeting places to.
+            - Default = {"name"="Sections", "markers_clustered"=False}
         :param bool cluster_markers: If true markers are clustered
         """
         self.logger.info("Adding section markers to map")
