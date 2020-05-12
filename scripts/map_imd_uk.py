@@ -40,8 +40,8 @@ if __name__ == "__main__":
 
     # Plot sections
     mapper.set_region_of_colour("X_name", countries)
-    mapper.map_plotter.add_layer(name="Sections", markers_clustered=True, show=True)
-    mapper.add_meeting_places_to_map(sections=scout_data.data, colour=mapper.district_colour_mapping(), marker_data=["youth membership"], layer="Sections")
+    sections = dict(name="Sections", markers_clustered=True, show=True)
+    mapper.add_meeting_places_to_map(sections=scout_data.data, colour=mapper.district_colour_mapping(), marker_data=["youth membership"], layer=sections)
 
     # Save the map and display
     mapper.save_map()

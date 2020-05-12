@@ -1,12 +1,13 @@
 import json
 import time
 from functools import wraps
+from typing import Callable
 
 import src.log_util as log_util
 from src.utility import SCRIPTS_ROOT
 
 
-def time_function(method):
+def time_function(method: Callable):
     """This method wraps functions to determine the execution time (clock time) for the function
 
     The function should be of a class with a self.logger logging object
@@ -49,7 +50,7 @@ def time_function(method):
 
 
 class Base:
-    def __init__(self, settings=False, log_path=None):
+    def __init__(self, settings: bool = False, log_path: str = None):
         """Acts as a base class for most classes. Provides automatic logging, settings creation,
           and common methods
 
@@ -74,7 +75,7 @@ class Base:
             # if a logger already exists for script
             self.logger = log_util.get_logger("log")
 
-    def close(self, start_time=None):
+    def close(self, start_time: float = None):
         """Outputs the duration of the programme """
         start_time = start_time if start_time else self.start_time
         self.logger.finished(f"Script", start_time=start_time)

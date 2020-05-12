@@ -4,6 +4,7 @@ import folium
 import pandas as pd
 import geopandas as gpd
 import numpy as np
+from pathlib import Path
 
 import src.utility as utility
 from src.reports.reports import Reports
@@ -19,14 +20,12 @@ class Map(Base):
     def __init__(self, scout_data_object: ScoutData, map_name: str):
         super().__init__(settings=True)
 
-        self.map_plotter = None
-
         # Can be set by set_region_of_colour
-        self.region_of_colour = None
+        self._region_of_colour = None
 
         self.scout_data = scout_data_object
 
-        self.map_plotter = MapPlotter(self.settings["Output folder"] + map_name)
+        self._map_plotter = MapPlotter(Path(self.settings["Output folder"], map_name))
 
     def add_areas(self, dimension: dict, reports: Reports, show=False, scale=None):
         """
@@ -39,19 +38,21 @@ class Map(Base):
                            0%, 20%, 40%, 60%, 80% and 100%.
         """
         shapefile_name = reports.shapefile_name
-        self.map_plotter.set_boundary(reports)
-        self.map_plotter.set_score_col(shapefile_name, dimension)
+        self._map_plotter.set_boundary(reports)
+        self._map_plotter.set_score_col(shapefile_name, dimension)
 
-        if self.map_plotter.SCORE_COL[shapefile_name] not in self.map_plotter.map_data.columns:
-            raise KeyError(f"{self.map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. \n" f"Valid columns include {self.map_plotter.map_data.columns}")
+        if self._map_plotter.SCORE_COL[shapefile_name] not in self._map_plotter.map_data.columns:
+            raise KeyError(f"{self._map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. \n" f"Valid columns include {self._map_plotter.map_data.columns}")
 
-        non_zero_score_col = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].loc[self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]] != 0]
+        non_zero_score_col = self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]].loc[
+            self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]] != 0
+        ]
         non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
 
         if not scale:
             colourmap_index = non_zero_score_col.quantile([0, 0.25, 0.75, 1])
-            colourmap_min = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].min()
-            colourmap_max = self.map_plotter.map_data[self.map_plotter.SCORE_COL[shapefile_name]].max()
+            colourmap_min = self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]].min()
+            colourmap_max = self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]].max()
 
             quantiles = [0, 20, 40, 60, 80, 100]
             colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
@@ -66,9 +67,9 @@ class Map(Base):
         colourmap.caption = dimension["legend"]
 
         self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
-        self.map_plotter.add_areas(dimension["legend"], show=show, boundary_name=shapefile_name, colourmap=colourmap)
+        self._map_plotter.add_areas(dimension["legend"], show=show, boundary_name=shapefile_name, colourmap=colourmap)
 
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: str = "Sections", cluster_markers: bool = False):
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: dict = None):
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
@@ -77,7 +78,8 @@ class Map(Base):
         :param list marker_data: List of strings which determines content for popup, including:
             - youth membership
             - awards
-        :param str layer: Name of layer on map to add meeting places to
+        :param dict layer: Name & properties of layer on map to add meeting places to.
+            - Default = {"name"="Sections", "markers_clustered"=False}
         :param bool cluster_markers: If true markers are clustered
         """
         self.logger.info("Adding section markers to map")
@@ -85,16 +87,20 @@ class Map(Base):
         # check that sections dataframe has data
         if sections.empty:
             return
-
+        
         # Sort sections dataframe
         sections = sections.sort_values("Object_ID").reset_index(drop=True)
 
-        if not self.map_plotter.layers.get(layer):
-            self.map_plotter.add_layer(layer, cluster_markers)
+        if not self._map_plotter.layers.get(layer["name"]):
+            layer = dict(name="Sections", markers_clustered=False) if layer is None else layer
+            self._map_plotter.add_layer(layer["name"], layer["markers_clustered"])
+
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
-        self.map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
+
+        # Sets the map so it opens in the right area
+        self._map_plotter.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
 
         # IDs for finding sections
         district_sections_group_code = -1
@@ -213,9 +219,9 @@ class Map(Base):
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-            self.map_plotter.add_marker(lat, long, popup, marker_colour, layer)
+            self._map_plotter.add_marker(lat, long, popup, marker_colour, layer)
 
-    def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section=None, layer="Sections", cluster_markers: bool = False):
+    def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False):
         """Filter sections and add to map.
 
         If a single section is specified, plots that section onto the map in
@@ -248,9 +254,11 @@ class Map(Base):
             filtered_data = latest_year_records
             section_types = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
 
-        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer, cluster_markers=cluster_markers)
+        self._map_plotter.add_layer(layer, cluster_markers)
+        layer_data = dict(name=layer, markers_clustered=cluster_markers)
+        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_data)
 
-    def add_custom_data(self, csv_file_path, layer_name, location_cols, markers_clustered=False, marker_data=None):
+    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols, markers_clustered: bool = False, marker_data: list = None):
         """Function to add custom data as markers on map
 
         :param str csv_file_path: file path to open csv file
@@ -278,7 +286,7 @@ class Map(Base):
             custom_data.crs = {"init": f"epsg:{location_cols['crs']}"}
             custom_data = custom_data.to_crs({"init": "epsg:4326"})
 
-        self.map_plotter.add_layer(layer_name, markers_clustered)
+        self._map_plotter.add_layer(layer_name, markers_clustered)
 
         # Plot marker and include marker_data in the popup for every item in custom_data
         def add_popup_data(row):
@@ -291,20 +299,20 @@ class Map(Base):
             else:
                 popup = None
             if not np.isnan(row.geometry.x):
-                self.map_plotter.add_marker(row.geometry.y, row.geometry.x, popup, colour="green", layer_name=layer_name)
+                self._map_plotter.add_marker(row.geometry.y, row.geometry.x, popup, colour="green", layer_name=layer_name)
 
         custom_data.apply(add_popup_data, axis=1)
 
     def save_map(self):
-        self.map_plotter.save()
+        self._map_plotter.save()
 
     def show_map(self):
-        self.map_plotter.show()
+        self._map_plotter.show()
 
-    def set_region_of_colour(self, column, value_list):
-        self.region_of_colour = {"column": column, "value_list": value_list}
+    def set_region_of_colour(self, column: str, value_list: list):
+        self._region_of_colour = {"column": column, "value_list": value_list}
 
-    def generic_colour_mapping(self, grouping_column: str):
+    def generic_colour_mapping(self, grouping_column: str) -> dict:
         # fmt: off
         colours = cycle([
             "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
@@ -316,8 +324,8 @@ class Map(Base):
         colour_mapping = {"census_column": grouping_column, "mapping": mapping}
         return colour_mapping
 
-    def district_colour_mapping(self):
+    def district_colour_mapping(self) -> dict:
         return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["DISTRICT"])
 
-    def county_colour_mapping(self):
+    def county_colour_mapping(self) -> dict:
         return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])

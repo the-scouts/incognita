@@ -1,5 +1,6 @@
 from src.utility import DATA_ROOT
 from src.data.ons_pd import ONSPostcodeDirectory
+from pathlib import Path
 
 
 class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
@@ -54,19 +55,19 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         )
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
-        names_codes_root = DATA_ROOT / self.settings["ONS Names and codes folder"]
-        boundaries_root = DATA_ROOT / self.settings["Boundaries folder"]
+        names_codes_root = DATA_ROOT / Path(self.settings["ONS Names and codes folder"]).resolve()
+        boundaries_dir = DATA_ROOT / Path(self.settings["Boundaries folder"]).resolve()
 
         # Paths to all shapefiles within the Boundaries folder
         # fmt: off
         shapefile_paths = {
-            "LADs": boundaries_root / r"Local_Authority_Districts_April_2019_Boundaries_UK_BUC\Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
-            "County": boundaries_root / r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
-            "Ward": boundaries_root / r"Wards_May_2019_Boundaries_UK_BSC\Wards_May_2019_Boundaries_UK_BSC.shp",
-            "PCon": boundaries_root / r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
-            "LSOA": boundaries_root / r"Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC\Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
-            "MSOA": boundaries_root / r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
-            "IZ": boundaries_root / r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp",
+            "LADs": boundaries_dir / "Local_Authority_Districts_April_2019_Boundaries_UK_BUC/Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
+            "County": boundaries_dir / "Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "Ward": boundaries_dir / "Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp",
+            "PCon": boundaries_dir / "Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
+            "LSOA": boundaries_dir / "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC/Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
+            "MSOA": boundaries_dir / "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
+            "IZ": boundaries_dir / "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp",
         }
         # fmt: on
 

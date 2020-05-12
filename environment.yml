@@ -12,6 +12,7 @@ dependencies:
   - numpy
   - pandas
   - shapely
+  - pyarrow
   # Development requirements:
   - pytest
   - pytest-cov

@@ -1,4 +1,6 @@
 from datetime import datetime
+from pathlib import Path
+import pandas as pd
 import time
 
 from src.base import Base
@@ -18,6 +20,7 @@ class ScoutData(Base):
 
     @property
     def columns(self):
+        """Returns ID and name columns of the dataset"""
         id_cols = self.scout_census.column_labels["id"].values()
         name_cols = self.scout_census.column_labels["name"].values()
         return [*id_cols, *name_cols]
@@ -35,8 +38,8 @@ class ScoutData(Base):
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
         census_path = utility.DATA_ROOT / self.settings["Scout Census location"] if not census_path else census_path
-        self.scout_census = ScoutCensus(census_path)
-        self.data = self.scout_census.data
+        self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path)
+        self.data: pd.DataFrame = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
         if merged_csv:
@@ -100,15 +103,16 @@ class ScoutData(Base):
         # Add IMD decile column
         self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], ons_pd).astype("UInt8")
 
-    def save_merged_data(self, ons_pd: ONSPostcodeDirectory):
+    def save_merged_data(self, ons_pd_publication_date: str):
         """Save passed dataframe to csv file.
 
         Also output list of errors in the merge process to a text file
 
-        :param ONSPostcodeDirectory ons_pd: Refers to the ONS Postcode Directory
+        :param str ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
         """
-        output_path = self.settings["Raw Census Extract location"][:-4] + f" with {ons_pd.PUBLICATION_DATE} fields.csv"
-        error_output_path = self.settings["Output folder"] + "error_file.csv"
+        raw_extract_path = utility.DATA_ROOT / self.settings["Raw Census Extract location"]
+        output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
+        error_output_path = Path(self.settings["Output folder"], "error_file.csv").resolve()
 
         valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
         postcode_merge_column = "clean_postcode"
@@ -121,7 +125,8 @@ class ScoutData(Base):
 
         # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
         self.logger.info("Writing merged data")
-        self.data.to_csv(output_path, index=False, encoding="utf-8-sig")
+        self.data.to_csv(output_path.with_suffix(".csv"), index=False, encoding="utf-8-sig")
+        self.data.to_feather(output_path.with_suffix(".feather"))
 
     def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
         """Filters the Census records by any field in ONS PD.

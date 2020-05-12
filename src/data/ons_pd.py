@@ -27,6 +27,8 @@ class ONSPostcodeDirectory(Base):
 
         self.fields = fields
 
+        self.BOUNDARIES = {}
+
         if load_data:
             self.logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{self.fields}")
 

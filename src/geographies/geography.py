@@ -26,38 +26,38 @@ class Geography(Base):
         self._set_boundary(geography_name, ons_pd_object)
 
     @property
-    def type(self):
+    def type(self) -> str:
         return self.geography_metadata_dict.get("name")
 
     @property
-    def codes_map_key(self):
+    def codes_map_key(self) -> str:
         return self.geography_metadata_dict["codes"]["key"]
 
     @property
-    def codes_map_name(self):
+    def codes_map_name(self) -> str:
         return self.geography_metadata_dict["codes"]["name"]
 
     @property
-    def shapefile_key(self):
+    def shapefile_key(self) -> str:
         return self.geography_metadata_dict["boundary"]["key"]
 
     @property
-    def shapefile_name(self):
+    def shapefile_name(self) -> str:
         return self.geography_metadata_dict["boundary"]["name"]
 
     @property
-    def shapefile_path(self):
+    def shapefile_path(self) -> Path:
         return self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
-    def age_profile_path(self):
+    def age_profile_path(self) -> Path:
         return self.geography_metadata_dict["age_profile"]["path"]
 
     @property
-    def age_profile_key(self):
+    def age_profile_key(self) -> str:
         return self.geography_metadata_dict["age_profile"]["key"]
 
-    def _set_boundary(self, geography_name: str, ons_pd):
+    def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
 
         :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
@@ -82,7 +82,7 @@ class Geography(Base):
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 
-    def _get_ons_codes_from_scout_area(self, scout_data, ons_code, column, value_list):
+    def _get_ons_codes_from_scout_area(self, scout_data: ScoutData, ons_code: str, column: str, value_list: list) -> list:
         """Produces list of ONS Geographical codes that exist within a subset
         of the Scout Census data.
 
@@ -106,7 +106,7 @@ class Geography(Base):
 
         return ons_codes
 
-    def filter_boundaries_regions_data(self, field, value_list, ons_pd_object):
+    def filter_boundaries_regions_data(self, field: str, value_list: list, ons_pd_object: ONSPostcodeDirectory):
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
         Requires _set_boundary to have been called.
@@ -152,11 +152,11 @@ class Geography(Base):
         ons_value_list = self._get_ons_codes_from_scout_area(scout_data, boundary, column, value_list)
         self.filter_boundaries_regions_data(boundary, ons_value_list, ons_pd)
 
-    def filter_boundaries_near_scout_area(self, scout_data, boundary, field, value_list, distance=3000):
+    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: list, distance: int = 3000):
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 
-        #TODO investigate some method of actually finding a boundary's neighbours.
+        TODO investigate some method of actually finding a boundary's neighbours.
 
         :param ScoutData scout_data: ScoutData object with data to operate on
         :param str boundary: ONS boundary to filter on

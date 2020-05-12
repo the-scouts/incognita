@@ -7,6 +7,11 @@ from src.base import Base, time_function
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
+# noinspection PyUnreachableCode
+if False:
+    from pathlib import Path
+    from src.data.ons_pd import ONSPostcodeDirectory
+
 
 class Reports(Base):
     @property
@@ -22,14 +27,14 @@ class Reports(Base):
         return self.geography.shapefile_key
 
     @property
-    def shapefile_path(self) -> str:
+    def shapefile_path(self) -> Path:
         return self.geography.shapefile_path
 
     @property
     def geography_type(self) -> str:
         return self.geography.type
 
-    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object=None):
+    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object: ONSPostcodeDirectory = None):
         super().__init__(settings=True)
 
         self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
@@ -46,7 +51,7 @@ class Reports(Base):
     }
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance=3000, near=False):
+    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False):
 
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
@@ -81,9 +86,9 @@ class Reports(Base):
         region_ids_by_district = self.scout_data.data.loc[self.scout_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
         region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == ScoutCensus.DEFAULT_VALUE)].dropna().drop_duplicates()
 
-        count_regions_in_district = (
-            region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})
-        )  # count of how many regions the district occupies
+        # count of how many regions the district occupies:
+        count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})
+
         count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column)
 
         count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
@@ -96,12 +101,12 @@ class Reports(Base):
         return dict(nested_dict)  # Return the mapping
 
     @time_function
-    def create_boundary_report(self, options=None, historical=False, report_name=None):
+    def create_boundary_report(self, options: list = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
         """Produces .csv file summarising by boundary provided.
 
         Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
 
-        :param list or None options: List of data to be included in report
+        :param list options: List of data to be included in report
         :param bool historical: Check to ensure that multiple years of data are intentional
         :param str report_name:
         """
@@ -147,7 +152,7 @@ class Reports(Base):
         award_eligible = sections_dict["Beavers"]["top_award_eligible"]
         section_cols = [sect for sect in sections_dict.keys() if sect != "Network"]
 
-        def groups_groupby(group_series: pd.Series):
+        def _groups_groupby(group_series: pd.Series) -> (str, int):
             # Used to list the groups that operate within the boundary
             # Gets all groups in the records_in_boundary dataframe
             # Removes NaN values
@@ -158,14 +163,14 @@ class Reports(Base):
             group_list: pd.Series = group_series.dropna().drop_duplicates().str.strip()
             return group_list.str.cat(sep="\n"), group_list.size
 
-        def young_people_numbers_groupby(group_df: pd.DataFrame):
+        def _young_people_numbers_groupby(group_df: pd.DataFrame) -> dict:
             output = {}
-            dicts: pd.Series = group_df.groupby(["Year"], sort=True).apply(year_groupby).to_list()
+            dicts: pd.Series = group_df.groupby(["Year"], sort=True).apply(_year_groupby).to_list()
             for row in dicts:
                 output = {**output, **row}
             return output
 
-        def year_groupby(group_df: pd.DataFrame):
+        def _year_groupby(group_df: pd.DataFrame) -> dict:
             census_year = group_df.name
             output = {}
             all_young_people = 0
@@ -188,7 +193,7 @@ class Reports(Base):
                 output[f"Waiting List-{census_year}"] = waiting_list
             return output
 
-        def awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame):
+        def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
             summed = group_df[[award_name, award_eligible,]].sum()
             output = summed.to_dict()
             if summed[award_eligible] > 0:
@@ -206,7 +211,7 @@ class Reports(Base):
 
             return output
 
-        def awards_per_region(district_records, district_nums):
+        def _awards_per_region(district_records, district_nums) -> dict:
             district_id = district_records.name
             num_ons_regions_occupied_by_district = district_nums[district_id]
 
@@ -224,12 +229,12 @@ class Reports(Base):
 
         if opt_groups or opt_number_of_groups:
             self.logger.debug(f"Adding group data")
-            group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(groups_groupby)
+            group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(_groups_groupby)
             dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=["Groups", "Number of Groups"]))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
             self.logger.debug(f"Adding young people numbers")
-            sections_table = grouped_data.apply(young_people_numbers_groupby)
+            sections_table = grouped_data.apply(_young_people_numbers_groupby)
             dataframes.append(pd.DataFrame(sections_table.values.tolist(), index=sections_table.index))
 
         if opt_awards:
@@ -241,11 +246,11 @@ class Reports(Base):
             self.logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(awards_per_region, district_numbers)
+            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(_awards_per_region, district_numbers)
             awards_per_district_per_regions = pd.DataFrame(awards_per_district_per_regions.values.tolist(), index=awards_per_district_per_regions.index)
 
             self.logger.debug(f"Adding awards data")
-            awards_table: pd.DataFrame = grouped_data.apply(awards_groupby, awards_per_district_per_regions)
+            awards_table: pd.DataFrame = grouped_data.apply(_awards_groupby, awards_per_district_per_regions)
             awards_table: pd.DataFrame = pd.DataFrame(awards_table.values.tolist(), index=awards_table.index)
             top_award = awards_table[f"%-{sections_dict['Beavers']['top_award']}"]
             max_value = top_award.quantile(0.95)
@@ -273,7 +278,7 @@ class Reports(Base):
         return output_data
 
     @time_function
-    def create_uptake_report(self, report_name=None):
+    def create_uptake_report(self, report_name: str = None) -> pd.DataFrame:
         """Creates a report of scouting uptake in geographic areas
 
         Creates an report by the boundary that has been set, requires a boundary report to already have been run.
@@ -334,5 +339,5 @@ class Reports(Base):
         self.boundary_report = uptake_report
         return uptake_report
 
-    def _save_report(self, report_data, report_name):
+    def _save_report(self, report_data: pd.DataFrame, report_name: str):
         utility.save_report(report_data, self.settings["Output folder"], report_name, logger=self.logger)

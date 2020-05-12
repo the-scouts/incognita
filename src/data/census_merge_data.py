@@ -16,11 +16,11 @@ class CensusMergeData(Base):
     def __init__(self):
         super().__init__()
 
-    def merge_data(self, census_data, data_to_merge, census_index_column):
+    def merge_data(self, census_data: pd.DataFrame, data_to_merge, census_index_column: str) -> pd.DataFrame:
         """Merge census data and input data on key and index.
 
-        :param census_data: pandas DataFrame with census data
-        :param data_to_merge: pandas DataFrame with index col as index to merge
+        :param pd.DataFrame census_data: pandas DataFrame with census data
+        :param pd.Series or pd.DataFrame data_to_merge: pandas DataFrame with index col as index to merge
         :param str census_index_column: column label to merge on in census data
 
         :return: Dataframe with merged data, and an indicator in each row signifying merge success
@@ -37,11 +37,11 @@ class CensusMergeData(Base):
         return census_data
 
     @staticmethod
-    def _postcode_cleaner(postcode):
+    def _postcode_cleaner(postcode: pd.Series) -> pd.Series:
         """Cleans postcode to ONS postcode directory format.
 
-        :param postcode: pandas series of postcodes
-        :return: cleaned postcode
+        :param pd.Series postcode: pandas series of postcodes
+        :return pd.Series: cleaned postcode
         """
 
         # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
@@ -49,7 +49,7 @@ class CensusMergeData(Base):
 
         # If length of postcode is 6 or 5 then insert 1 or 2 spaces.
         # 6 first as more common to speed up execution
-        def pad_to_seven(single_postcode):  # r'(.*?(?=.{3}$))(.{3}$)' (potential regex)
+        def _pad_to_seven(single_postcode):  # r'(.*?(?=.{3}$))(.{3}$)' (potential regex)
             if single_postcode == single_postcode:  # filters out NaNs
                 length = len(single_postcode)
                 if length == 6 or length == 5:
@@ -59,7 +59,7 @@ class CensusMergeData(Base):
         # Remove any whitespace and most non-alphanumeric chars
         # Convert input to uppercase (ONS Postcode Directory uses upper case)
         # Pads length as we use the 7 long version from the Postcode Directory
-        postcode = postcode.str.replace(regex_clean, "").str.upper().apply(lambda single_postcode: pad_to_seven(single_postcode))
+        postcode = postcode.str.replace(regex_clean, "").str.upper().apply(lambda single_postcode: _pad_to_seven(single_postcode))
 
         # Replaces shifted numbers with their number equivalents
         postcode = (
@@ -79,13 +79,13 @@ class CensusMergeData(Base):
         return postcode
 
     @staticmethod
-    def fill_unmerged_rows(census_data, row_has_merged, fields_data_types):
+    def fill_unmerged_rows(census_data: pd.DataFrame, row_has_merged: str, fields_data_types: dict) -> pd.DataFrame:
         """Fills rows that have not merged with default values
 
         Fills all passed fields in rows where there has been no data merged
         Fills categorical fields with ScoutCensus.DEFAULT_VALUE and numerical fields with 0
 
-        :param census_data: pandas DataFrame with census data
+        :param pd.DataFrame census_data: DataFrame with census data
         :param str row_has_merged: column label for column with booleans of if the merge was successful
         :param dict fields_data_types: dict of data types containing lists of fields
         :return: dataframe with filled values
@@ -97,13 +97,13 @@ class CensusMergeData(Base):
 
         return census_data
 
-    def clean_and_verify_postcode(self, census_data, postcode_column):
+    def clean_and_verify_postcode(self, census_data: pd.DataFrame, postcode_column: str) -> None:
         """Cleans postcode data and inserts clean postcodes and validity check
 
         Cleans postcode data from passed table and index
         Gets index of postcode column, and inserts new columns after postcode column
 
-        :param census_data: table of data with a postcode column
+        :param pd.DataFrame census_data: table of data with a postcode column
         :param str postcode_column: heading of the postcode column in the table
         :return: None
         """
@@ -124,7 +124,7 @@ class CensusMergeData(Base):
         census_data.insert(cleaned_postcode_index, cleaned_postcode_label, cleaned_postcode_column)
         census_data.insert(valid_postcode_index, valid_postcode_label, np.NaN)
 
-    def try_fix_invalid_postcodes(self, census_data, merge_test_column):
+    def try_fix_invalid_postcodes(self, census_data: pd.DataFrame, merge_test_column: pd.Series) -> pd.DataFrame:
         """Uses various methods attempting to provide every record with a valid postcode
 
         Currently only implemented for sections with youth membership.
@@ -136,10 +136,9 @@ class CensusMergeData(Base):
         - If group or district has no valid postcode in 2010-2016, use following years (e.g. if 2010 not valid, try 2011, 12, 13 etc.)
 
         :param census_data: Dataframe of census data including invalid postcodes
-        :param str merge_test_column: a column from the ONS Postcode Directory to test validity of the postcode by attempting to merge
+        :param pd.Series merge_test_column: a column from the ONS Postcode Directory to test validity of the postcode by attempting to merge
         :return: modified data table with more correct postcodes
         """
-        #
 
         self.logger.info("filling postcodes in sections with invalid postcodes")
 
@@ -163,23 +162,31 @@ class CensusMergeData(Base):
         index_cols = [district_id_label, group_id_label, section_id_label, year_label]
 
         # Columns to return to the .apply function to reduce memory usage
+        # fmt: off
         fields_for_postcode_lookup = [
-            # fmt: off
             valid_postcode_label, clean_postcode_label, year_label,
-            # fmt: on
             # Add to to items below if a new column is used in the fix process
             section_id_label,
             group_id_label,
             district_id_label,
         ]
+        # fmt: on
 
         # Sets a MultiIndex on the data table to enable fast searching and querying for data
         census_data = census_data.set_index(index_cols, drop=False)
 
-        def fill_invalid_section_postcodes(row_object, column_label, index_level):
-            # Gets all records with ID from given column and index level, then clears the indexing
-            # Returns the first row's postcode. As the index is sorted, this will return the earliest correct year.
-            # TODO change to use modal result instead of first (If section has no valid postcodes, use most common (mode) postcode from sections in group in that year, then try successive years)
+        def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: int):
+            """
+            Gets all records with ID from given column and index level, then clears the indexing
+            Returns the first row's postcode. As the index is sorted, this will return the earliest correct year.
+            TODO change to use modal result instead of first (If section has no valid postcodes, use most common
+                (modal) postcode from sections in group in that year, then try successive years)
+
+            :param row_object:
+            :param str column_label: Label to index for
+            :param int index_level: Level of the multiindex to use
+            :return: updated row_object
+            """
             try:
                 # get all rows from the lookup with the same ID in the passed column
                 valid_postcodes = valid_postcode_lookup.xs(row_object[column_label], level=index_level)
@@ -210,7 +217,7 @@ class CensusMergeData(Base):
 
             return row_object
 
-        def create_helper_tables(data, entity_type_list):
+        def _create_helper_tables(data: pd.DataFrame, entity_type_list: list) -> (pd.DataFrame, pd.DataFrame):
             # Filters records by type and returns a subset of columns to reduce memory usage
             records_filtered_fields = data.loc[data[entity_type_label].isin(entity_type_list), fields_for_postcode_lookup]
 
@@ -220,13 +227,13 @@ class CensusMergeData(Base):
 
             return records_filtered_fields, lookup
 
-        def run_fixer(data, column_label, index_level, records):
+        def _run_fixer(data: pd.DataFrame, column_label: str, index_level: int, records: pd.DataFrame) -> pd.DataFrame:
             # Index level: 0=District; 1=Group; 2=Section; 3=Year
 
             valid_postcodes_start = data[valid_postcode_label].sum()
 
             # Returns a column with updated postcodes
-            changed_records = records.loc[records[valid_postcode_label] == 0].apply(fill_invalid_section_postcodes, column_label=column_label, index_level=index_level, axis=1)
+            changed_records = records.loc[records[valid_postcode_label] == 0].apply(_fill_invalid_section_postcodes, column_label=column_label, index_level=index_level, axis=1)
 
             # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
             data.update(changed_records)
@@ -239,23 +246,23 @@ class CensusMergeData(Base):
             return data
 
         self.logger.info("Fill invalid section postcodes with valid section postcodes from 2019")
-        section_records, valid_postcode_lookup = create_helper_tables(census_data, section_types_list)
-        census_data = run_fixer(census_data, section_id_label, 2, section_records,)
+        section_records, valid_postcode_lookup = _create_helper_tables(census_data, section_types_list)
+        census_data = _run_fixer(census_data, section_id_label, 2, section_records,)
         section_records, valid_postcode_lookup = None, None
 
         self.logger.info("Fill invalid group-section postcodes with valid postcodes from same group")
-        group_section_records, valid_postcode_lookup = create_helper_tables(census_data, group_section_types_list)
-        census_data = run_fixer(census_data, group_id_label, 1, group_section_records,)
+        group_section_records, valid_postcode_lookup = _create_helper_tables(census_data, group_section_types_list)
+        census_data = _run_fixer(census_data, group_id_label, 1, group_section_records,)
         group_section_records, valid_postcode_lookup = None, None
 
         self.logger.info("Fill invalid district-section postcodes with valid postcodes from same district")
-        district_section_records, valid_postcode_lookup = create_helper_tables(census_data, district_section_types_list)
-        census_data = run_fixer(census_data, district_id_label, 0, district_section_records,)
+        district_section_records, valid_postcode_lookup = _create_helper_tables(census_data, district_section_types_list)
+        census_data = _run_fixer(census_data, district_id_label, 0, district_section_records,)
         district_section_records, valid_postcode_lookup = None, None
 
         self.logger.info("Fill invalid pre 2017 postcodes with valid postcodes from same entity")
-        pre_2017_section_records, valid_postcode_lookup = create_helper_tables(census_data, pre_2017_types_list)
-        census_data = run_fixer(census_data, section_id_label, 2, pre_2017_section_records,)
+        pre_2017_section_records, valid_postcode_lookup = _create_helper_tables(census_data, pre_2017_types_list)
+        census_data = _run_fixer(census_data, section_id_label, 2, pre_2017_section_records,)
         pre_2017_section_records, valid_postcode_lookup = None, None
 
         # Undoes the changes made in this method by removing the MultiIndex and
