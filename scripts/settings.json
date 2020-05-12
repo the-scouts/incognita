@@ -2,13 +2,15 @@
   "settings":
   {
     "Raw Census Extract location":  "Scout Census Data/Census 2020 Extract (1).csv",
-    "Scout Census location":  "Scout Census Data/Census 2020 Extract (1) with May 2019 fields.feather",
-    "Full ONS PD location":        "../data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv",
-    "Reduced ONS PD location": "../data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced.csv",
-    "ONS Names and codes folder": "../data/ONSPD_MAY_2019_UK/Documents/",
-    "National Statistical folder": "../data/National Statistical data/",
+    "Scout Census location":  "Scout Census Data/Census 2020 Extract (1) with May 2019 fields.csv",
+    "Full ONS PD location":        "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv",
+    "Reduced ONS PD location": "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced.csv",
+    "ONS Names and codes folder": "ONSPD_MAY_2019_UK/Documents/",
+    "National Statistical folder": "National Statistical data/",
+    "Boundaries folder": "Boundary shape files/",
+
     "Output folder": "../Output/",
-    "Boundaries folder": "../data/Boundary shape files/",
+
     "Scout Mappings":
     {
       "District":

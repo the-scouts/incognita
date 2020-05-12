@@ -6,7 +6,7 @@ Directory.
 This script has no command line options.
 """
 import json
-from src.utility import SCRIPTS_ROOT
+from src.utility import SCRIPTS_ROOT, DATA_ROOT
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     scout_data.data[column_labels["name"]["ITEM"]] = scout_data.data[column_labels["name"]["ITEM"]].str.replace("`", "")
 
     # load ONS postcode directory
-    ons_pd = ONSPostcodeDirectoryMay19(scout_data.settings["Full ONS PD location"])
+    ons_pd = ONSPostcodeDirectoryMay19(DATA_ROOT / scout_data.settings["Full ONS PD location"])
 
     # merge the census extract and ONS postcode directory, and save the data to file
     scout_data.merge_ons_postcode_directory(ons_pd)

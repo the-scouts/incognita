@@ -37,7 +37,7 @@ class ScoutData(Base):
         self.logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
-        census_path = self.settings["Scout Census location"] if not census_path else census_path
+        census_path = utility.DATA_ROOT / self.settings["Scout Census location"] if not census_path else census_path
         self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path)
         self.data: pd.DataFrame = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
@@ -46,9 +46,10 @@ class ScoutData(Base):
             self.logger.info("Loading ONS data")
             start_time = time.time()
 
-            # Check for ONS PD data existing
-            if ScoutCensus.column_labels["VALID_POSTCODE"] in self.data.columns:
-                self.ons_pd: ONSPostcodeDirectory = ONSPostcodeDirectoryMay19(self.settings["Reduced ONS PD location"], load_data=load_ons_pd_data)
+            has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
+
+            if has_ons_pd_data:
+                self.ons_pd = ONSPostcodeDirectoryMay19(utility.DATA_ROOT / self.settings["Reduced ONS PD location"], load_data=load_ons_pd_data)
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 

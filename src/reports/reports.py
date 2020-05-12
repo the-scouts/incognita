@@ -302,7 +302,8 @@ class Reports(Base):
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
         try:
-            age_profile_pd = pd.read_csv(self.settings["National Statistical folder"] + age_profile_path, dtype=data_types)
+            full_age_profile_path = utility.DATA_ROOT / self.settings["National Statistical folder"] / age_profile_path
+            age_profile_pd = pd.read_csv(full_age_profile_path, dtype=data_types)
         except TypeError:
             self.logger.error("Age profiles must be integers in each age category")
             raise
