@@ -1,3 +1,4 @@
+from src.utility import DATA_ROOT
 from src.data.ons_pd import ONSPostcodeDirectory
 
 
@@ -54,18 +55,19 @@ class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):
         )
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
-        self.NAMES_AND_CODES_FILE_LOCATION = self.settings["ONS Names and codes folder"]
+        names_codes_root = DATA_ROOT / self.settings["ONS Names and codes folder"]
+        boundaries_root = DATA_ROOT / self.settings["Boundaries folder"]
 
         # Paths to all shapefiles within the Boundaries folder
         # fmt: off
         shapefile_paths = {
-            "LADs": self.settings["Boundaries folder"] + r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp",
-            "County": self.settings["Boundaries folder"] + r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
-            "Ward": self.settings["Boundaries folder"] + r"Wards_May_2018_Boundaries\Wards_May_2018_Boundaries.shp",
-            "PCon": self.settings["Boundaries folder"] + r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
-            "LSOA": self.settings["Boundaries folder"] + r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp",
-            "MSOA": self.settings["Boundaries folder"] + r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
-            "IZ": self.settings["Boundaries folder"] + r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp"
+            "LADs": boundaries_root / r"Local_Authority_Districts_December_2018_Boundaries_UK_BGC\Local_Authority_Districts_December_2018_Boundaries_UK_BGC.shp",
+            "County": boundaries_root / r"Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK\Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "Ward": boundaries_root / r"Wards_May_2018_Boundaries\Wards_May_2018_Boundaries.shp",
+            "PCon": boundaries_root / r"Westminster_PCON_Dec_2017_Generalised_Clipped_UK\Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
+            "LSOA": boundaries_root / r"Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales\Lower_Layer_Super_Output_Areas_December_2011_Generalised_Clipped__Boundaries_in_England_and_Wales.shp",
+            "MSOA": boundaries_root / r"Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales\Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
+            "IZ": boundaries_root / r"SG_IntermediateZoneBdry_2011\SG_IntermediateZone_Bdry_2011.shp"
         }
         # fmt: on
 
@@ -74,37 +76,37 @@ class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):
         self.BOUNDARIES = {
             "lad": {
                 "name": "oslaua",
-                "codes": {"path": "LA_UA names and codes UK as at 12_18.csv", "key": "LAD18CD"},
+                "codes": {"path": names_codes_root / "LA_UA names and codes UK as at 12_18.csv", "key": "LAD18CD"},
                 "boundary": {"shapefile": shapefile_paths["LADs"], "key": "lad18cd", "name": "lad18nm",},
                 "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
             },
             "cty": {
                 "name": "oslaua",
-                "codes": {"path": "LA_UA names and codes UK as at 12_18.csv", "key": "LAD18CD"},
+                "codes": {"path": names_codes_root / "LA_UA names and codes UK as at 12_18.csv", "key": "LAD18CD"},
                 "boundary": {"shapefile": shapefile_paths["County"], "key": "ctyua17cd", "name": "ctyua17nm",},
                 "age_profile": {"path": None, "key": None},
             },
             "osward": {
                 "name": "osward",
-                "codes": {"path": "Ward names and codes UK as at 05_18.csv", "key": "WD18CD"},
+                "codes": {"path": names_codes_root / "Ward names and codes UK as at 05_18.csv", "key": "WD18CD"},
                 "boundary": {"shapefile": shapefile_paths["Ward"], "key": "wd18cd", "name": "wd18nm",},
                 "age_profile": {"path": None, "key": None},
             },
             "pcon": {
                 "name": "pcon",
-                "codes": {"path": "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv", "key": "None"},
+                "codes": {"path": names_codes_root / "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv", "key": "None"},
                 "boundary": {"shapefile": shapefile_paths["PCon"], "key": "pcon17cd",},
                 "age_profile": {"path": None, "key": None},
             },
             "lsoa": {
                 "name": "lsoa11",
-                "codes": {"path": "LSOA (2011) names and codes UK as at 12_12.csv", "key": "LSOA11CD"},
+                "codes": {"path": names_codes_root / "LSOA (2011) names and codes UK as at 12_12.csv", "key": "LSOA11CD"},
                 "boundary": {"shapefile": shapefile_paths["LSOA"], "key": "lsoa11cd", "name": "lsoa11nm",},
                 "age_profile": {"path": None, "key": None},
             },
             "msoa": {
                 "name": "msoa",
-                "codes": {"path": "MSOA (2011) names and codes UK as at 12_12.csv", "key": "None"},
+                "codes": {"path": names_codes_root / "MSOA (2011) names and codes UK as at 12_12.csv", "key": "None"},
                 "boundary": {"shapefile": shapefile_paths["MSOA"], "key": "msoa11cd",},
                 "age_profile": {"path": None, "key": None},
             },
