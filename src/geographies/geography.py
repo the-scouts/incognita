@@ -1,12 +1,15 @@
+from __future__ import annotations
 import pandas as pd
 import geopandas as gpd
 import shapely
+from typing import TYPE_CHECKING
 
 from src.base import Base
 
 # For type hints
-from src.data.ons_pd import ONSPostcodeDirectory
-from src.data.scout_data import ScoutData
+if TYPE_CHECKING:
+    from src.data.ons_pd import ONSPostcodeDirectory
+    from src.data.scout_data import ScoutData
 
 
 # noinspection PyUnresolvedReferences

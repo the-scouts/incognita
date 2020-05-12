@@ -1,7 +1,9 @@
+from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
 import time
+from typing import TYPE_CHECKING
 
 from src.base import Base
 from src.data.scout_census import ScoutCensus
@@ -10,7 +12,8 @@ from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 import src.utility as utility
 
 # type hints
-from src.data.ons_pd import ONSPostcodeDirectory
+if TYPE_CHECKING:
+    from src.data.ons_pd import ONSPostcodeDirectory
 
 
 class ScoutData(Base):
@@ -128,7 +131,7 @@ class ScoutData(Base):
         self.data.to_csv(output_path.with_suffix(".csv"), index=False, encoding="utf-8-sig")
         self.data.to_feather(output_path.with_suffix(".feather"))
 
-    def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
+    def filter_records(self: ScoutDataInterface, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
         """Filters the Census records by any field in ONS PD.
 
         :param str field: The field on which to filter

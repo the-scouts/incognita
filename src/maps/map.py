@@ -87,14 +87,13 @@ class Map(Base):
         # check that sections dataframe has data
         if sections.empty:
             return
-        
+
         # Sort sections dataframe
         sections = sections.sort_values("Object_ID").reset_index(drop=True)
 
         if not self._map_plotter.layers.get(layer["name"]):
             layer = dict(name="Sections", markers_clustered=False) if layer is None else layer
             self._map_plotter.add_layer(layer["name"], layer["markers_clustered"])
-
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
