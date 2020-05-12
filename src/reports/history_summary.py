@@ -5,21 +5,25 @@ from src.base import Base
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
+# noinspection PyUnreachableCode
+if False:
+    from src.data.scout_data import ScoutData
+
 
 class HistorySummary(Base):
-    def __init__(self, scout_data_object, **kwargs):
+    def __init__(self, scout_data_object: ScoutData, **kwargs):
         super().__init__(settings=True, **kwargs)
 
         self.scout_data = scout_data_object
 
-    def group_history_summary(self, years, report_name=None):
+    def group_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
         self.logger.info("Beginning group_history_summary")
         report = self._history_summary(years, "Group ID", ScoutCensus.column_labels["id"]["GROUP"], unit_type="Group")
         if report_name:
             utility.save_report(report, self.settings["Output folder"], report_name, logger=self.logger)
         return report
 
-    def section_history_summary(self, years, report_name=None):
+    def section_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
         # Works effectively for years after 2017
         self.logger.info("Beginning section_history_summary")
         report = self._history_summary(years, "compass ID", "compass")
@@ -27,7 +31,7 @@ class HistorySummary(Base):
             utility.save_report(report, self.settings["Output folder"], report_name, logger=self.logger)
         return report
 
-    def _history_summary(self, years, id_name, census_col, unit_type=None):
+    def _history_summary(self, years: list, id_name: str, census_col: str, unit_type: str = None) -> pd.DataFrame:
         sections_dict = ScoutCensus.column_labels["sections"]
 
         # Must have imd scores and deciles already in census_postcode_data.
@@ -69,7 +73,7 @@ class HistorySummary(Base):
         # values associated with that rank. This requires IMD decile to have been added beforehand
         imd_cols = ["clean_postcode", "ctry", "imd", "imd_decile"]
 
-        def imd_groupby(df: pd.DataFrame):
+        def _imd_groupby(df: pd.DataFrame):
             # To find the postcode and IMD for a range of Sections and Group records across several years.
             # Find the most recent year, and then choose the Postcode with the lowest IMD Rank.
             most_recent_year = df["Year"].max()
@@ -83,14 +87,14 @@ class HistorySummary(Base):
         sections_list = [sect for sect in sections_dict.keys() if sect != "Explorers" or sect != "Network"]
         adult_cols = ["Leaders", "SectAssistants", "OtherAdults"]  # TODO re add
 
-        def year_groupby(df):
-            dicts: pd.Series = df.groupby(["Year"], sort=True).apply(section_groupby).to_list()
+        def _year_groupby(df):
+            dicts: pd.Series = df.groupby(["Year"], sort=True).apply(_section_groupby).to_list()
             output = {}
             for row in dicts:
                 output = {**output, **row}
             return output
 
-        def section_groupby(df):
+        def _section_groupby(df):
             census_year = df.name
             output = {}
             for section in sections_list:
@@ -101,12 +105,12 @@ class HistorySummary(Base):
         # For each year, calculate and add number of beavers, cubs, scouts.  Explorers, Network deliberately omitted.
         # Expand series of dictionaries to a dataframe with the same index
         self.logger.info(f"Creating table of members by section and adults by year")
-        member_numbers_table = grouped_data.apply(year_groupby)
+        member_numbers_table = grouped_data.apply(_year_groupby)
         member_numbers_table = pd.DataFrame(member_numbers_table.to_list(), index=member_numbers_table.index)
 
         # apply the imd function and map country codes to country names
         self.logger.info(f"Creating table of IMD data and postcodes")
-        imd_table = grouped_data.apply(imd_groupby).droplevel(1)
+        imd_table = grouped_data.apply(_imd_groupby).droplevel(1)
         imd_table["IMD Country"] = imd_table["ctry"].map(self.scout_data.ons_pd.COUNTRY_CODES)
 
         # fmt: off
@@ -129,7 +133,7 @@ class HistorySummary(Base):
 
         return pd.DataFrame(history_summary_data, columns=output_columns)
 
-    def new_section_history_summary(self, years, report_name=None):
+    def new_section_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
         sections_dict = ScoutCensus.column_labels["sections"]
 
         # Given data on all sections, provides summary of all new sections, and

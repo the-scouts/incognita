@@ -2,6 +2,12 @@ import pandas as pd
 from pathlib import Path
 from src.data.scout_census import ScoutCensus
 
+# noinspection PyUnreachableCode
+if False:
+    import logging
+    from src.data.ons_pd import ONSPostcodeDirectory
+
+
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
@@ -10,21 +16,22 @@ def get_proj_root() -> Path:
     return Path(__file__).parent.parent
 
 
+DATA_ROOT = get_proj_root().joinpath("data")
 SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
 LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
 
 
-def filter_records(data: pd.DataFrame, field: str, value_list: list, logger, mask=False, exclusion_analysis=False):
+def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: logging.Logger, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
     """Filters the Census records by any field in ONS PD.
 
-    :param data:
+    :param pd.DataFrame data:
     :param str field: The field on which to filter
     :param list value_list: The values on which to filter
-    :param logger:
+    :param logging.Logger logger:
     :param bool mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
     :param bool exclusion_analysis:
 
-    :returns None: Nothing
+    :returns pd.DataFrame: Nothing
     """
     # Count number of rows
     original_records = len(data.index)
@@ -77,20 +84,19 @@ def filter_records(data: pd.DataFrame, field: str, value_list: list, logger, mas
     return data
 
 
-def section_from_type(section_type):
+def section_from_type(section_type: str) -> str:
     """returns section from section types lookup dict"""
     return section_types[section_type]
 
 
-def calc_imd_decile(imd_ranks, country_codes, ons_object):
+def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: ONSPostcodeDirectory) -> pd.Series:
     """
 
     :param pd.Series imd_ranks:
     :param pd.Series country_codes:
-    :param ons_object:
+    :param ONSPostcodeDirectory ons_object:
 
     :var pd.Series country_names:
-    :var pd.Series country_codes:
     :var pd.Series imd_max:
     :var pd.Series imd_deciles:
 
@@ -113,7 +119,7 @@ def calc_imd_decile(imd_ranks, country_codes, ons_object):
         raise Exception("No IMD values found to calculate deciles from")
 
 
-def _try_downcast(series):
+def _try_downcast(series: pd.Series) -> pd.Series:
     try:
         uint_series = series.astype("uint16")
         if series.equals(uint_series):
@@ -124,7 +130,7 @@ def _try_downcast(series):
         return series
 
 
-def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger=None):
+def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger: logging.Logger = None):
     if logger:
         logger.info(f"Writing to {report_name}")
     report.to_csv(output_path + report_name + ".csv", index=False, encoding="utf-8-sig")

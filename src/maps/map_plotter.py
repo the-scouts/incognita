@@ -9,6 +9,11 @@ import os
 from src.reports.reports import Reports
 from src.base import Base
 
+# noinspection PyUnreachableCode
+if False:
+    from pathlib import Path
+    from branca import colormap
+
 # WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
 # It is used by folium to plot the data.
 WGS_84 = "4326"
@@ -17,7 +22,7 @@ WGS_84 = "4326"
 class MapPlotter(Base):
     """This class enables easy plotting of maps with a shape file.
 
-    :param str out_file: path to save the map to
+    :param Path out_file: path to save the map to
 
     :var dictionary self.map_data: contains shapefile paths, and labels for region codes and names
     :var str self.CODE_COL: holds the name of the region class, e.g. oslaua, pcon
@@ -26,20 +31,20 @@ class MapPlotter(Base):
     :var self.map: holds the folium map object
     """
 
-    def __init__(self, out_file):
+    def __init__(self, out_file: Path):
         super().__init__()
 
-        self.out_file = out_file + ".html"
+        self.out_file: Path = out_file.with_suffix(".html")
 
         # Create folium map
-        self.map = folium.Map(location=[53.5, -1.49], zoom_start=6)
-        self.SCORE_COL = {}
-        self.layers = {}
+        self.map: folium.Map = folium.Map(location=[53.5, -1.49], zoom_start=6)
+        self.SCORE_COL: dict = {}
+        self.layers: dict = {}
 
-        self.score_col_label = None
-        self.code_name = None
-        self.CODE_COL = None
-        self.map_data: pd.DataFrame = None
+        self.score_col_label: str = None
+        self.code_name: str = None
+        self.CODE_COL: str = None
+        self.map_data: pd.DataFrame = pd.DataFrame()
 
         self.geo_data = None
 
@@ -70,7 +75,7 @@ class MapPlotter(Base):
         self.score_col_label = dimension["tooltip"]
         self.logger.info(f"Setting score column to {self.SCORE_COL[shapefile_name_column]} (displayed: {self.score_col_label})")
 
-    def add_layer(self, name, markers_clustered=False, show=True):
+    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True):
         """
         Adds a maker layer to the map
 
@@ -83,14 +88,14 @@ class MapPlotter(Base):
         else:
             self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
 
-    def _filter_shape_file(self, shape_file_path):
+    def _filter_shape_file(self, shape_file_path: Path):
         """Loads, filters and converts shapefiles for later use
 
         Loads shapefile from path into GeoPandas dataframe
         Filters out unneeded shapes within all shapes loaded
         Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
-        :param str shape_file_path: path to ESRI shapefile with region information
+        :param Path shape_file_path: path to ESRI shapefile with region information
         :return: None
         """
 
@@ -112,7 +117,7 @@ class MapPlotter(Base):
         self.geo_data = all_shapes.to_crs({"init": f"epsg:{WGS_84}"})
         # self.logger.debug(f"geo_data\n{self.geo_data}")
 
-    def add_areas(self, name, show, boundary_name, colourmap):
+    def add_areas(self, name: str, show: bool, boundary_name: str, colourmap: colormap.ColorMap):
         """Adds features from self.geo_data to map
 
         :param str name: the name of the Layer, as it will appear in the layer controls
@@ -144,7 +149,7 @@ class MapPlotter(Base):
         # fmt: on
         colourmap.add_to(self.map)
 
-    def _map_colourmap(self, properties, colourmap, boundary_name):
+    def _map_colourmap(self, properties: dict, colourmap: colormap.ColorMap, boundary_name: str) -> str:
         """Returns colour from colour map function and value
 
         :param properties: dictionary of properties
@@ -161,19 +166,19 @@ class MapPlotter(Base):
         else:
             return colourmap(area_score)
 
-    def add_marker(self, lat, long, popup, colour, layer_name="Sections"):
+    def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections"):
         """Adds a leaflet marker to the map using given values
 
         :param float lat: latitude of the marker
         :param float long: longitude of the marker
         :param folium.Popup popup: popup text for the marker
-        :param string colour: colour for the marker
-        :param string layer_name: name of the layer that markers are added to
+        :param str colour: colour for the marker
+        :param str layer_name: name of the layer that markers are added to
         :return: None
         """
         folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
 
-    def set_bounds(self, bounds):
+    def set_bounds(self, bounds: list):
         self.map.fit_bounds(bounds)
 
     def save(self):
@@ -184,4 +189,4 @@ class MapPlotter(Base):
 
     def show(self):
         """Show the file at self.out_file in the default browser. """
-        webbrowser.open("file://" + os.path.realpath(self.out_file))
+        webbrowser.open(self.out_file.resolve().as_uri())
