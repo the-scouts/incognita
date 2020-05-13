@@ -218,7 +218,7 @@ class Map(Base):
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-            self._map_plotter.add_marker(lat, long, popup, marker_colour, layer)
+            self._map_plotter.add_marker(lat, long, popup, marker_colour, layer["name"])
 
     def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False):
         """Filter sections and add to map.
