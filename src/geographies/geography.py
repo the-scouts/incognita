@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from src.data.ons_pd import ONSPostcodeDirectory
     from src.data.scout_data import ScoutData
 
+WGS_84 = 4326
+BNG = 27700
+
 
 # noinspection PyUnresolvedReferences
 class Geography(Base):
@@ -177,8 +180,8 @@ class Geography(Base):
 
         # Pivots the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        data_with_points.crs = {"init": "epsg:4326"}
-        data_with_points = data_with_points.to_crs({"init": "epsg:27700"})
+        data_with_points.crs = f"epsg:{WGS_84}"
+        data_with_points = data_with_points.to_crs(f"epsg:{BNG}")
         # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ordinates)
 
         self.logger.info(f"Filters for records that satisfy {field} in {value_list}")
