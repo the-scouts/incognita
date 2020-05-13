@@ -1,9 +1,9 @@
 {
   "settings":
   {
-    "Raw Census Extract location":  "Scout Census Data/Census 2020 Extract (1).csv",
-    "Scout Census location":  "Scout Census Data/Census 2020 Extract (1) with May 2019 fields.feather",
-    "Full ONS PD location":        "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv",
+    "Raw Census Extract location": "Scout Census Data/Census 2020 Extract (1).csv",
+    "Scout Census location": "Scout Census Data/Census 2020 Extract (1) with May 2019 fields.feather",
+    "Full ONS PD location": "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv",
     "Reduced ONS PD location": "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced.csv",
     "ONS Names and codes folder": "ONSPD_MAY_2019_UK/Documents/",
     "National Statistical folder": "National Statistical data/",
@@ -17,10 +17,7 @@
       {
         "name": "D_ID",
         "codes": {"path": "../data/Scout Census Data/district_id_mapping.csv", "key": "D_ID", "key_type": "Int32", "name": "D_name"},
-        "boundary":
-          {
-            "shapefile": "../src/scripts/districts_buffered.geojson", "key": "id", "name": "name"
-          },
+        "boundary": {"shapefile": "../src/scripts/districts_buffered.geojson", "key": "id", "name": "name"},
         "age_profile": null,
         "age_profile_code_col": null
       },
