@@ -79,7 +79,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "oslaua",
                 "codes": {
                     "path": names_codes_root / "LA_UA names and codes UK as at 12_19.csv",
-                    "key": "LAD19CD", "key_type": "object",
+                    "key": "LAD19CD", "key_type": "string",
                     "name": "LAD19NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["LADs"], "key": "lad19cd", "name": "lad19nm", },
@@ -90,7 +90,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "oslaua",
                 "codes": {
                     "path": names_codes_root / "LA_UA names and codes UK as at 12_19.csv",
-                    "key": "LAD19CD", "key_type": "object",
+                    "key": "LAD19CD", "key_type": "string",
                     "name": "LAD19NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["County"], "key": "ctyua17cd", "name": "ctyua17nm", },
@@ -101,7 +101,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "osward",
                 "codes": {
                     "path": names_codes_root / "Ward names and codes UK as at 05_19_NSPD.csv",
-                    "key": "WD19CD", "key_type": "object",
+                    "key": "WD19CD", "key_type": "string",
                     "name": "WD19NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["Ward"], "key": "wd19cd", "name": "wd19nm", },
@@ -112,7 +112,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "pcon",
                 "codes": {
                     "path": names_codes_root / "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv",
-                    "key": "PCON14CD", "key_type": "object",
+                    "key": "PCON14CD", "key_type": "string",
                     "name": "PCON14NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["PCon"], "key": "pcon17cd", "name": "pcon17nm", },
@@ -123,7 +123,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "lsoa11",
                 "codes": {
                     "path": names_codes_root / "LSOA (2011) names and codes UK as at 12_12.csv",
-                    "key": "LSOA11CD", "key_type": "object",
+                    "key": "LSOA11CD", "key_type": "string",
                     "name": "LSOA11NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["LSOA"], "key": "LSOA11CD", "name": "LSOA11NM", },
@@ -134,7 +134,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "msoa",
                 "codes": {
                     "path": names_codes_root / "MSOA (2011) names and codes UK as at 12_12.csv",
-                    "key": "MSOA11CD", "key_type": "object",
+                    "key": "MSOA11CD", "key_type": "string",
                     "name": "MSOA11NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["MSOA"], "key": "msoa11cd", "name": None, },
