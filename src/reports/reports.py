@@ -291,8 +291,8 @@ class Reports(Base):
         """
         geog_name: str = self.geography.type
         try:
-            age_profile_path: str = self.geography.age_profile_path
-            age_profile_key: str = self.geography.age_profile_key
+            age_profile_path = self.geography.age_profile_path
+            age_profile_key = self.geography.age_profile_key
         except KeyError:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 
@@ -303,8 +303,7 @@ class Reports(Base):
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
         try:
-            full_age_profile_path = utility.DATA_ROOT / self.settings["National Statistical folder"] / age_profile_path
-            age_profile_pd = pd.read_csv(full_age_profile_path, dtype=data_types)
+            age_profile_pd = pd.read_csv(age_profile_path, dtype=data_types)
         except TypeError:
             self.logger.error("Age profiles must be integers in each age category")
             raise

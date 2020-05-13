@@ -40,7 +40,7 @@ class ScoutData(Base):
         self.logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
-        census_path = utility.DATA_ROOT / self.settings["Scout Census location"] if not census_path else census_path
+        census_path = self.settings["Scout Census location"] if not census_path else census_path
         self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path)
         self.data: pd.DataFrame = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
@@ -131,7 +131,7 @@ class ScoutData(Base):
         self.data.to_csv(output_path.with_suffix(".csv"), index=False, encoding="utf-8-sig")
         self.data.to_feather(output_path.with_suffix(".feather"))
 
-    def filter_records(self: ScoutDataInterface, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
+    def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
         """Filters the Census records by any field in ONS PD.
 
         :param str field: The field on which to filter

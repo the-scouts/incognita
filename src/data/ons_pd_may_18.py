@@ -1,4 +1,3 @@
-from src.utility import DATA_ROOT
 from src.data.ons_pd import ONSPostcodeDirectory
 
 
@@ -55,8 +54,8 @@ class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):
         )
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
-        names_codes_root = DATA_ROOT / self.settings["ONS Names and codes folder"]
-        boundaries_root = DATA_ROOT / self.settings["Boundaries folder"]
+        names_codes_root = self.settings["ONS Names and codes folder"]
+        boundaries_root = self.settings["Boundaries folder"]
 
         # Paths to all shapefiles within the Boundaries folder
         # fmt: off

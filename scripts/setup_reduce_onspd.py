@@ -1,15 +1,14 @@
 import json
 
 import src.utility as utility
-from src.utility import SCRIPTS_ROOT, DATA_ROOT
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 
 if __name__ == "__main__":
-    with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
+    with open(utility.SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
         settings = json.load(read_file)["settings"]
     print("Starting")
 
-    ons_pd_location = DATA_ROOT / settings["Full ONS PD location"]
+    ons_pd_location = utility.DATA_ROOT / settings["Full ONS PD location"]
 
     # Load Full ONS Postcode Directory
     ons_pd = ONSPostcodeDirectoryMay19(ons_pd_location, load_data=True)
