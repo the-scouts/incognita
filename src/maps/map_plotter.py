@@ -34,7 +34,7 @@ class MapPlotter(Base):
     def __init__(self, out_file: Path):
         super().__init__()
 
-        self.out_file: Path = out_file.with_suffix(".html")
+        self.out_file: Path = out_file.with_suffix(".html").resolve()
 
         # Create folium map
         self.map: folium.Map = folium.Map(location=[53.5, -1.49], zoom_start=6)
@@ -185,8 +185,8 @@ class MapPlotter(Base):
         """Saves the folium map to a HTML file """
         # Add layer control to map
         folium.LayerControl(collapsed=False).add_to(self.map)
-        self.map.save(self.out_file)
+        self.map.save(f"{self.out_file}")
 
     def show(self):
         """Show the file at self.out_file in the default browser. """
-        webbrowser.open(self.out_file.resolve().as_uri())
+        webbrowser.open(self.out_file.as_uri())
