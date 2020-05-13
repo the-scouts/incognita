@@ -140,8 +140,8 @@ class Map(Base):
                 sections["marker_colour"] = colour
 
             # Areas outside the region_of_colour have markers coloured grey
-            if self.region_of_colour:
-                sections.loc[~sections[self.region_of_colour["column"]].isin(self.region_of_colour["value_list"]), "marker_colour"] = "gray"
+            if self._region_of_colour:
+                sections.loc[~sections[self._region_of_colour["column"]].isin(self._region_of_colour["value_list"]), "marker_colour"] = "gray"
 
             # fmt: off
             sections_info_table = pd.DataFrame({
