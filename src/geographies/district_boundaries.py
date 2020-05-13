@@ -6,6 +6,9 @@ from src.data.scout_data import ScoutData
 from src.base import Base
 from src.data.scout_census import ScoutCensus
 
+WGS_84 = 4326
+BNG = 27700
+
 
 # noinspection PyUnresolvedReferences
 # To solve warnings for shapely methods
@@ -44,11 +47,11 @@ class DistrictBoundaries(Base):
 
         # Uses the lat and long co-ordinates from above to create a GeoDataFrame
         all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat))
-        all_points.crs = {"init": "epsg:4326"}
+        all_points.crs = f"epsg:{WGS_84}"
 
         # Converts the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        all_points = all_points.to_crs({"init": "epsg:27700"})
+        all_points = all_points.to_crs(f"epsg:{BNG}")
         all_points.reset_index(inplace=True)
 
         self.logger.info(f"Found {len(all_points.index)} different Section points")
@@ -102,10 +105,10 @@ class DistrictBoundaries(Base):
                 data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon])
                 output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
 
-        output_gpd.crs = {"init": "epsg:27700"}
+        output_gpd.crs = f"epsg:{BNG}"
 
         # Convert co-ordinates back to WGS84, which uses latitude and longitude
-        output_gpd = output_gpd.to_crs({"init": "epsg:4326"})
+        output_gpd = output_gpd.to_crs(f"epsg:{WGS_84}")
         output_gpd.reset_index(drop=True, inplace=True)
 
         self.logger.debug(f"output gpd\n{output_gpd}")
