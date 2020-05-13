@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pandas as pd
 import collections
 
@@ -261,7 +262,7 @@ class Reports(Base):
 
         # areas_data holds area names and codes for each area
         # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = (self.geography.geography_region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True))
+        areas_data: pd.DataFrame = self.geography.geography_region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
 
         merged_dataframes = pd.concat(dataframes, axis=1)
         output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)

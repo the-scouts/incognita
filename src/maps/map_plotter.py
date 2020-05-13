@@ -1,10 +1,10 @@
+from __future__ import annotations
 import folium
 from folium.plugins import MarkerCluster
 from folium.map import FeatureGroup
 import geopandas as gpd
 import pandas as pd
 import webbrowser
-import os
 
 from src.reports.reports import Reports
 from src.base import Base
