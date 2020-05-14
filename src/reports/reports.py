@@ -52,6 +52,10 @@ class Reports(Base):
         "Explorers": {"ages": ["14", "15", "16", "17"]},
     }
 
+    def add_shapefile_data(self, shapefile_key):
+        self.scout_data.add_shape_data(shapefile_key, path=self.geography.shapefile_path)
+        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography_type})
+
     @time_function
     def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False):
 
@@ -95,8 +99,9 @@ class Reports(Base):
 
         count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
 
+        count_col: pd.Series = count_by_district_by_region["count"]
         nested_dict = collections.defaultdict(dict)
-        for keys, value in count_by_district_by_region["count"].iteritems():
+        for keys, value in count_col.iteritems():
             nested_dict[keys[0]][keys[1]] = value
 
         self.logger.debug("Finished mapping from ons boundary to district")
@@ -134,7 +139,7 @@ class Reports(Base):
             True if "waiting list total" in options else False
         # fmt: on
 
-        geog_name = self.geography.type  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography_type  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
@@ -196,7 +201,7 @@ class Reports(Base):
             return output
 
         def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
-            summed = group_df[[award_name, award_eligible,]].sum()
+            summed = group_df[[award_name, award_eligible]].sum()
             output = summed.to_dict()
             if summed[award_eligible] > 0:
                 output[f"%-{award_name}"] = (summed[award_name] * 100) / summed[award_eligible]
@@ -290,7 +295,7 @@ class Reports(Base):
 
         :returns pd.DataFrame: Uptake data of Scouts in the boundary
         """
-        geog_name: str = self.geography.type
+        geog_name: str = self.geography_type
         try:
             age_profile_path = self.geography.age_profile_path
             age_profile_key = self.geography.age_profile_key
