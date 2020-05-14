@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
+import geopandas as gpd
 import time
 from typing import TYPE_CHECKING
 
@@ -14,6 +15,8 @@ import src.utility as utility
 # type hints
 if TYPE_CHECKING:
     from src.data.ons_pd import ONSPostcodeDirectory
+
+WGS_84 = 4326
 
 
 class ScoutData(Base):
@@ -43,6 +46,7 @@ class ScoutData(Base):
         census_path = self.settings["Scout Census location"] if not census_path else census_path
         self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
+        self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
         if merged_csv:
@@ -142,3 +146,20 @@ class ScoutData(Base):
         :returns None: Nothing
         """
         self.data = utility.filter_records(self.data, field, value_list, self.logger, mask, exclusion_analysis)
+
+    def add_shape_data(self, shapes_key: str, path: str = None, gdf: gpd.GeoDataFrame = None):
+        if self.points_data.empty:
+            self.points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(self.data.long, self.data.lat))
+            self.points_data.crs = WGS_84
+
+        if path:
+            shapes = gpd.GeoDataFrame.from_file(path)
+        elif gdf is not None:
+            shapes = gdf
+        else:
+            raise ValueError("A path to a shapefile or a Ge")
+
+        geo_merged = gpd.sjoin(self.points_data, shapes.to_crs(f"epsg:{WGS_84}"), how="left", op="intersects")
+        merged = self.data.merge(geo_merged[[shapes_key]], how="left", left_index=True, right_index=True)
+        assert self.data.equals(merged[self.data.columns])
+        self.data = merged
