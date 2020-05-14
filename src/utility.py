@@ -56,8 +56,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: log
     logger.info(f"Resulting in {remaining_records} records remaining.")
 
     if exclusion_analysis:
-        tuples = [(sections_dict[section]["type"], sections_dict[section]["total"]) for section in sections_dict.keys()]
-        cols = [ScoutCensus.column_labels["UNIT_TYPE"]] + [item for sub in tuples for item in sub]
+        cols = [ScoutCensus.column_labels["UNIT_TYPE"]] + [sections_dict[section]["total"] for section in sections_dict.keys()]
         if not all([col in data.columns for col in cols]):
             raise ValueError("Required columns are not in dataset!\n" f"Required columns are: {cols}.\n" f"Your columns are: {data.columns.to_list()}")
 
