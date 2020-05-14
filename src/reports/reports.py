@@ -321,8 +321,9 @@ class Reports(Base):
         age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1)
 
         # merge population data
-        cols = [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"] + [age_profile_key]
-        uptake_report = boundary_report.merge(age_profile_pd[cols], how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
+        cols = [age_profile_key] + [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"]
+        reduced_age_profile_pd = age_profile_pd[cols]
+        uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
         del uptake_report[age_profile_key]
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
