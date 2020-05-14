@@ -331,8 +331,12 @@ class Reports(Base):
 
             ons_data_subset = self.ons_pd.data[[geog_name, pivot_key]]
             merged_age_profile = reduced_age_profile_pd.merge(ons_data_subset, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
-            merged_age_profile = merged_age_profile.dropna(subset=[geog_name])
-            pivoted_age_profile = merged_age_profile.groupby(geog_name).sum().astype("UInt32")
+            merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_name])
+            pivoted_age_profile = merged_age_profile_no_na.groupby(geog_name).sum().astype("UInt32")
+
+            # Check we did not accidentally expand the population!
+            assert merged_age_profile["Pop_All"].sum() == reduced_age_profile_pd["Pop_All"].sum()  # this will fail
+            assert pivoted_age_profile["Pop_All"].sum() == merged_age_profile_no_na["Pop_All"].sum()
             uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on=geog_name, right_index=True, sort=False)
         else:
             uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
