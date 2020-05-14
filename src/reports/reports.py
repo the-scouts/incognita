@@ -53,7 +53,7 @@ class Reports(Base):
     }
 
     def add_shapefile_data(self, shapefile_key):
-        self.scout_data.add_shape_data(shapefile_key, path=self.geography.shapefile_path)
+        self.scout_data.add_shape_data(shapefile_key, path=self.shapefile_path)
         self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography_type})
 
     @time_function

@@ -147,7 +147,7 @@ class ScoutData(Base):
         """
         self.data = utility.filter_records(self.data, field, value_list, self.logger, mask, exclusion_analysis)
 
-    def add_shape_data(self, shapes_key: str, path: str = None, gdf: gpd.GeoDataFrame = None):
+    def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None):
         if self.points_data.empty:
             self.points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(self.data.long, self.data.lat))
             self.points_data.crs = WGS_84
