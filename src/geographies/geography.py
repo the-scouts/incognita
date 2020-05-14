@@ -66,11 +66,15 @@ class Geography(Base):
 
     @property
     def age_profile_path(self) -> Path:
-        return DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"]["path"]
+        return DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
     def age_profile_key(self) -> str:
-        return self.geography_metadata_dict["age_profile"]["key"]
+        return self.geography_metadata_dict["age_profile"].get("key")
+
+    @property
+    def age_profile_pivot(self) -> str:
+        return self.geography_metadata_dict["age_profile"].get("pivot_key")
 
     def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
