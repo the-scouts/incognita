@@ -68,3 +68,13 @@ def test_filter_records_exclusion(scout_data_factory, data):
 
     expected_outcome = data.loc[data[COLUMN_NAME] == first_country_code]
     assert scout_data_stub.data.equals(expected_outcome)
+
+
+@hypothesis.given(CountryDataFrame)
+def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_factory, data):
+    first_country_code = data.loc[0, COLUMN_NAME]
+    scout_data_stub = scout_data_factory(data)
+
+    with pytest.raises(ValueError):
+        scout_data_stub.filter_records(field=COLUMN_NAME, value_list=[first_country_code], mask=False, exclusion_analysis=True)
+        scout_data_stub.filter_records(field=COLUMN_NAME, value_list=[first_country_code], mask=True, exclusion_analysis=True)
