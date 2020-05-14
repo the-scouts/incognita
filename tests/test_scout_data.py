@@ -78,3 +78,22 @@ def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_fac
     with pytest.raises(ValueError):
         scout_data_stub.filter_records(field=COLUMN_NAME, value_list=[first_country_code], mask=False, exclusion_analysis=True)
         scout_data_stub.filter_records(field=COLUMN_NAME, value_list=[first_country_code], mask=True, exclusion_analysis=True)
+
+
+@hypothesis.given(LocationDataFrame)
+def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame, data):
+    sd = scout_data_factory(data)
+    sd.add_shape_data("id", gdf=blank_geo_data_frame)
+
+    points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat))
+    assert points_data.equals(sd.points_data[points_data.columns])
+
+
+@hypothesis.given(LocationDataFrame)
+def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame, data):
+    sd = scout_data_factory(data)
+    sd.add_shape_data("id", gdf=blank_geo_data_frame)
+
+    points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat))
+    merged = data.merge(gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")[["id"]], how="left", left_index=True, right_index=True)
+    assert sd.data.equals(merged)
