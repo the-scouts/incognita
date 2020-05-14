@@ -295,7 +295,7 @@ class Reports(Base):
 
         :returns pd.DataFrame: Uptake data of Scouts in the boundary
         """
-        geog_name: str = self.geography_type
+        geog_name = self.geography_type
         try:
             age_profile_path = self.geography.age_profile_path
             age_profile_key = self.geography.age_profile_key
@@ -316,15 +316,27 @@ class Reports(Base):
 
         # population data
         for section, ages in Reports.SECTION_AGES.items():
-            age_profile_pd[f"Pop_{section}"] = age_profile_pd[ages["ages"]].sum(axis=1)
-            age_profile_pd[f"Pop_{section}"] += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
-        age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1)
+            section_population = age_profile_pd[ages["ages"]].sum(axis=1)
+            section_population += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
+            age_profile_pd[f"Pop_{section}"] = section_population.astype("UInt32")
+        age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1).astype("UInt32")
 
         # merge population data
         cols = [age_profile_key] + [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"]
         reduced_age_profile_pd = age_profile_pd[cols]
-        uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
-        del uptake_report[age_profile_key]
+
+        # Pivot age profile to current geography type if needed
+        if self.geography.age_profile_pivot and self.geography.age_profile_pivot != geog_name:
+            pivot_key = self.geography.age_profile_pivot
+
+            ons_data_subset = self.ons_pd.data[[geog_name, pivot_key]]
+            merged_age_profile = reduced_age_profile_pd.merge(ons_data_subset, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
+            merged_age_profile = merged_age_profile.dropna(subset=[geog_name])
+            pivoted_age_profile = merged_age_profile.groupby(geog_name).sum().astype("UInt32")
+            uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on=geog_name, right_index=True, sort=False)
+        else:
+            uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
+            del uptake_report[age_profile_key]
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
 
