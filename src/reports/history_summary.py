@@ -5,8 +5,9 @@ from src.base import Base
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
-# noinspection PyUnreachableCode
-if False:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from src.data.scout_data import ScoutData
 
 

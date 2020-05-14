@@ -8,8 +8,9 @@ from src.base import Base, time_function
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
-# noinspection PyUnreachableCode
-if False:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from pathlib import Path
     from src.data.ons_pd import ONSPostcodeDirectory
 

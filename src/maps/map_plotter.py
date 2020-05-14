@@ -9,8 +9,9 @@ import webbrowser
 from src.reports.reports import Reports
 from src.base import Base
 
-# noinspection PyUnreachableCode
-if False:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from pathlib import Path
     from branca import colormap
 
