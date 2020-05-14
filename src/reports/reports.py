@@ -205,7 +205,7 @@ class Reports(Base):
             # Divides total # of awards by the number of Scout Districts that the ONS Region is in
             code = group_df.name
             district_ids = awards_mapping.get(code, {}) if not geog_name == "D_ID" else {code: 1}
-            awards_regions_data = awards_data.loc[[id for id in district_ids.keys()]].sum()
+            awards_regions_data = awards_data.loc[[d_id for d_id in district_ids.keys()]].sum()
 
             output["QSA"] = awards_regions_data["QSA"]
             if awards_regions_data["qsa_eligible"] > 0:
