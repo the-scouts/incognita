@@ -49,9 +49,7 @@ class ONSPostcodeDirectoryMay18(ONSPostcodeDirectory):
     }
 
     def __init__(self, ons_pd_csv_path, load_data=True):
-        ONSPostcodeDirectory.__init__(
-            self, ons_pd_csv_path, load_data, ONSPostcodeDirectoryMay18.index_column, ONSPostcodeDirectoryMay18.fields, ONSPostcodeDirectoryMay18.data_types,
-        )
+        super().__init__(ons_pd_csv_path, load_data, ONSPostcodeDirectoryMay18.index_column, ONSPostcodeDirectoryMay18.fields, ONSPostcodeDirectoryMay18.data_types)
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
         names_codes_root = self.settings["ONS Names and codes folder"]
