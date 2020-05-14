@@ -15,6 +15,7 @@ dependencies:
   - pyarrow
   # Development requirements:
   - pytest
+  - hypothesis
   - pytest-cov
   - pre-commit
   - black
