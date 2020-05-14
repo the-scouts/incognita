@@ -97,7 +97,11 @@ class ScoutCensus:
     UNIT_LEVEL_GROUP = "Group"
     UNIT_LEVEL_DISTRICT = "District"
 
-    def __init__(self, census_file_path: Path):
+    def __init__(self, census_file_path: Path, load_data=True):
+        if not load_data:
+            self.data = pd.DataFrame()
+            return
+
         cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
         cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "Young_Leader_Unit"]
         # fmt: off

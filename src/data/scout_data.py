@@ -32,7 +32,7 @@ class ScoutData(Base):
 
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
-    def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None):
+    def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None, load_census_data=True):
         super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
         self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
@@ -41,7 +41,7 @@ class ScoutData(Base):
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
         census_path = self.settings["Scout Census location"] if not census_path else census_path
-        self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path)
+        self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
         self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
