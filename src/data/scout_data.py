@@ -16,8 +16,6 @@ import src.utility as utility
 if TYPE_CHECKING:
     from src.data.ons_pd import ONSPostcodeDirectory
 
-WGS_84 = 4326
-
 
 class ScoutData(Base):
     """Provides access to manipulate and process data
@@ -150,7 +148,7 @@ class ScoutData(Base):
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None):
         if self.points_data.empty:
             self.points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(self.data.long, self.data.lat))
-            self.points_data.crs = WGS_84
+            self.points_data.crs = utility.WGS_84
 
         if path:
             shapes = gpd.GeoDataFrame.from_file(path)
@@ -159,7 +157,7 @@ class ScoutData(Base):
         else:
             raise ValueError("A path to a shapefile or a Ge")
 
-        geo_merged = gpd.sjoin(self.points_data, shapes.to_crs(f"epsg:{WGS_84}"), how="left", op="intersects")
+        geo_merged = gpd.sjoin(self.points_data, shapes.to_crs(f"epsg:{utility.WGS_84}"), how="left", op="intersects")
         merged = self.data.merge(geo_merged[[shapes_key]], how="left", left_index=True, right_index=True)
         assert self.data.equals(merged[self.data.columns])
         self.data = merged

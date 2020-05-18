@@ -5,15 +5,12 @@ import shapely
 from typing import TYPE_CHECKING
 
 from src.base import Base
-from src.utility import DATA_ROOT
+import src.utility as utility
 
 # For type hints
 if TYPE_CHECKING:
     from src.data.ons_pd import ONSPostcodeDirectory
     from src.data.scout_data import ScoutData
-
-WGS_84 = 4326
-BNG = 27700
 
 
 # noinspection PyUnresolvedReferences
@@ -46,7 +43,7 @@ class Geography(Base):
 
     @property
     def codes_map_path(self) -> Path:
-        return DATA_ROOT / self.geography_metadata_dict["codes"].get("path")
+        return utility.DATA_ROOT / self.geography_metadata_dict["codes"].get("path")
 
     @property
     def codes_map_name(self) -> str:
@@ -62,11 +59,11 @@ class Geography(Base):
 
     @property
     def shapefile_path(self) -> Path:
-        return DATA_ROOT / self.geography_metadata_dict["boundary"]["shapefile"]
+        return utility.DATA_ROOT / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        return DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"].get("path")
+        return utility.DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
     def age_profile_key(self) -> str:
@@ -191,8 +188,8 @@ class Geography(Base):
 
         # Pivots the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        data_with_points.crs = f"epsg:{WGS_84}"
-        data_with_points = data_with_points.to_crs(f"epsg:{BNG}")
+        data_with_points.crs = f"epsg:{utility.WGS_84}"
+        data_with_points = data_with_points.to_crs(f"epsg:{utility.BNG}")
         # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ordinates)
 
         self.logger.info(f"Filters for records that satisfy {field} in {value_list}")
