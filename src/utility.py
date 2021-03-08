@@ -21,6 +21,10 @@ DATA_ROOT = get_proj_root().joinpath("data")
 SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
 LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
 
+# EPSG values for the co-ordinate reference systems that we use
+WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
+BNG = 27700  # British National Grid
+
 
 def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: logging.Logger, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
     """Filters the Census records by any field in ONS PD.

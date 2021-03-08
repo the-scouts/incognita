@@ -15,8 +15,6 @@ from src.data.scout_census import ScoutCensus
 
 from typing import Dict, Union
 
-WGS_84 = 4326
-
 
 class Map(Base):
     def __init__(self, scout_data_object: ScoutData, map_name: str):
@@ -82,7 +80,6 @@ class Map(Base):
             - awards
         :param dict layer: Name & properties of layer on map to add meeting places to.
             - Default = {"name"="Sections", "markers_clustered"=False}
-        :param bool cluster_markers: If true markers are clustered
         """
         self.logger.info("Adding section markers to map")
 
@@ -277,15 +274,15 @@ class Map(Base):
             # Merge with ONS Postcode Directory to obtain dataframe with lat/long
             ons_pd_data = self.scout_data.ons_pd.data
             custom_data = pd.merge(custom_data, ons_pd_data, how="left", left_on=location_cols, right_index=True, sort=False)
-            location_cols = {"crs": WGS_84, "x": "long", "y": "lat"}
+            location_cols = {"crs": utility.WGS_84, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
         custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]),)
 
         # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
-        if location_cols["crs"] != WGS_84:
+        if location_cols["crs"] != utility.WGS_84:
             custom_data.crs = f"epsg:{location_cols['crs']}"
-            custom_data = custom_data.to_crs(f"epsg:{WGS_84}")
+            custom_data = custom_data.to_crs(f"epsg:{utility.WGS_84}")
 
         self._map_plotter.add_layer(layer_name, markers_clustered)
 

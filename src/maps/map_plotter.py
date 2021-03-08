@@ -8,16 +8,13 @@ import webbrowser
 
 from src.reports.reports import Reports
 from src.base import Base
+import src.utility as utility
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
     from branca import colormap
-
-# WGS_84 (World Geodetic System 1984) is a system for global positioning used  in GPS.
-# It is used by folium to plot the data.
-WGS_84 = 4326
 
 
 class MapPlotter(Base):
@@ -115,7 +112,7 @@ class MapPlotter(Base):
         self.logger.info(f"Resulting in {len(all_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
-        self.geo_data = all_shapes.to_crs(f"epsg:{WGS_84}")
+        self.geo_data = all_shapes.to_crs(f"epsg:{utility.WGS_84}")
         # self.logger.debug(f"geo_data\n{self.geo_data}")
 
     def add_areas(self, name: str, show: bool, boundary_name: str, colourmap: colormap.ColorMap):
