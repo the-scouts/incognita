@@ -7,13 +7,28 @@ on:
 
 jobs:
   testing-pip:
+    name: Testing using pip
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip files
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -24,134 +39,48 @@ jobs:
         run: |
           pip install pytest-cov codecov
 
-      - name: Test with pytest
+      - name: Test with pytest, generate coverage report
         run: |
           python -m pytest --cov=./
 
-#      - name: Upload to CodeCov
-#        uses: codecov/codecov-action@v1
+      - name: Upload coverage report to CodeCov
+        uses: codecov/codecov-action@v1
 
   testing-conda:
+    name: Testing using conda (mambaforge)
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2.0.1
-        with:
-          activate-environment: scouts_mapping
-          channel-priority: strict
-          environment-file: environment.yml
-
-      - name: Install pytest-cov, codecov
+    defaults:
+      run:
+        # https://github.com/conda-incubator/setup-miniconda#use-a-default-shell
         shell: bash -l {0}
-        run: |
-          conda install pytest-cov codecov
 
-      - name: Test with pytest
-        run: |
-          python -m pytest --cov=./
-
-#      - name: Upload to CodeCov
-#        uses: codecov/codecov-action@v1
-
-  testing-miniforge:
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2.0.1
+      - name: Cache conda files
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/conda_pkgs_dir
+            /opt/hostedtoolcache/Mambaforge
+          key:
+            ${{ runner.os }}-mambaforge-${{ hashFiles('environment.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-mambaforge-
+
+      - name: Setup Miniconda (Mambaforge)
+        uses: conda-incubator/setup-miniconda@master
         with:
           activate-environment: scouts_mapping
           environment-file: environment.yml
           channel-priority: strict
-          miniforge-version: latest
-
-      - name: Install pytest-cov, codecov
-        shell: bash -l {0}
-        run: |
-          conda install pytest-cov codecov
-
-      - name: Test with pytest
-        run: |
-          python -m pytest --cov=./
-
-#      - name: Upload to CodeCov
-#        uses: codecov/codecov-action@v1
-
-  testing-mamba:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2.0.1
-        with:
-          activate-environment: scouts_mapping
-          environment-file: environment.yml
-          channel-priority: strict
-          mamba-version: "*"
-
-      - name: Install pytest-cov, codecov
-        shell: bash -l {0}
-        run: |
-          mamba install pytest-cov codecov
-
-      - name: Test with pytest
-        run: |
-          python -m pytest --cov=./
-
-#      - name: Upload to CodeCov
-#        uses: codecov/codecov-action@v1
-
-  testing-mambaforge:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2.0.1
-        with:
-          activate-environment: scouts_mapping
-          environment-file: environment.yml
-          channel-priority: strict
+          # Mamba:
           miniforge-variant: Mambaforge
-          mamba-version: "*"
           miniforge-version: latest
-
-      - name: Install pytest-cov, codecov
-        shell: bash -l {0}
-        run: |
-          mamba install pytest-cov codecov
+          use-mamba: true
+          # This needs to be set for caching to work properly
+          use-only-tar-bz2: true
 
       - name: Test with pytest
         run: |
-          python -m pytest --cov=./
-
-#      - name: Upload to CodeCov
-#        uses: codecov/codecov-action@v1
-
-  testing-native-conda:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Miniconda
-        shell: bash -l {0}
-        run: |
-          conda env update
-          conda activate scouts_mapping
-
-      - name: Install pytest-cov, codecov
-        shell: bash -l {0}
-        run: |
-          mamba install pytest-cov codecov
-
-      - name: Test with pytest
-        run: |
-          python -m pytest --cov=./
-
-#      - name: Upload to CodeCov
-#        uses: codecov/codecov-action@v1
-
+          python -m pytest
