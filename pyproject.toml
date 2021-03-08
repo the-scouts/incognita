@@ -1,2 +1,13 @@
+# Black configuration
 [tool.black]
 line-length = 180
+target-version = ["py38"]  # Remember to change this if we change pins from Python 3.9!  TODO black does not yet support 3.9 (13-01-2021)
+
+# isort configuration
+[tool.isort]
+line_length = 180
+profile = "google"
+py_version = "39"
+skip_gitignore = true
+known_tests = ['tests']
+sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'FIRSTPARTY', "TESTS", 'LOCALFOLDER']

@@ -2,7 +2,7 @@
 repo:
   - ./*
 
-# Add 'tests' to any changes within 'tests' folder or any subfolders
+# Add 'tests' to any changes within 'tests' folder or any sub-folders
 tests:
   - tests/**/*
 
@@ -10,6 +10,6 @@ tests:
 scripts:
   - scripts/*
 
-# Add 'documentation' to any changes within 'docs' folder or any subfolders
+# Add 'documentation' to any changes within 'docs' folder or any sub-folders
 documentation:
   - docs/**/*
