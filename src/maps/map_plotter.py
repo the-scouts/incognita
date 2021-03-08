@@ -9,8 +9,9 @@ import webbrowser
 from src.reports.reports import Reports
 from src.base import Base
 
-# noinspection PyUnreachableCode
-if False:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from pathlib import Path
     from branca import colormap
 
@@ -41,9 +42,9 @@ class MapPlotter(Base):
         self.SCORE_COL: dict = {}
         self.layers: dict = {}
 
-        self.score_col_label: str = None
-        self.code_name: str = None
-        self.CODE_COL: str = None
+        self.score_col_label: str = ""
+        self.code_name: str = ""
+        self.CODE_COL: str = ""
         self.map_data: pd.DataFrame = pd.DataFrame()
 
         self.geo_data = None
@@ -109,7 +110,7 @@ class MapPlotter(Base):
         self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
         self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
 
-        list_codes = self.map_data[self.CODE_COL].astype(str).to_list()
+        list_codes = self.map_data[self.CODE_COL].drop_duplicates().astype(str).to_list()
         all_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
         self.logger.info(f"Resulting in {len(all_shapes.index)} shapes")
 

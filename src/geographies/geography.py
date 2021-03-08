@@ -5,6 +5,7 @@ import shapely
 from typing import TYPE_CHECKING
 
 from src.base import Base
+from src.utility import DATA_ROOT
 
 # For type hints
 if TYPE_CHECKING:
@@ -40,6 +41,14 @@ class Geography(Base):
         return self.geography_metadata_dict["codes"]["key"]
 
     @property
+    def codes_map_key_type(self) -> str:
+        return self.geography_metadata_dict["codes"]["key_type"]
+
+    @property
+    def codes_map_path(self) -> Path:
+        return DATA_ROOT / self.geography_metadata_dict["codes"].get("path")
+
+    @property
     def codes_map_name(self) -> str:
         return self.geography_metadata_dict["codes"]["name"]
 
@@ -53,15 +62,19 @@ class Geography(Base):
 
     @property
     def shapefile_path(self) -> Path:
-        return self.geography_metadata_dict["boundary"]["shapefile"]
+        return DATA_ROOT / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        return self.geography_metadata_dict["age_profile"]["path"]
+        return DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
     def age_profile_key(self) -> str:
-        return self.geography_metadata_dict["age_profile"]["key"]
+        return self.geography_metadata_dict["age_profile"].get("key")
+
+    @property
+    def age_profile_pivot(self) -> str:
+        return self.geography_metadata_dict["age_profile"].get("pivot_key")
 
     def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
@@ -80,11 +93,9 @@ class Geography(Base):
         boundaries_dict = {**ons_pd.BOUNDARIES, **self.settings["Scout Mappings"]}
         if geography_name in boundaries_dict.keys():
             self.geography_metadata_dict = boundaries_dict[geography_name]
-            boundary_codes_dict = self.geography_metadata_dict["codes"]
 
-            self.geography_region_ids_mapping = pd.read_csv(
-                boundary_codes_dict.get("path"), dtype={boundary_codes_dict["key"]: boundary_codes_dict["key_type"], boundary_codes_dict["name"]: "object",},
-            )  # Names & Codes file path
+            # Names & Codes file path
+            self.geography_region_ids_mapping = pd.read_csv(self.codes_map_path, dtype={self.codes_map_key: self.codes_map_key_type, self.codes_map_name: "string"})
         else:
             raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 

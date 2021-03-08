@@ -1,24 +1,25 @@
 import json
 import logging
+from numbers import Real
 import pytest
 
 from src.base import Base, time_function
 from src.utility import LOGS_ROOT, SCRIPTS_ROOT
 
 
-def example_function(number1, number2):
+def add(number1: Real, number2: Real) -> Real:
     return number1 + number2
 
 
 class ExampleClassLogger(Base):
-    def __init__(self, path=True):
+    def __init__(self, path: bool = True):
         if path:
-            super().__init__(log_path=str(LOGS_ROOT.joinpath("tests.log")))
+            super().__init__(log_path=str(LOGS_ROOT / "tests.log"))
         else:
             super().__init__()
 
     @time_function
-    def example_function(self, number1, number2):
+    def add(number1: Real, number2: Real) -> Real:
         self.logger.info("Example Function")
         return number1 + number2
 
@@ -32,7 +33,7 @@ class ExampleClassSettings(Base):
 def ec_logger():
     """Returns an ExampleClassLogger instance"""
 
-    def _instantiator(path=True):
+    def _instantiator(path: bool = True) -> ExampleClassLogger:
         return ExampleClassLogger(path)
 
     return _instantiator
@@ -45,7 +46,7 @@ def ec_settings():
 
 
 def test_time_function_wraps_function():
-    assert time_function(example_function)(2, 2) == example_function(2, 2)
+    assert time_function(add)(2, 2) == add(2, 2)
 
 
 # noinspection PyTypeChecker
@@ -67,17 +68,17 @@ def test_base_settings_are_accurate(ec_settings):
 
 def test_time_function_no_logger_entity():
     try:
-        time_function(example_function)(2, 2)
+        time_function(add)(2, 2)
     except AttributeError:
         pytest.fail(f"Unexpected AttributeError in base.test_function")
 
 
 def test_time_function_logger_output(caplog, ec_logger):
     caplog.set_level(logging.INFO)
-    ec_logger().example_function(2, 2)
+    ec_logger().add(2, 2)
 
-    assert "Calling function example_function" in caplog.text
-    assert "example_function took 0.0" in caplog.text
+    assert "Calling function add" in caplog.text
+    assert "add took 0.0" in caplog.text
 
 
 def test_base_logger_creation(ec_logger):

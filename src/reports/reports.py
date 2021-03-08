@@ -8,8 +8,9 @@ from src.base import Base, time_function
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
-# noinspection PyUnreachableCode
-if False:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from pathlib import Path
     from src.data.ons_pd import ONSPostcodeDirectory
 
@@ -50,6 +51,10 @@ class Reports(Base):
         "Scouts": {"halves": ["10"], "ages": ["11", "12", "13"]},
         "Explorers": {"ages": ["14", "15", "16", "17"]},
     }
+
+    def add_shapefile_data(self, shapefile_key):
+        self.scout_data.add_shape_data(shapefile_key, path=self.shapefile_path)
+        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography_type})
 
     @time_function
     def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False):
@@ -94,8 +99,9 @@ class Reports(Base):
 
         count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
 
+        count_col: pd.Series = count_by_district_by_region["count"]
         nested_dict = collections.defaultdict(dict)
-        for keys, value in count_by_district_by_region["count"].iteritems():
+        for keys, value in count_col.iteritems():
             nested_dict[keys[0]][keys[1]] = value
 
         self.logger.debug("Finished mapping from ons boundary to district")
@@ -133,7 +139,7 @@ class Reports(Base):
             True if "waiting list total" in options else False
         # fmt: on
 
-        geog_name = self.geography.type  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography_type  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
@@ -195,7 +201,7 @@ class Reports(Base):
             return output
 
         def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
-            summed = group_df[[award_name, award_eligible,]].sum()
+            summed = group_df[[award_name, award_eligible]].sum()
             output = summed.to_dict()
             if summed[award_eligible] > 0:
                 output[f"%-{award_name}"] = (summed[award_name] * 100) / summed[award_eligible]
@@ -204,7 +210,7 @@ class Reports(Base):
             # Divides total # of awards by the number of Scout Districts that the ONS Region is in
             code = group_df.name
             district_ids = awards_mapping.get(code, {}) if not geog_name == "D_ID" else {code: 1}
-            awards_regions_data = awards_data.loc[[id for id in district_ids.keys()]].sum()
+            awards_regions_data = awards_data.loc[[d_id for d_id in district_ids.keys()]].sum()
 
             output["QSA"] = awards_regions_data["QSA"]
             if awards_regions_data["qsa_eligible"] > 0:
@@ -289,10 +295,10 @@ class Reports(Base):
 
         :returns pd.DataFrame: Uptake data of Scouts in the boundary
         """
-        geog_name: str = self.geography.type
+        geog_name = self.geography_type
         try:
-            age_profile_path: str = self.geography.age_profile_path
-            age_profile_key: str = self.geography.age_profile_key
+            age_profile_path = self.geography.age_profile_path
+            age_profile_key = self.geography.age_profile_key
         except KeyError:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 
@@ -303,22 +309,38 @@ class Reports(Base):
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
         try:
-            full_age_profile_path = utility.DATA_ROOT / self.settings["National Statistical folder"] / age_profile_path
-            age_profile_pd = pd.read_csv(full_age_profile_path, dtype=data_types)
+            age_profile_pd = pd.read_csv(age_profile_path, dtype=data_types)
         except TypeError:
             self.logger.error("Age profiles must be integers in each age category")
             raise
 
         # population data
         for section, ages in Reports.SECTION_AGES.items():
-            age_profile_pd[f"Pop_{section}"] = age_profile_pd[ages["ages"]].sum(axis=1)
-            age_profile_pd[f"Pop_{section}"] += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
-        age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1)
+            section_population = age_profile_pd[ages["ages"]].sum(axis=1)
+            section_population += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
+            age_profile_pd[f"Pop_{section}"] = section_population.astype("UInt32")
+        age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1).astype("UInt32")
 
         # merge population data
-        cols = [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"] + [age_profile_key]
-        uptake_report = boundary_report.merge(age_profile_pd[cols], how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
-        del uptake_report[age_profile_key]
+        cols = [age_profile_key] + [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"]
+        reduced_age_profile_pd = age_profile_pd[cols]
+
+        # Pivot age profile to current geography type if needed
+        if self.geography.age_profile_pivot and self.geography.age_profile_pivot != geog_name:
+            pivot_key = self.geography.age_profile_pivot
+
+            ons_data_subset = self.ons_pd.data[[geog_name, pivot_key]]
+            merged_age_profile = reduced_age_profile_pd.merge(ons_data_subset, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
+            merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_name])
+            pivoted_age_profile = merged_age_profile_no_na.groupby(geog_name).sum().astype("UInt32")
+
+            # Check we did not accidentally expand the population!
+            assert merged_age_profile["Pop_All"].sum() == reduced_age_profile_pd["Pop_All"].sum()  # this will fail
+            assert pivoted_age_profile["Pop_All"].sum() == merged_age_profile_no_na["Pop_All"].sum()
+            uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on=geog_name, right_index=True, sort=False)
+        else:
+            uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
+            del uptake_report[age_profile_key]
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
 

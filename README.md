@@ -6,7 +6,7 @@ Mapping Scouts data to UK administrative regions.
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Prerequisites:
-This is written and tested in Python 3.7.
+This is written and tested in Python 3.8.
 
 This project is largely dependent on `geopandas` and `pandas`, along with `folium`, `dash`, and `shapely`.
 
@@ -45,7 +45,7 @@ To install geopandas and its dependencies, follow below
 It is highly recommended to use conda to install geopandas.
 
 However, to install geopandas using pip on windows, follow the following steps:
-* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the correct python version (currently 3.7) and platform
+* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the correct python version (currently 3.8) and platform
 * Install any prerequisites listed on Gohlke's site (e.g. C++ redistributables)
 * `pip install` the wheels in the following order (preferably in a Virtual Environment)
     1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
