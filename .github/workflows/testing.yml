@@ -1,0 +1,157 @@
+name: testing
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  testing-pip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install pytest-cov, codecov
+        run: |
+          pip install pytest-cov codecov
+
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=./
+
+#      - name: Upload to CodeCov
+#        uses: codecov/codecov-action@v1
+
+  testing-conda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.0.1
+        with:
+          activate-environment: scouts_mapping
+          channel-priority: strict
+          environment-file: environment.yml
+
+      - name: Install pytest-cov, codecov
+        shell: bash -l {0}
+        run: |
+          conda install pytest-cov codecov
+
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=./
+
+#      - name: Upload to CodeCov
+#        uses: codecov/codecov-action@v1
+
+  testing-miniforge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.0.1
+        with:
+          activate-environment: scouts_mapping
+          environment-file: environment.yml
+          channel-priority: strict
+          miniforge-version: latest
+
+      - name: Install pytest-cov, codecov
+        shell: bash -l {0}
+        run: |
+          conda install pytest-cov codecov
+
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=./
+
+#      - name: Upload to CodeCov
+#        uses: codecov/codecov-action@v1
+
+  testing-mamba:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.0.1
+        with:
+          activate-environment: scouts_mapping
+          environment-file: environment.yml
+          channel-priority: strict
+          mamba-version: "*"
+
+      - name: Install pytest-cov, codecov
+        shell: bash -l {0}
+        run: |
+          mamba install pytest-cov codecov
+
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=./
+
+#      - name: Upload to CodeCov
+#        uses: codecov/codecov-action@v1
+
+  testing-mambaforge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.0.1
+        with:
+          activate-environment: scouts_mapping
+          environment-file: environment.yml
+          channel-priority: strict
+          miniforge-variant: Mambaforge
+          mamba-version: "*"
+          miniforge-version: latest
+
+      - name: Install pytest-cov, codecov
+        shell: bash -l {0}
+        run: |
+          mamba install pytest-cov codecov
+
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=./
+
+#      - name: Upload to CodeCov
+#        uses: codecov/codecov-action@v1
+
+  testing-native-conda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Miniconda
+        shell: bash -l {0}
+        run: |
+          conda env update
+          conda activate scouts_mapping
+
+      - name: Install pytest-cov, codecov
+        shell: bash -l {0}
+        run: |
+          mamba install pytest-cov codecov
+
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=./
+
+#      - name: Upload to CodeCov
+#        uses: codecov/codecov-action@v1
+
