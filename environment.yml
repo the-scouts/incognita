@@ -5,7 +5,9 @@ channels:
 dependencies:
   - python>=3.8
   - pip
+
   # Core requirements
+  - folium
   - branca
   - dash
   - geopandas
@@ -13,12 +15,15 @@ dependencies:
   - pandas
   - shapely
   - pyarrow
+  - pygeos
+
   # Development requirements:
   - pytest
   - hypothesis
   - pytest-cov
   - pre-commit
   - black
-  # Requirements not on conda:
-  - pip:
-    - folium
+
+#  # Requirements not on conda:
+#  - pip:
+#    -
