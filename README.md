@@ -4,8 +4,7 @@ Mapping Scouts data to UK administrative regions.
 [![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-
-## Installing required packages:
+## Where to get it
 
 The source code for the project is hosted on GitHub at
 [the-scouts/geo_mapping](https://github.com/the-scouts/geo_mapping)
@@ -39,12 +38,12 @@ However, to install geopandas using pip on Windows, follow the following steps:
 2. Install any prerequisites listed on Gohlke's site (e.g. C++ re-distributables)
 3. `pip install` the wheels in the following order (preferably in a Virtual
    Environment)
-  1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
-  2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
-  3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
+    1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+    2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
+    3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
 4. `pip install geopandas`
 
-### Prerequisites:
+### Dependencies
 This project is written and tested in Python 3.8, and depends on:
 
 - [geopandas](https://github.com/geopandas/geopandas),
@@ -65,14 +64,17 @@ ONSPostcodeDirectory in `ONS_data.py`
 
 You will need to populate the settings.json file with the appropriate file paths
 
-### Generating datafile
-To generate the datafile needed for most operations, run `setup_data_file.py` with clean prototype extract.
+### Generating the data file
+To generate the datafile needed for most operations, run `setup_data_file.py` 
+with clean prototype extract.
 
-You may also run `setup_reduce_onspd.py` to produce a smaller ONS Postcode Directory file to speed up lookup operations and reduce memory consumption. 
+You may also run `setup_reduce_onspd.py` to produce a smaller ONS Postcode 
+Directory file to speed up lookup operations and reduce memory consumption. 
 
 ## Resources:
 ### Postcode Directory:
- * Latest ONS Postcode Directory ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory))
+ * Latest 
+   [ONS Postcode Directory](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory)
 
 ### Shapefiles:
 #### Administrative/Electoral Geographies:
