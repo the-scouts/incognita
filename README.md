@@ -5,11 +5,16 @@ Mapping Scouts data to UK administrative regions.
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Prerequisites:
-This is written and tested in Python 3.8.
+This project is written and tested in Python 3.8, and depends on:
 
-This project is largely dependent on `geopandas` and `pandas`, along with `folium`, `dash`, and `shapely`.
-
-For testing we use `pytest` and `coverage`, with `black` as our codestyle.
+- [geopandas](https://github.com/geopandas/geopandas),
+  [pandas](https://github.com/pandas-dev/pandas) - for (geospatial) data
+  transformation and arrangement
+- [folium](https://github.com/python-visualization/folium) - for rendering to
+  [Leaflet.js](https://github.com/Leaflet/Leaflet) maps
+- [shapely](https://github.com/Toblerity/Shapely) - for manipulation and
+  analysis of geometric objects
+- [dash](https://github.com/plotly/dash) - for simple web-apps
 
 ### Installing required packages:
 It is highly recommended to use conda to install this project, however pip can be used with a number of manual installation steps listed below.
@@ -117,3 +122,4 @@ loads into heroku correctly.
 ***geo_mapping*** is naturally
 [open source](https://github.com/the-scouts/geo_mapping) and is
 licensed under the **[GNU License](https://choosealicense.com/licenses/gpl-3.0)**.
+
