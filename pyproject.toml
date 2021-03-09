@@ -1,3 +1,8 @@
+# Build system requirements.
+[build-system]
+requires = ["setuptools>=41.0", "wheel"]  #"setuptools-scm",
+build-backend = "setuptools.build_meta"
+
 # Black configuration
 [tool.black]
 line-length = 180
