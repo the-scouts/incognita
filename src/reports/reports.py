@@ -358,6 +358,8 @@ class Reports(Base):
 
         # add uptake data
         for year in years:
+            # clip here as unexpectedly large values throw off the scale bars.
+            # TODO normalise unexpectedly large values so that we don't need to clip
             for section in Reports.SECTION_AGES.keys():
                 uptake_section = 100 * uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
