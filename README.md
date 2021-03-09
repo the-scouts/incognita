@@ -97,19 +97,6 @@ The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk
     * ONS_PD_**DATE**/
     * Scout Census Data/
         * _Census Extract Files_
-* docs/
-    * _Documentation Files_
-* scripts/
-    * _Script Files_
-* src/
-    * _Source Files_
-    * data/
-    * geographies/
-    * maps/
-    * reports/
-* tests/
-    * _Testing Files_
-
 
 ## Notes
 I suspect that this will generalise beyond the specific application to Scouts,
