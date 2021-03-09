@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
-import geopandas as gpd
 import time
 from typing import TYPE_CHECKING
 
+import geopandas as gpd
+import pandas as pd
+
 from src.base import Base
-from src.data.scout_census import ScoutCensus
 from src.data.census_merge_data import CensusMergeData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
 # type hints

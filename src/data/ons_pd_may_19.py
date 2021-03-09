@@ -1,5 +1,6 @@
-from src.data.ons_pd import ONSPostcodeDirectory
 from pathlib import Path
+
+from src.data.ons_pd import ONSPostcodeDirectory
 
 
 class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):

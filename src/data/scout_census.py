@@ -1,6 +1,7 @@
-import pandas as pd
-from typing import Dict
 from pathlib import Path
+from typing import Dict
+
+import pandas as pd
 from pyarrow import feather
 
 

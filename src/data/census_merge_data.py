@@ -1,6 +1,7 @@
+import re
+
 import numpy as np
 import pandas as pd
-import re
 
 from src.base import Base
 from src.data.scout_census import ScoutCensus
