@@ -1,6 +1,7 @@
-import src.utility as utility
-import src.data.ons_pd as ons_pd
 import pandas as pd
+
+import src.data.ons_pd as ons_pd
+import src.utility as utility
 
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):

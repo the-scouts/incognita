@@ -1,14 +1,14 @@
-import pandas as pd
 import geopandas as gpd
-
-import pytest
 import hypothesis
+from hypothesis.extra.pandas import column
+from hypothesis.extra.pandas import data_frames
+from hypothesis.extra.pandas import range_indexes
 import hypothesis.strategies as st
-from hypothesis.extra.pandas import data_frames, column, range_indexes
+import pandas as pd
+import pytest
 
 from data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
-
 
 COLUMN_NAME = "ctry"
 
@@ -33,10 +33,10 @@ def blank_geo_data_frame():
     return gdf
 
 
-CountryDataFrame = data_frames(columns=[column(name=COLUMN_NAME, elements=st.from_regex(r"^[A-Za-z]{2}[0-9]{8}\Z"))], index=range_indexes(min_size=2),)
+CountryDataFrame = data_frames(columns=[column(name=COLUMN_NAME, elements=st.from_regex(r"^[A-Za-z]{2}[0-9]{8}\Z"))], index=range_indexes(min_size=2))
 
 LocationDataFrame = data_frames(
-    columns=[column(name="lat", elements=st.floats(min_value=-85, max_value=85)), column(name="long", elements=st.floats(min_value=-180, max_value=180)),],
+    columns=[column(name="lat", elements=st.floats(min_value=-85, max_value=85)), column(name="long", elements=st.floats(min_value=-180, max_value=180))],
     index=range_indexes(min_size=2),
 )
 

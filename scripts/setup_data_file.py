@@ -6,10 +6,12 @@ Directory.
 This script has no command line options.
 """
 import json
-from src.utility import SCRIPTS_ROOT, DATA_ROOT
+
+from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
-from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.utility import DATA_ROOT
+from src.utility import SCRIPTS_ROOT
 
 if __name__ == "__main__":
     column_labels = ScoutCensus.column_labels

@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 from pathlib import Path
-import pandas as pd
-from src.data.scout_census import ScoutCensus
 from typing import TYPE_CHECKING
+
+import pandas as pd
+
+from src.data.scout_census import ScoutCensus
 
 if TYPE_CHECKING:
     import logging
+
     from src.data.ons_pd import ONSPostcodeDirectory
 
 

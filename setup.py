@@ -1,4 +1,5 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import find_namespace_packages
+from setuptools import setup
 
 setup(
     name="geo_mapping",

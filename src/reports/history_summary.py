@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import List
+
+from typing import List, TYPE_CHECKING
+
 import pandas as pd
 
 from src.base import Base
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.data.scout_data import ScoutData
@@ -234,9 +234,7 @@ class HistorySummary(Base):
                             open_sections["years"].append(year)
                         # Create new section record
                         for ii in range(change):
-                            opened_sections.append(
-                                {"id": district_id, "section": "Explorers", "years": [year], "nu_sections": units_by_year,}
-                            )
+                            opened_sections.append({"id": district_id, "section": "Explorers", "years": [year], "nu_sections": units_by_year})
                     elif change == 0:
                         # Lengthens all sections by a year
                         for open_sections in opened_sections:

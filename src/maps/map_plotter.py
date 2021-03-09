@@ -1,19 +1,21 @@
 from __future__ import annotations
-import folium
-from folium.plugins import MarkerCluster
-from folium.map import FeatureGroup
-import geopandas as gpd
-import pandas as pd
-import webbrowser
-
-from src.reports.reports import Reports
-from src.base import Base
-import src.utility as utility
 
 from typing import TYPE_CHECKING
+import webbrowser
+
+import folium
+from folium.map import FeatureGroup
+from folium.plugins import MarkerCluster
+import geopandas as gpd
+import pandas as pd
+
+from src.base import Base
+from src.reports.reports import Reports
+import src.utility as utility
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from branca import colormap
 
 

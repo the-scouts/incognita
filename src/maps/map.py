@@ -1,19 +1,19 @@
 from itertools import cycle
+from pathlib import Path
+from typing import Dict, Union
+
 import branca
 import folium
-import pandas as pd
 import geopandas as gpd
 import numpy as np
-from pathlib import Path
+import pandas as pd
 
-import src.utility as utility
-from src.reports.reports import Reports
-from src.data.scout_data import ScoutData
 from src.base import Base
-from src.maps.map_plotter import MapPlotter
 from src.data.scout_census import ScoutCensus
-
-from typing import Dict, Union
+from src.data.scout_data import ScoutData
+from src.maps.map_plotter import MapPlotter
+from src.reports.reports import Reports
+import src.utility as utility
 
 
 class Map(Base):
@@ -276,7 +276,7 @@ class Map(Base):
             location_cols = {"crs": utility.WGS_84, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
-        custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]),)
+        custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]))
 
         # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
         if location_cols["crs"] != utility.WGS_84:

@@ -1,6 +1,7 @@
-import pandas as pd
-from typing import Dict
 from pathlib import Path
+from typing import Dict
+
+import pandas as pd
 from pyarrow import feather
 
 
@@ -102,6 +103,7 @@ class ScoutCensus:
             self.data = pd.DataFrame()
             return
 
+        # fmt: off
         cols_bool = ["postcode_is_valid"]
         cols_int_16 = [
             "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Beavers_total", "Cubs_m", "Cubs_total",
@@ -111,10 +113,9 @@ class ScoutCensus:
             "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond",
             "Eligible4QSA", "ScoutsOfTheWorldAward", "Eligible4SOWA", "imd_decile"
         ]
-        # fmt: on
         cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
         cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "clean_postcode", "Young_Leader_Unit"]
-        # fmt: off
+        # fmt: on
 
         # TODO add yp total columns, clean postcode/valid postcode, Asst leaders, SOWA/SOWA eligible, ONS PD fields
 

@@ -1,10 +1,10 @@
 import json
 
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
 
-import src.utility as utility
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+import src.utility as utility
 
 if __name__ == "__main__":
     print("Starting")

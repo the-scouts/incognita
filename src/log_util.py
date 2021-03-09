@@ -1,5 +1,5 @@
-import sys
 import logging
+import sys
 import time
 
 FINISHED_LEVEL_NUM = logging.INFO + 5

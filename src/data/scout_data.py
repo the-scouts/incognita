@@ -1,15 +1,17 @@
 from __future__ import annotations
+
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
-import geopandas as gpd
 import time
 from typing import TYPE_CHECKING
 
+import geopandas as gpd
+import pandas as pd
+
 from src.base import Base
-from src.data.scout_census import ScoutCensus
 from src.data.census_merge_data import CensusMergeData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from src.data.scout_census import ScoutCensus
 import src.utility as utility
 
 # type hints
@@ -18,9 +20,7 @@ if TYPE_CHECKING:
 
 
 class ScoutData(Base):
-    """Provides access to manipulate and process data
-
-    """
+    """Provides access to manipulate and process data."""
 
     @property
     def columns(self):
@@ -79,17 +79,17 @@ class ScoutData(Base):
         self.logger.info("Adding ONS postcode directory data to Census and outputting")
 
         # initially merge just Country column to test what postcodes can match
-        self.data = merge.merge_data(self.data, ons_pd.data["ctry"], "clean_postcode",)
+        self.data = merge.merge_data(self.data, ons_pd.data["ctry"], "clean_postcode")
 
         # attempt to fix invalid postcodes
-        self.data = merge.try_fix_invalid_postcodes(self.data, ons_pd.data["ctry"],)
+        self.data = merge.try_fix_invalid_postcodes(self.data, ons_pd.data["ctry"])
 
         # fully merge the data
-        self.data = merge.merge_data(self.data, ons_pd.data, "clean_postcode",)
+        self.data = merge.merge_data(self.data, ons_pd.data, "clean_postcode")
 
         # fill unmerged rows with default values
         self.logger.info("filling unmerged rows")
-        self.data = merge.fill_unmerged_rows(self.data, ScoutCensus.column_labels["VALID_POSTCODE"], ons_fields_data_types,)
+        self.data = merge.fill_unmerged_rows(self.data, ScoutCensus.column_labels["VALID_POSTCODE"], ons_fields_data_types)
 
         # Filter to useful columns
         # fmt: off
@@ -163,7 +163,7 @@ class ScoutData(Base):
             all_shapes = gdf
         else:
             raise ValueError("A path to a shapefile or a GeoDataFrame must be passed")
-        shapes = all_shapes[[shapes_key, 'geometry']].to_crs(utility.WGS_84)
+        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(utility.WGS_84)
 
         spatial_merged = gpd.sjoin(self.points_data, shapes, how="left", op="within").set_index("object_index")
         merged = self.data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)
