@@ -102,28 +102,36 @@ class ScoutCensus:
             self.data = pd.DataFrame()
             return
 
-        cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
-        cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "Young_Leader_Unit"]
-        # fmt: off
+        cols_bool = ["postcode_is_valid"]
         cols_int_16 = [
-            "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Cubs_m", "Scouts_f", "Scouts_m",
-            "Explorers_f", "Explorers_m", "Network_f", "Network_m", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "SectAssistants", "OtherAdults",
-            "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards",
-            "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze",
-            "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA", "imd_decile"
+            "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Beavers_total", "Cubs_m", "Cubs_total",
+            "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total", "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c",
+            "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults", "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards",
+            "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver",
+            "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond",
+            "Eligible4QSA", "ScoutsOfTheWorldAward", "Eligible4SOWA", "imd_decile"
         ]
         # fmt: on
+        cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
+        cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "clean_postcode", "Young_Leader_Unit"]
+        # fmt: off
+
         # TODO add yp total columns, clean postcode/valid postcode, Asst leaders, SOWA/SOWA eligible, ONS PD fields
 
+        data_values_bool = {key: "bool" for key in cols_bool}
+        data_values_16 = {key: "Int16" for key in cols_int_16}
         data_values_32 = {key: "Int32" for key in cols_int_32}
         data_values_cat = {key: "category" for key in cols_categorical}
-        data_values_16 = {key: "Int16" for key in cols_int_16}
-        data_values_sections = {**data_values_32, **data_values_cat, **data_values_16}
-
+        data_values_sections = {**data_values_bool, **data_values_16, **data_values_32, **data_values_cat}  # TODO py3.9 |
         if census_file_path.suffix == ".csv":
             self.data = pd.read_csv(census_file_path, dtype=data_values_sections, encoding="utf-8")
         elif census_file_path.suffix == ".feather":
             self.data = feather.read_feather(census_file_path)
+            self.data[cols_bool] = self.data[cols_bool].astype(bool)
+            self.data[cols_int_16] = self.data[cols_int_16].astype("Int16")
+            self.data[cols_int_32] = self.data[cols_int_32].astype("Int32")
+            self.data[cols_categorical] = self.data[cols_categorical].astype("category")
+            # ['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'lat', 'long'] not dtyped
         else:
             raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
 

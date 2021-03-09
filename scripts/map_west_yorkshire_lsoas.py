@@ -3,7 +3,7 @@ from src.reports.reports import Reports
 from src.maps.map import Map
 
 if __name__ == "__main__":
-    county_name = "Central Yorkshire"
+    county_name = "Birmingham"
     year = 2020
 
     scout_data = ScoutData(load_ons_pd_data=True)
@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
     # Plot
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    mapper.add_areas(dimension, reports, show=True)
+    mapper.add_areas(dimension, reports, show=True, threshold=0)
     mapper.set_region_of_colour("C_name", [county_name])
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"])
+    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(), ["youth membership"])
 
     # Save the map and display
     mapper.save_map()

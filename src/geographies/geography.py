@@ -59,11 +59,13 @@ class Geography(Base):
 
     @property
     def shapefile_path(self) -> Path:
-        return utility.DATA_ROOT / self.geography_metadata_dict["boundary"]["shapefile"]
+        shapefiles_root = utility.DATA_ROOT / self.settings["Boundaries folder"]
+        return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        return utility.DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"].get("path")
+        age_profiles_root = utility.DATA_ROOT / self.settings["National Statistical folder"]
+        return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
     def age_profile_key(self) -> str:
@@ -145,7 +147,13 @@ class Geography(Base):
             ons_records_in_value_list = ons_pd_object.data[field].isin(value_list)
             boundary_subset = ons_pd_object.data.loc[ons_records_in_value_list, name].drop_duplicates().to_list()
         except AttributeError:
-            self.logger.exception("No data in ONS PD object. Ensure ScoutData object is created with load_ons_pd_data being True")
+            msg = "No data in ONS PD object. Ensure ScoutData object is created with load_ons_pd_data being True"
+            self.logger.exception(msg)
+            raise AttributeError(msg) from None
+        except KeyError:
+            msg = f"{name} not in ONS PD dataframe. \nValid values are: {ons_pd_object.data.columns.to_list()}"
+            self.logger.error(msg)
+            raise KeyError(msg) from None
         self.logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list

@@ -1,3 +1,4 @@
+import sys
 import logging
 import time
 
@@ -12,18 +13,25 @@ def create_logger(name: str, file_path: str = None) -> logging.Logger:
     :param file_path: file path to output debug log
     :return: logger object
     """
-    # set up a log to file
-    if file_path:
-        logging.basicConfig(filename=file_path, level=logging.DEBUG, filemode="w")
-
-    # set up a log to the console
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    console.setFormatter(logging.Formatter(fmt="%(filename)s - %(levelname)s - %(message)s"))
-
     # creates the main logger
     logger = logging.getLogger(name)
-    # add the handler to the root logger
+
+    # Set log level
+    logger.setLevel(logging.DEBUG)
+
+    # Create formatter
+    formatter = logging.Formatter(fmt="{filename} - {levelname} - {message}", style="{")
+
+    # set up a log to file
+    file = logging.FileHandler(file_path, encoding="utf-8", mode="w")
+    file.setFormatter(formatter)
+
+    # set up a log to the console
+    console = logging.StreamHandler(stream=sys.stdout)
+    console.setFormatter(formatter)
+
+    # add the handlers to the root logger
+    logger.addHandler(file)
     logger.addHandler(console)
 
     return logger

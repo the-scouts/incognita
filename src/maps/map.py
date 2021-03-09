@@ -27,7 +27,7 @@ class Map(Base):
 
         self._map_plotter = MapPlotter(Path(self.settings["Output folder"], map_name))
 
-    def add_areas(self, dimension: dict, reports: Reports, show=False, scale=None):
+    def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, threshold: float = 2.5):
         """
         Creates a 2D colouring with geometry specified by the boundary
 
@@ -36,23 +36,20 @@ class Map(Base):
         :param bool show: if True the colouring is shown by default
         :param dict scale: Allows a fixed value scale, default is boundaries at
                            0%, 20%, 40%, 60%, 80% and 100%.
+        :param float threshold: If an area's value is significant enough to be displayed
         """
-        shapefile_name = reports.shapefile_name
+        colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
         self._map_plotter.set_boundary(reports)
-        self._map_plotter.set_score_col(shapefile_name, dimension)
+        self._map_plotter.set_score_col(dimension)
+        self._map_plotter.validate_columns()
 
-        if self._map_plotter.SCORE_COL[shapefile_name] not in self._map_plotter.map_data.columns:
-            raise KeyError(f"{self._map_plotter.SCORE_COL[shapefile_name]} is not a valid column in the data. \n" f"Valid columns include {self._map_plotter.map_data.columns}")
-
-        non_zero_score_col = self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]].loc[
-            self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]] != 0
-        ]
+        non_zero_score_col = self._map_plotter.map_data[dimension["column"]].loc[self._map_plotter.map_data[dimension["column"]] != 0]
         non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
 
         if not scale:
-            colourmap_index = non_zero_score_col.quantile([0, 0.25, 0.75, 1])
-            colourmap_min = self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]].min()
-            colourmap_max = self._map_plotter.map_data[self._map_plotter.SCORE_COL[shapefile_name]].max()
+            colourmap_index = non_zero_score_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
+            colourmap_min = self._map_plotter.map_data[dimension["column"]].min()
+            colourmap_max = self._map_plotter.map_data[dimension["column"]].max()
 
             quantiles = [0, 20, 40, 60, 80, 100]
             colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
@@ -62,12 +59,14 @@ class Map(Base):
             colourmap_max = scale["max"]
             colourmap_step_index = scale["boundaries"]
 
-        colourmap = branca.colormap.LinearColormap(colors=["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"], index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
+        colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
         colourmap = colourmap.to_step(index=colourmap_step_index)
         colourmap.caption = dimension["legend"]
 
-        self.logger.info(f"Colour scale boundary values\n{non_zero_score_col.quantile([0, 0.2, 0.4, 0.6, 0.8, 1])}")
-        self._map_plotter.add_areas(dimension["legend"], show=show, boundary_name=shapefile_name, colourmap=colourmap)
+        self.logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
+        self.logger.info(f"Colour scale index values\n{colourmap_index}")
+        self._map_plotter.add_areas(dimension["legend"], show=show, colourmap=colourmap, col_name=dimension["column"], significance_threshold=threshold)
+        # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: dict = None):
         """Adds the sections provided as markers to map with the colour, and data

@@ -16,7 +16,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     :var dict ONSPostcodeDirectoryMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
     """
 
-    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile"]
+    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"]
     index_column = "pcd"
     data_types = {
         "oscty": "category",
@@ -49,22 +49,21 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     }
 
     def __init__(self, ons_pd_csv_path, load_data=True):
-        super().__init__(ons_pd_csv_path, load_data, self.index_column, ONSPostcodeDirectoryMay19.fields, ONSPostcodeDirectoryMay19.data_types)
+        super().__init__(ons_pd_csv_path, load_data, self.index_column, data_types=self.data_types)
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
         names_codes_root = Path(self.settings["ONS Names and codes folder"]).resolve()
-        boundaries_dir = Path(self.settings["Boundaries folder"]).resolve()
 
         # Paths to all shapefiles within the Boundaries folder
         # fmt: off
         shapefile_paths = {
-            "LADs": boundaries_dir / "Local_Authority_Districts_April_2019_Boundaries_UK_BUC/Local_Authority_Districts_April_2019_Boundaries_UK_BUC.shp",
-            "County": boundaries_dir / "Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
-            "Ward": boundaries_dir / "Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp",
-            "PCon": boundaries_dir / "Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
-            "LSOA": boundaries_dir / "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC/Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
-            "MSOA": boundaries_dir / "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
-            "IZ": boundaries_dir / "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp",
+            "LADs": "Local_Authority_Districts__December_2019__Boundaries_UK_BUC/Local_Authority_Districts__December_2019__Boundaries_UK_BUC.shp",
+            "County": "Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+            "Ward": "Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp",
+            "PCon": "Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
+            "LSOA": "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC/Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
+            "MSOA": "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
+            "IZ": "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp",
         }
         # fmt: on
 
@@ -101,8 +100,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                     "key": "WD19CD", "key_type": "string",
                     "name": "WD19NM",
                 },
-                "boundary": {"shapefile": shapefile_paths["Ward"], "key": "wd19cd", "name": "wd19nm", },
-                "age_profile": {"path": None, "key": None},
+                "boundary": {"shapefile": shapefile_paths["Ward"], "key": "WD19CD", "name": "WD19NM", },
+                "age_profile": {"path": "osward_by_age_mid_2018_population_may_2019_wards.csv", "key": "Ward Code"},
             },
             "pcon": {
                 # Parliamentary Constituencies
@@ -128,7 +127,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
             },
             "msoa": {
                 # Middle Layer Super Output Areas
-                "name": "msoa",
+                "name": "msoa11",
                 "codes": {
                     "path": names_codes_root / "MSOA (2011) names and codes UK as at 12_12.csv",
                     "key": "MSOA11CD", "key_type": "string",
@@ -138,12 +137,12 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "age_profile": {"path": None, "key": None},
             },
             "iz": {
-                # Intermediate Zones
-                "name": "iz",
+                # Intermediate Zones (codepages identical to MSOA but different shapefiles)
+                "name": "msoa11",
                 "codes": {
-                    "path": None,
-                    "key": None, "key_type": "object",
-                    "name": None
+                    "path": names_codes_root / "MSOA (2011) names and codes UK as at 12_12.csv",
+                    "key": "MSOA11CD", "key_type": "string",
+                    "name": "MSOA11NM",
                 },
                 "boundary": {"shapefile": shapefile_paths["IZ"], "key": "InterZone", "name": None, },
                 "age_profile": {"path": None, "key": None},

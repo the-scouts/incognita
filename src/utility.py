@@ -47,12 +47,14 @@ def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: log
         # Excluding records that match the filter criteria
         logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
         if exclusion_analysis:
+            original_data = data.copy()
             excluded_data = data.loc[data[field].isin(value_list)]
         data = data.loc[~data[field].isin(value_list)]
     else:
         # Including records that match the filter criteria
         logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
         if exclusion_analysis:
+            original_data = data.copy()
             excluded_data = data.loc[~data[field].isin(value_list)]
         data = data.loc[data[field].isin(value_list)]
 
@@ -75,15 +77,14 @@ def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: log
             members_col = sections_dict[section]["total"]
 
             excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
-            logger.debug(f"Excluded sections\n{excluded_sections}")
-            logger.debug(f"Finding number of excluded {section} by summing {members_col}")
-            excluded_members = excluded_sections[members_col].sum()
-            logger.debug(f"{excluded_members} {section} excluded")
+            excluded_members = 0
+            if not excluded_sections.empty:
+                logger.debug(f"Excluded sections\n{excluded_sections}")
+                logger.debug(f"Finding number of excluded {section} by summing {members_col}")
+                excluded_members = excluded_sections[members_col].sum()
+                logger.debug(f"{excluded_members} {section} excluded")
 
-            sections = data.loc[data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
-            counted_members = sections[members_col].sum()
-
-            original_members = counted_members + excluded_members
+            original_members = original_data.loc[original_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type, members_col].sum()
 
             if original_members > 0:
                 logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
