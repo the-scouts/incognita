@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.8
+  - python>=3.9
   - pip
 
   # Core requirements
@@ -17,12 +17,13 @@ dependencies:
   - pyarrow
   - pygeos
 
-  # Development requirements:
+  # Testing
   - pytest
   - hypothesis
-  - pytest-cov
-  - pre-commit
+
+  # Development requirements:
   - black
+  - isort
 
 #  # Requirements not on conda:
 #  - pip:
