@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import List
+
+from typing import List, TYPE_CHECKING
+
 import pandas as pd
 
 from src.base import Base
 from src.data.scout_census import ScoutCensus
 import src.utility as utility
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.data.scout_data import ScoutData

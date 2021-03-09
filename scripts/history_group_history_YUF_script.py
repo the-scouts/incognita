@@ -1,4 +1,5 @@
 import pandas as pd
+
 from src.data.scout_data import ScoutData
 from src.reports.history_summary import HistorySummary
 

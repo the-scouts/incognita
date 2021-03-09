@@ -1,10 +1,10 @@
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
 import shapely
 
+from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
-from src.base import Base
 import src.utility as utility
 
 

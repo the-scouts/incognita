@@ -1,17 +1,20 @@
 from __future__ import annotations
-import pandas as pd
-import collections
 
+import collections
+from typing import TYPE_CHECKING
+
+import pandas as pd
+
+from src.base import Base
+from src.base import time_function
+from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.geographies.geography import Geography
-from src.base import Base, time_function
-from src.data.scout_census import ScoutCensus
 import src.utility as utility
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from src.data.ons_pd import ONSPostcodeDirectory
 
 

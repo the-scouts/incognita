@@ -1,14 +1,14 @@
-import pandas as pd
 import geopandas as gpd
-
-import pytest
 import hypothesis
+from hypothesis.extra.pandas import column
+from hypothesis.extra.pandas import data_frames
+from hypothesis.extra.pandas import range_indexes
 import hypothesis.strategies as st
-from hypothesis.extra.pandas import data_frames, column, range_indexes
+import pandas as pd
+import pytest
 
 from data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
-
 
 COLUMN_NAME = "ctry"
 

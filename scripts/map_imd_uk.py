@@ -5,9 +5,9 @@ Index of Multiple Deprivation Deciles.
 
 This script has no command line options.
 """
-from src.reports.reports import Reports
 from src.data.scout_data import ScoutData
 from src.maps.map import Map
+from src.reports.reports import Reports
 
 if __name__ == "__main__":
     countries = ["England", "Wales"]

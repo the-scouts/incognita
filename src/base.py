@@ -1,6 +1,6 @@
+from functools import wraps
 import json
 import time
-from functools import wraps
 from typing import Callable
 
 import src.log_util as log_util

@@ -1,10 +1,13 @@
 import json
 import logging
 from numbers import Real
+
 import pytest
 
-from src.base import Base, time_function
-from src.utility import LOGS_ROOT, SCRIPTS_ROOT
+from src.base import Base
+from src.base import time_function
+from src.utility import LOGS_ROOT
+from src.utility import SCRIPTS_ROOT
 
 
 def add(number1: Real, number2: Real) -> Real:
