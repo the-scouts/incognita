@@ -17,12 +17,12 @@ def add(number1: Real, number2: Real) -> Real:
 class ExampleClassLogger(Base):
     def __init__(self, path: bool = True):
         if path:
-            super().__init__(log_path=str(LOGS_ROOT / "tests.log"))
+            super().__init__(log_path=LOGS_ROOT / "tests.log")
         else:
             super().__init__()
 
     @time_function
-    def add(number1: Real, number2: Real) -> Real:
+    def add(self, number1: Real, number2: Real) -> Real:
         self.logger.info("Example Function")
         return number1 + number2
 

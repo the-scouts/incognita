@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import logging
 import sys
 import time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 FINISHED_LEVEL_NUM = logging.INFO + 5
 DURATION_LEVEL_NUM = logging.INFO + 4
 
 
-def create_logger(name: str, file_path: str = None) -> logging.Logger:
+def create_logger(name: str, file_path: Path = None) -> logging.Logger:
     """Creates and returns a logger with preset options
 
     :param str name: name to give the logger

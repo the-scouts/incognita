@@ -34,7 +34,7 @@ class ScoutData(Base):
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
     def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None, load_census_data=True):
-        super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
+        super().__init__(settings=True, log_path=utility.LOGS_ROOT / "geo_mapping.log")
         self.logger.info(f"Starting at {datetime.now().time()}")
         self.logger.finished(f"Logging setup", start_time=self.start_time)
 

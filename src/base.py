@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 from functools import wraps
 import json
 import time
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import src.log_util as log_util
 from src.utility import SCRIPTS_ROOT
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 def time_function(method: Callable):
@@ -50,12 +56,12 @@ def time_function(method: Callable):
 
 
 class Base:
-    def __init__(self, settings: bool = False, log_path: str = None):
+    def __init__(self, settings: bool = False, log_path: Path = None):
         """Acts as a base class for most classes. Provides automatic logging, settings creation,
           and common methods
 
         :param bool settings: If true, load settings from the config file
-        :param str log_path: Path to store the log. If not set, get the global log
+        :param Path log_path: Path to store the log. If not set, get the global log
         """
 
         # record a class-wide start time
@@ -63,8 +69,7 @@ class Base:
 
         # Load the settings file
         if settings:
-            with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
-                self.settings = json.load(read_file)["settings"]
+            self.settings = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
 
         # The global logger is named log, which means there is only ever one instance
         # if passed a path to output the log to, create the logger at that path
