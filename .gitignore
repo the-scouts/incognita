@@ -1,7 +1,7 @@
-Output/
-data/
-logs/
-.idea/
+/Output/
+/data/
+/logs/
+/.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
