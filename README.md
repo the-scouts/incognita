@@ -17,24 +17,26 @@ This project is written and tested in Python 3.8, and depends on:
 - [dash](https://github.com/plotly/dash) - for simple web-apps
 
 ### Installing required packages:
-It is highly recommended to use conda to install this project, however pip can be used with a number of manual installation steps listed below.
 
+The source code for the project is hosted on GitHub at
+[the-scouts/geo_mapping](https://github.com/the-scouts/geo_mapping)
 
-#### Installing with Conda:
+We **strongly** recommended using `conda` to install *geo_mapping*, however pip can
+be used with a number of manual installation steps as below.
+
 To install dependencies with Conda, run the following commands in the terminal
+```shell
+# conda
+conda env update
+conda activate scouts_mapping
+```
 
-`conda env update`
-
-`conda env list` (Check that `scouts_mapping` is listed)
-
-`conda activate scouts_mapping`
-
-#### Installing with Pip
-To install dependencies with Conda, run the following commands in the terminal
-
-`pip install -r requirements.txt`
-
-To install geopandas and its dependencies, follow below
+```shell
+# or PyPI
+pip install -r requirements.txt
+```
+If installing with `pip`, you will need to manually install geopandas and its
+dependencies. Please follow below:
 
 ##### Installing geopandas:
 It is highly recommended to use conda to install geopandas.
