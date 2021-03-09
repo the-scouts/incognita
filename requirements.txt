@@ -1,5 +1,19 @@
- # requirements.txt
- #
- # installs dependencies from ./setup.py, and the package itself, in editable mode
- # dev notes to also install packages for development and testing
- -e .[dev]
+# core
+pandas
+numpy
+folium
+branca
+geopandas>=0.8
+shapely
+dash
+pyarrow
+pygeos
+
+# testing
+pytest
+hypothesis
+pytest-cov
+
+# dev
+black
+isort
