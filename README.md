@@ -113,4 +113,8 @@ I would welcome any support, comments or guidance on my code.
 The heroku branch is specifically for the heroku application: http://scout-mapping.herokuapp.com. It contains a cut down requirements file to ensure that it
 loads into heroku correctly.
 
-*This project is licensed under the GNU License - see the LICENSE file for details*
+## License
+
+***geo_mapping*** is naturally
+[open source](https://github.com/the-scouts/geo_mapping) and is
+licensed under the **[GNU License](https://choosealicense.com/licenses/gpl-3.0)**.
