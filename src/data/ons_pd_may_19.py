@@ -16,7 +16,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     :var dict ONSPostcodeDirectoryMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
     """
 
-    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile"]
+    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"]
     index_column = "pcd"
     data_types = {
         "oscty": "category",
