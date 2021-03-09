@@ -234,9 +234,7 @@ class HistorySummary(Base):
                             open_sections["years"].append(year)
                         # Create new section record
                         for ii in range(change):
-                            opened_sections.append(
-                                {"id": district_id, "section": "Explorers", "years": [year], "nu_sections": units_by_year,}
-                            )
+                            opened_sections.append({"id": district_id, "section": "Explorers", "years": [year], "nu_sections": units_by_year})
                     elif change == 0:
                         # Lengthens all sections by a year
                         for open_sections in opened_sections:

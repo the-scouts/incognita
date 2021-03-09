@@ -22,7 +22,7 @@ class Dashboard(Base):
             ]
         )
 
-        self.input_layout = html.Div([dcc.Upload(id="upload-scout-data", children=html.Div(["Add Census with ONS Postcode Directory", html.A("Select Files")]),)])
+        self.input_layout = html.Div([dcc.Upload(id="upload-scout-data", children=html.Div(["Add Census with ONS Postcode Directory", html.A("Select Files")]))])
 
     def run(self):
         self.app.run_server(debug=False)
