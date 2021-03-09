@@ -12,15 +12,6 @@ This project is largely dependent on `geopandas` and `pandas`, along with `foliu
 
 For testing we use `pytest` and `coverage`, with `black` as our codestyle.
 
-## Getting Started:
-You will need to obtain the latest version of the ONS Postcode Directory. Note
-that this has some open licences attached to it.
-
-If this is not May 2018, then you will need to create another child class of
-ONSPostcodeDirectory in `ONS_data.py`
-
-You will need to populate the settings.json file with the appropriate file paths
-
 ### Installing required packages:
 It is highly recommended to use conda to install this project, however pip can be used with a number of manual installation steps listed below.
 
@@ -52,6 +43,15 @@ However, to install geopandas using pip on windows, follow the following steps:
     2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
     3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
 * `pip install geopandas`
+
+## Getting Started:
+You will need to obtain the latest version of the ONS Postcode Directory. Note
+that this has some open licences attached to it.
+
+If this is not May 2018, then you will need to create another child class of
+ONSPostcodeDirectory in `ONS_data.py`
+
+You will need to populate the settings.json file with the appropriate file paths
 
 ### Generating datafile
 To generate the datafile needed for most operations, run `setup_data_file.py` with clean prototype extract.
