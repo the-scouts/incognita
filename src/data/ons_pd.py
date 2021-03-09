@@ -25,19 +25,21 @@ class ONSPostcodeDirectory(Base):
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
         super().__init__(settings=True)
 
-        self.fields = fields
-
         self.BOUNDARIES = {}
 
+        # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)
+        def cols_lambda(col):
+            return col in fields if fields else True
+
         if load_data:
-            self.logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{self.fields}")
+            self.logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{fields}")
 
             # Handle index column possibly not existing (if the full ONS PD is loaded then the index column will exist, if using the reduced ONS PD it won't so use automatic index)
             try:
-                self.data = pd.read_csv(ons_pd_csv_path, index_col=index_column, usecols=lambda col: col in self.fields, dtype=data_types, encoding="utf-8")
+                self.data = pd.read_csv(ons_pd_csv_path, index_col=index_column, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
             except ValueError:
                 self.logger.debug(f"Loading ONS data with given index colum ({index_column}) failed, trying with pandas-generated index")
-                self.data = pd.read_csv(ons_pd_csv_path, index_col=None, usecols=lambda col: col in self.fields, dtype=data_types, encoding="utf-8")
+                self.data = pd.read_csv(ons_pd_csv_path, index_col=None, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
 
             for field in data_types:
                 if data_types[field] == "category":
