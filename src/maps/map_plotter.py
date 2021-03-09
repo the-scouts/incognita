@@ -9,9 +9,10 @@ from folium.plugins import MarkerCluster
 import geopandas as gpd
 import pandas as pd
 
+from src import utility
 from src.base import Base
+from src.log_util import logger
 from src.reports.reports import Reports
-import src.utility as utility
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -62,7 +63,7 @@ class MapPlotter(Base):
 
     def validate_columns(self):
         if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:
-            self.logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
+            logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
             raise KeyError(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data.")
 
     def set_boundary(self, reports: Reports):
@@ -80,7 +81,7 @@ class MapPlotter(Base):
         # map_data, CODE_COL and code_name all must be set before calling _filter_shape_file()
         self._filter_shape_file(reports.shapefile_path)
 
-        self.logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
+        logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
     def set_score_col(self, dimension: dict):
         """
@@ -91,7 +92,7 @@ class MapPlotter(Base):
         self.score_col_key = f"{self.boundary_name}_{dimension['column']}"
         self.SCORE_COL[self.score_col_key] = dimension["column"]
         self.score_col_label = dimension["tooltip"]
-        self.logger.info(f"Setting score column to {dimension['column']} (displayed: {self.score_col_label})")
+        logger.info(f"Setting score column to {dimension['column']} (displayed: {self.score_col_label})")
 
     def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True):
         """
@@ -124,16 +125,16 @@ class MapPlotter(Base):
             raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
         original_number_of_shapes = len(all_shapes.index)
-        self.logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
-        self.logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
+        logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
+        logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
 
         list_codes = self.map_data[self.CODE_COL].drop_duplicates().astype(str).to_list()
         filtered_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
-        self.logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
+        logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
         self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(f"epsg:{utility.WGS_84}")
-        # self.logger.debug(f"geo_data\n{self.geo_data}")
+        # logger.debug(f"geo_data\n{self.geo_data}")
 
     def add_areas(self, name: str, show: bool, colourmap: colormap.ColorMap, col_name: str, significance_threshold: float):
         """Adds features from self.geo_data to map
@@ -145,11 +146,11 @@ class MapPlotter(Base):
         :param float significance_threshold: If an area's value is significant enough to be displayed
         :return: None
         """
-        self.logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
+        logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
         merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
-        self.logger.debug(f"Merged_data\n{merged_data}")
+        logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
-            self.logger.error("Data unsuccesfully merged resulting in zero records")
+            logger.error("Data unsuccesfully merged resulting in zero records")
             raise Exception("Data unsuccesfully merged resulting in zero records")
 
         boundary_name = f"{self.boundary_name}_{col_name}"
@@ -180,10 +181,10 @@ class MapPlotter(Base):
         :param colourmap: a Branca Colormap object to calculate the region's colour
         :return str: hexadecimal colour value "#RRGGBB"
         """
-        # self.logger.debug(f"Colouring {properties} by {self.SCORE_COL[boundary_name]}")
+        # logger.debug(f"Colouring {properties} by {self.SCORE_COL[boundary_name]}")
         area_score = properties.get(self.SCORE_COL[boundary_name])
         if area_score is None:
-            self.logger.debug(f"Colouring gray. key: {boundary_name}, score: {area_score}")
+            logger.debug(f"Colouring gray. key: {boundary_name}, score: {area_score}")
             return "#cccccc"
         elif abs(area_score) < threshold:
             return "#ffbe33"

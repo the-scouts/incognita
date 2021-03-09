@@ -2,10 +2,11 @@ import geopandas as gpd
 import pandas as pd
 import shapely
 
+from src import utility
 from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
-import src.utility as utility
+from src.log_util import logger
 
 
 # noinspection PyUnresolvedReferences
@@ -52,7 +53,7 @@ class DistrictBoundaries(Base):
         all_points = all_points.to_crs(f"epsg:{utility.BNG}")
         all_points.reset_index(inplace=True)
 
-        self.logger.info(f"Found {len(all_points.index)} different Section points")
+        logger.info(f"Found {len(all_points.index)} different Section points")
 
         # Calculates all the other points within twice the distance of the
         # closest point from a neighbouring district
@@ -61,9 +62,9 @@ class DistrictBoundaries(Base):
         all_points["buffer_distance"] = 0
 
         # Initial calculation of the buffer distances
-        self.logger.info(f"Calculating buffer distances of {sum(all_points['buffer_distance'] == 0)} points")
+        logger.info(f"Calculating buffer distances of {sum(all_points['buffer_distance'] == 0)} points")
         all_points["buffer_distance"] = all_points.apply(lambda row: self._buffer_distance(row, all_points), axis=1)
-        self.logger.info(f"On first pass {sum(all_points['buffer_distance'] == 0)} missing buffer distance")
+        logger.info(f"On first pass {sum(all_points['buffer_distance'] == 0)} missing buffer distance")
 
         old_number = sum(all_points["buffer_distance"] == 0)
         new_number = 1
@@ -73,8 +74,8 @@ class DistrictBoundaries(Base):
             old_number = sum(all_points["buffer_distance"] == 0)
             all_points["buffer_distance"] = all_points.apply(lambda row: self._buffer_distance(row, all_points), axis=1)
             new_number = sum(all_points["buffer_distance"] == 0)
-            self.logger.info(f"On next pass {new_number} missing buffer distance")
-            self.logger.debug(f"The following points do not have buffer distances defined:\n{all_points.loc[all_points['buffer_distance'] == 0]}")
+            logger.info(f"On next pass {new_number} missing buffer distance")
+            logger.debug(f"The following points do not have buffer distances defined:\n{all_points.loc[all_points['buffer_distance'] == 0]}")
 
         # Create the GeoDataFrame that will form the GeoJSON
         output_columns = ["id", "name"]
@@ -87,7 +88,7 @@ class DistrictBoundaries(Base):
                     "id": [district["D_ID"]],
                     "name": [district["D_name"]],
                 }
-                self.logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
+                logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
 
                 district_points = all_points.loc[all_points["D_ID"] == district["D_ID"]]
 
@@ -109,9 +110,9 @@ class DistrictBoundaries(Base):
         output_gpd = output_gpd.to_crs(f"epsg:{utility.WGS_84}")
         output_gpd.reset_index(drop=True, inplace=True)
 
-        self.logger.debug(f"output gpd\n{output_gpd}")
+        logger.debug(f"output gpd\n{output_gpd}")
         output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors="coerce")
-        self.logger.debug(f"output gpd\n{output_gpd}")
+        logger.debug(f"output gpd\n{output_gpd}")
         output_gpd.to_file("districts_buffered.geojson", driver="GeoJSON")
 
     @staticmethod

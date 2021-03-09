@@ -5,6 +5,7 @@ import json
 import time
 from typing import TYPE_CHECKING
 
+from src.log_util import logger
 import src.log_util as log_util
 from src.utility import SCRIPTS_ROOT
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 def time_function(method: Callable):
     """This method wraps functions to determine the execution time (clock time) for the function
 
-    The function should be of a class with a self.logger logging object
+    The function should be of a class with a logger logging object
 
     Incredible wrapping SO answer https://stackoverflow.com/a/1594484 (for future ref)
 
@@ -36,7 +37,7 @@ def time_function(method: Callable):
 
         # Try to log calling the function
         try:
-            self.logger.info(f"Calling function {method.__name__}")
+            logger.info(f"Calling function {method.__name__}")
         except AttributeError:
             pass
 
@@ -45,7 +46,7 @@ def time_function(method: Callable):
 
         # Try to log how long the function took
         try:
-            self.logger.duration(method.__name__, start_time=start_time)
+            logger.duration(method.__name__, start_time=start_time)
         except AttributeError:
             pass
 
@@ -75,12 +76,9 @@ class Base:
         # if passed a path to output the log to, create the logger at that path
         # otherwise retrieve the standard logger
         if log_path:
-            self.logger = log_util.create_logger("log", log_path)
-        else:
-            # if a logger already exists for script
-            self.logger = log_util.get_logger("log")
+            log_util.set_up_logger(log_path)
 
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """
         start_time = start_time if start_time else self.start_time
-        self.logger.finished(f"Script", start_time=start_time)
+        logger.finished(f"Script", start_time=start_time)

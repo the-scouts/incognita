@@ -1,7 +1,7 @@
 import pandas as pd
 
+from src import utility
 import src.data.ons_pd as ons_pd
-import src.utility as utility
 
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):

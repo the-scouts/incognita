@@ -5,6 +5,7 @@ import pandas as pd
 
 from src.base import Base
 from src.data.scout_census import ScoutCensus
+from src.log_util import logger
 
 
 class CensusMergeData(Base):
@@ -29,7 +30,7 @@ class CensusMergeData(Base):
         # Column heading denoting a valid postcode in the row
         valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
 
-        self.logger.info("Merging data")
+        logger.info("Merging data")
         census_data = pd.merge(census_data, data_to_merge, how="left", left_on=census_index_column, right_index=True, sort=False)
 
         # Checks whether ONS data exists for each row and stores in a column
@@ -118,10 +119,10 @@ class CensusMergeData(Base):
         cleaned_postcode_label = "clean_postcode"
         valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
 
-        self.logger.info("Cleaning postcodes")
+        logger.info("Cleaning postcodes")
         cleaned_postcode_column = CensusMergeData._postcode_cleaner(census_data[postcode_column])
 
-        self.logger.info("Inserting columns")
+        logger.info("Inserting columns")
         census_data.insert(cleaned_postcode_index, cleaned_postcode_label, cleaned_postcode_column)
         census_data.insert(valid_postcode_index, valid_postcode_label, np.NaN)
 
@@ -141,7 +142,7 @@ class CensusMergeData(Base):
         :return: modified data table with more correct postcodes
         """
 
-        self.logger.info("filling postcodes in sections with invalid postcodes")
+        logger.info("filling postcodes in sections with invalid postcodes")
 
         # Helper variables to store field headings for often used fields
         entity_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
@@ -242,26 +243,26 @@ class CensusMergeData(Base):
             # Delete the Country column from the passed data as having this would prevent merging
             # Pass only the merge test column as a quick way to test that the postcode has merged
             data = self.merge_data(data.drop(merge_test_column_label, axis=1), merge_test_column, "clean_postcode")
-            self.logger.info(f"change in valid postcodes is: {data[valid_postcode_label].sum() - valid_postcodes_start}")
+            logger.info(f"change in valid postcodes is: {data[valid_postcode_label].sum() - valid_postcodes_start}")
 
             return data
 
-        self.logger.info("Fill invalid section postcodes with valid section postcodes from 2019")
+        logger.info("Fill invalid section postcodes with valid section postcodes from 2019")
         section_records, valid_postcode_lookup = _create_helper_tables(census_data, section_types_list)
         census_data = _run_fixer(census_data, section_id_label, 2, section_records)
         section_records, valid_postcode_lookup = None, None
 
-        self.logger.info("Fill invalid group-section postcodes with valid postcodes from same group")
+        logger.info("Fill invalid group-section postcodes with valid postcodes from same group")
         group_section_records, valid_postcode_lookup = _create_helper_tables(census_data, group_section_types_list)
         census_data = _run_fixer(census_data, group_id_label, 1, group_section_records)
         group_section_records, valid_postcode_lookup = None, None
 
-        self.logger.info("Fill invalid district-section postcodes with valid postcodes from same district")
+        logger.info("Fill invalid district-section postcodes with valid postcodes from same district")
         district_section_records, valid_postcode_lookup = _create_helper_tables(census_data, district_section_types_list)
         census_data = _run_fixer(census_data, district_id_label, 0, district_section_records)
         district_section_records, valid_postcode_lookup = None, None
 
-        self.logger.info("Fill invalid pre 2017 postcodes with valid postcodes from same entity")
+        logger.info("Fill invalid pre 2017 postcodes with valid postcodes from same entity")
         pre_2017_section_records, valid_postcode_lookup = _create_helper_tables(census_data, pre_2017_types_list)
         census_data = _run_fixer(census_data, section_id_label, 2, pre_2017_section_records)
         pre_2017_section_records, valid_postcode_lookup = None, None

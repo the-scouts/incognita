@@ -6,6 +6,7 @@ import pytest
 
 from src.base import Base
 from src.base import time_function
+from src.log_util import logger
 from src.utility import LOGS_ROOT
 from src.utility import SCRIPTS_ROOT
 
@@ -23,7 +24,7 @@ class ExampleClassLogger(Base):
 
     @time_function
     def add(self, number1: Real, number2: Real) -> Real:
-        self.logger.info("Example Function")
+        logger.info("Example Function")
         return number1 + number2
 
 
