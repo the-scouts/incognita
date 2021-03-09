@@ -1,16 +1,59 @@
 # geo_mapping
 Mapping Scouts data to UK administrative regions.
 
-[![Build Status](https://travis-ci.com/the-scouts/geo_mapping.svg?branch=master)](https://travis-ci.com/the-scouts/geo_mapping)
 [![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Prerequisites:
-This is written and tested in Python 3.8.
+## Where to get it
 
-This project is largely dependent on `geopandas` and `pandas`, along with `folium`, `dash`, and `shapely`.
+The source code for the project is hosted on GitHub at
+[the-scouts/geo_mapping](https://github.com/the-scouts/geo_mapping)
 
-For testing we use `pytest` and `coverage`, with `black` as our codestyle.
+We **strongly** recommended using `conda` to install *geo_mapping*, however pip can
+be used with a number of manual installation steps as below.
+
+To install dependencies with Conda, run the following commands in the terminal
+```shell
+# conda
+conda env update
+conda activate scouts_mapping
+```
+
+```shell
+# or PyPI
+pip install -r requirements.txt
+```
+If installing with `pip`, you will need to manually install geopandas and its
+dependencies. Please follow below:
+
+### Installing geopandas:
+We **strongly** recommended using `conda` to install geopandas.
+
+However, to install geopandas using pip on Windows, follow the following steps:
+1. Download the wheels for
+   [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal),
+   [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and
+   [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the
+   correct platform and python version (currently 3.8).
+2. Install any prerequisites listed on Gohlke's site (e.g. C++ re-distributables)
+3. `pip install` the wheels in the following order (preferably in a Virtual
+   Environment)
+    1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+    2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
+    3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
+4. `pip install geopandas`
+
+### Dependencies
+This project is written and tested in Python 3.8, and depends on:
+
+- [geopandas](https://github.com/geopandas/geopandas),
+  [pandas](https://github.com/pandas-dev/pandas) - for (geospatial) data
+  transformation and arrangement
+- [folium](https://github.com/python-visualization/folium) - for rendering to
+  [Leaflet.js](https://github.com/Leaflet/Leaflet) maps
+- [shapely](https://github.com/Toblerity/Shapely) - for manipulation and
+  analysis of geometric objects
+- [dash](https://github.com/plotly/dash) - for simple web-apps
 
 ## Getting Started:
 You will need to obtain the latest version of the ONS Postcode Directory. Note
@@ -21,46 +64,17 @@ ONSPostcodeDirectory in `ONS_data.py`
 
 You will need to populate the settings.json file with the appropriate file paths
 
-### Installing required packages:
-It is highly recommended to use conda to install this project, however pip can be used with a number of manual installation steps listed below.
+### Generating the data file
+To generate the datafile needed for most operations, run `setup_data_file.py` 
+with clean prototype extract.
 
-
-#### Installing with Conda:
-To install dependencies with Conda, run the following commands in the terminal
-
-`conda env update`
-
-`conda env list` (Check that `scouts_mapping` is listed)
-
-`conda activate scouts_mapping`
-
-#### Installing with Pip
-To install dependencies with Conda, run the following commands in the terminal
-
-`pip install -r requirements.txt`
-
-To install geopandas and its dependencies, follow below
-
-##### Installing geopandas:
-It is highly recommended to use conda to install geopandas.
-
-However, to install geopandas using pip on windows, follow the following steps:
-* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the correct python version (currently 3.8) and platform
-* Install any prerequisites listed on Gohlke's site (e.g. C++ redistributables)
-* `pip install` the wheels in the following order (preferably in a Virtual Environment)
-    1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
-    2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
-    3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
-* `pip install geopandas`
-
-### Generating datafile
-To generate the datafile needed for most operations, run `setup_data_file.py` with clean prototype extract.
-
-You may also run `setup_reduce_onspd.py` to produce a smaller ONS Postcode Directory file to speed up lookup operations and reduce memory consumption. 
+You may also run `setup_reduce_onspd.py` to produce a smaller ONS Postcode 
+Directory file to speed up lookup operations and reduce memory consumption. 
 
 ## Resources:
 ### Postcode Directory:
- * Latest ONS Postcode Directory ([link](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory))
+ * Latest 
+   [ONS Postcode Directory](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory)
 
 ### Shapefiles:
 #### Administrative/Electoral Geographies:
@@ -97,33 +111,14 @@ The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk
     * ONS_PD_**DATE**/
     * Scout Census Data/
         * _Census Extract Files_
-* docs/
-    * _Documentation Files_
-* scripts/
-    * _Script Files_
-* src/
-    * _Source Files_
-    * data/
-    * geographies/
-    * maps/
-    * reports/
-* tests/
-    * _Testing Files_
-
-
-## Notes
-I suspect that this will generalise beyond the specific application to Scouts,
-but I have not done so. I anticipate to progress to this point, but unfortunately
-the code will only work out of the box with data structured as an extract of
-the Scout Census.
-
-The documentation and commenting are imperfect and being improved, and can be
-found here:
-
-I would welcome any support, comments or guidance on my code.
 
 ## Branches
 The heroku branch is specifically for the heroku application: http://scout-mapping.herokuapp.com. It contains a cut down requirements file to ensure that it
 loads into heroku correctly.
 
-*This project is licensed under the GNU License - see the LICENSE file for details*
+## License
+
+***geo_mapping*** is naturally
+[open source](https://github.com/the-scouts/geo_mapping) and is
+licensed under the **[GNU License](https://choosealicense.com/licenses/gpl-3.0)**.
+
