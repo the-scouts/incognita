@@ -23,15 +23,14 @@ def create_logger(name: str, file_path: str = None) -> logging.Logger:
     formatter = logging.Formatter(fmt="{filename} - {levelname} - {message}", style="{")
 
     # set up a log to file
-    file = logging.FileHandler(file_path, encoding="utf-8", mode="w")
-    file.setFormatter(formatter)
+    if file_path is not None:
+        file = logging.FileHandler(file_path, encoding="utf-8", mode="w")
+        file.setFormatter(formatter)
+        logger.addHandler(file)
 
     # set up a log to the console
     console = logging.StreamHandler(stream=sys.stdout)
     console.setFormatter(formatter)
-
-    # add the handlers to the root logger
-    logger.addHandler(file)
     logger.addHandler(console)
 
     return logger
