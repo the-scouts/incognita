@@ -4,19 +4,8 @@ Mapping Scouts data to UK administrative regions.
 [![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Prerequisites:
-This project is written and tested in Python 3.8, and depends on:
 
-- [geopandas](https://github.com/geopandas/geopandas),
-  [pandas](https://github.com/pandas-dev/pandas) - for (geospatial) data
-  transformation and arrangement
-- [folium](https://github.com/python-visualization/folium) - for rendering to
-  [Leaflet.js](https://github.com/Leaflet/Leaflet) maps
-- [shapely](https://github.com/Toblerity/Shapely) - for manipulation and
-  analysis of geometric objects
-- [dash](https://github.com/plotly/dash) - for simple web-apps
-
-### Installing required packages:
+## Installing required packages:
 
 The source code for the project is hosted on GitHub at
 [the-scouts/geo_mapping](https://github.com/the-scouts/geo_mapping)
@@ -38,7 +27,7 @@ pip install -r requirements.txt
 If installing with `pip`, you will need to manually install geopandas and its
 dependencies. Please follow below:
 
-##### Installing geopandas:
+### Installing geopandas:
 It is highly recommended to use conda to install geopandas.
 
 However, to install geopandas using pip on windows, follow the following steps:
@@ -49,6 +38,18 @@ However, to install geopandas using pip on windows, follow the following steps:
     2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
     3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
 * `pip install geopandas`
+
+### Prerequisites:
+This project is written and tested in Python 3.8, and depends on:
+
+- [geopandas](https://github.com/geopandas/geopandas),
+  [pandas](https://github.com/pandas-dev/pandas) - for (geospatial) data
+  transformation and arrangement
+- [folium](https://github.com/python-visualization/folium) - for rendering to
+  [Leaflet.js](https://github.com/Leaflet/Leaflet) maps
+- [shapely](https://github.com/Toblerity/Shapely) - for manipulation and
+  analysis of geometric objects
+- [dash](https://github.com/plotly/dash) - for simple web-apps
 
 ## Getting Started:
 You will need to obtain the latest version of the ONS Postcode Directory. Note
