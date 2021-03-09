@@ -104,17 +104,6 @@ The Beginner's Guide to UK Geography ([link](https://geoportal.statistics.gov.uk
     * Scout Census Data/
         * _Census Extract Files_
 
-## Notes
-I suspect that this will generalise beyond the specific application to Scouts,
-but I have not done so. I anticipate to progress to this point, but unfortunately
-the code will only work out of the box with data structured as an extract of
-the Scout Census.
-
-The documentation and commenting are imperfect and being improved, and can be
-found here:
-
-I would welcome any support, comments or guidance on my code.
-
 ## Branches
 The heroku branch is specifically for the heroku application: http://scout-mapping.herokuapp.com. It contains a cut down requirements file to ensure that it
 loads into heroku correctly.
