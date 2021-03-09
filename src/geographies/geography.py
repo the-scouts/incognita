@@ -59,11 +59,13 @@ class Geography(Base):
 
     @property
     def shapefile_path(self) -> Path:
-        return utility.DATA_ROOT / self.geography_metadata_dict["boundary"]["shapefile"]
+        shapefiles_root = utility.DATA_ROOT / self.settings["Boundaries folder"]
+        return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        return utility.DATA_ROOT / self.settings["National Statistical folder"] / self.geography_metadata_dict["age_profile"].get("path")
+        age_profiles_root = utility.DATA_ROOT / self.settings["National Statistical folder"]
+        return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
     def age_profile_key(self) -> str:
