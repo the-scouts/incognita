@@ -120,23 +120,19 @@ class Reports(Base):
 
         # Set default option set for `options`
         if options is None:
-            options = ["Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"]
+            options = {"Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"}
+        else:
+            options = set(options)
 
         # fmt: off
-        opt_number_of_sections = \
-            True if "Number of Sections" in options else False
-        opt_number_of_groups = \
-            True if "Number of Groups" in options else False
-        opt_groups = \
-            True if "Groups" in options else False
-        opt_section_numbers = \
-            True if "Section numbers" in options else False
-        opt_6_to_17_numbers = \
-            True if "6 to 17 numbers" in options else False
-        opt_awards = \
-            True if "awards" in options else False
-        opt_waiting_list_totals = \
-            True if "waiting list total" in options else False
+        opt_number_of_sections = "Number of Sections" in options
+        opt_number_of_groups = "Number of Groups" in options
+        opt_groups = "Groups" in options
+        opt_section_numbers = "Section numbers" in options
+        opt_6_to_17_numbers = "6 to 17 numbers" in options
+        opt_awards = "awards" in options
+        opt_waiting_list_totals = "waiting list total" in options
+        opt_adult_numbers = "Adult numbers" in options
         # fmt: on
 
         geog_name = self.geography_type  # e.g oslaua osward pcon lsoa11
@@ -198,6 +194,8 @@ class Reports(Base):
                 output[f"All-{census_year}"] = all_young_people
             if opt_waiting_list_totals:
                 output[f"Waiting List-{census_year}"] = waiting_list
+            if opt_adult_numbers:
+                output[f"Adults-{census_year}"] = group_df[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum().sum()
             return output
 
         def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
