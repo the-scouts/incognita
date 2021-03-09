@@ -146,19 +146,20 @@ class ScoutData(Base):
         self.data = utility.filter_records(self.data, field, value_list, self.logger, mask, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None):
-        uid = Path(f"{hash(self.data.shape)}_{shapes_key}_{path.stem}.feather")
-        if uid.is_file():
-            data = pd.read_feather(uid).set_index("index")
-            assert self.data.equals(data[self.data.columns])
-            self.data = data
-            return
+        if path is not None:
+            uid = Path(f"{hash(self.data.shape)}_{shapes_key}_{path.stem}.feather")
+            if uid.is_file():
+                data = pd.read_feather(uid).set_index("index")
+                assert self.data.equals(data[self.data.columns])
+                self.data = data
+                return
 
         if self.points_data.empty:
             idx = pd.Series(self.data.index, name="object_index")
             self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.data.long, self.data.lat), crs=utility.WGS_84)
 
-        if path:
-            all_shapes = gpd.GeoDataFrame.from_file(path)
+        if path is not None:
+            all_shapes = gpd.GeoDataFrame.from_file(str(path))  # FIXME geopandas does not support os.PathLike (2021-03-09)
         elif gdf is not None:
             all_shapes = gdf
         else:
@@ -169,4 +170,5 @@ class ScoutData(Base):
         merged = self.data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)
         assert self.data.equals(merged[self.data.columns])
         self.data = merged
-        merged.reset_index(drop=False).to_feather(uid)
+        if path is not None:
+            merged.reset_index(drop=False).to_feather(uid)
