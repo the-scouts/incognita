@@ -10,7 +10,7 @@ dependencies:
   - folium
   - branca
   - dash
-  - geopandas
+  - geopandas>=0.8
   - numpy
   - pandas
   - shapely
