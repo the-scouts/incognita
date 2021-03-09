@@ -28,16 +28,21 @@ If installing with `pip`, you will need to manually install geopandas and its
 dependencies. Please follow below:
 
 ### Installing geopandas:
-It is highly recommended to use conda to install geopandas.
+We **strongly** recommended using `conda` to install geopandas.
 
-However, to install geopandas using pip on windows, follow the following steps:
-* Download the wheels for [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the correct python version (currently 3.8) and platform
-* Install any prerequisites listed on Gohlke's site (e.g. C++ redistributables)
-* `pip install` the wheels in the following order (preferably in a Virtual Environment)
-    1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
-    2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
-    3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
-* `pip install geopandas`
+However, to install geopandas using pip on Windows, follow the following steps:
+1. Download the wheels for
+   [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal),
+   [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and
+   [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the
+   correct platform and python version (currently 3.8).
+2. Install any prerequisites listed on Gohlke's site (e.g. C++ re-distributables)
+3. `pip install` the wheels in the following order (preferably in a Virtual
+   Environment)
+  1. [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+  2. [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona)
+  3. [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree)
+4. `pip install geopandas`
 
 ### Prerequisites:
 This project is written and tested in Python 3.8, and depends on:
