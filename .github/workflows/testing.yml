@@ -35,7 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install pytest-cov, codecov
+      - name: Install coverage requirements (pytest-cov, codecov)
         run: |
           pip install pytest-cov codecov
 
