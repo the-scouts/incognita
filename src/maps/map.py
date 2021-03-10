@@ -236,10 +236,10 @@ class Map:
             sections_info_table = sections_info_table.reset_index().set_index(["postcode", "district_ID", "group_ID", "index"], drop=False).drop("index", axis=1)
             sections_info_table = sections_info_table.dropna(subset=["district_ID"]).sort_index(level=[0, 1, 2, 3])
 
-        _sect_info_type = Dict[str, str]
-        _group_info_type = Dict[str, Union[str, _sect_info_type]]
-        _district_info_type = Dict[str, Union[str, float, _group_info_type]]
-        _postcode_info_type = Dict[str, _district_info_type]
+        _sect_info_type = dict[str, str]
+        _group_info_type = dict[str, Union[str, _sect_info_type]]
+        _district_info_type = dict[str, Union[str, float, _group_info_type]]
+        _postcode_info_type = dict[str, _district_info_type]
         postcode_info: _postcode_info_type = {}
         for postcode in postcodes:
             # Find all the sections with the same postcode

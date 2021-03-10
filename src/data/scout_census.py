@@ -155,6 +155,6 @@ class ScoutCensus:
         :return: List of section types
         """
         section_names_list = ScoutCensus.get_section_names(level)
-        section_dict: Dict = ScoutCensus.column_labels["sections"]
+        section_dict: dict = ScoutCensus.column_labels["sections"]
         return [section_dict[section]["type"] for section in section_names_list]
         # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.

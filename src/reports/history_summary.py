@@ -139,7 +139,7 @@ class HistorySummary:
         # Given data on all sections, provides summary of all new sections, and
         # copes with the pre-2017 section reporting structure
         logger.info(f"Beginning new_section_history_summary for {years}")
-        new_section_ids: List[dict] = []
+        new_section_ids: list[dict] = []
 
         logger.info(f"Getting group ID list in column {ScoutCensus.column_labels['id']['GROUP']}")
         # Iterate through Groups looking for new Sections
