@@ -34,11 +34,3 @@ def test_time_function_logger_output(caplog: pytest.LogCaptureFixture):
 
     assert "Calling function add" in caplog.text
     assert "add took 0.0" in caplog.text
-
-
-def test_base_close_script(caplog: pytest.LogCaptureFixture):
-    caplog.set_level(logging.INFO)
-
-    Base().close()
-
-    assert "Script finished, 0.00 seconds elapsed." in caplog.text
