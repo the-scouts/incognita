@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,14 +17,13 @@ if TYPE_CHECKING:
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_ROOT = PROJECT_ROOT / "data"
+SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
+LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
 
-def get_proj_root() -> Path:
-    return Path(__file__).parent.parent
-
-
-DATA_ROOT = get_proj_root().joinpath("data")
-SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
-LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
+SETTINGS = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
+OUTPUT_FOLDER = PROJECT_ROOT.joinpath(json.loads(SETTINGS["Output folder"])).absolute()
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
