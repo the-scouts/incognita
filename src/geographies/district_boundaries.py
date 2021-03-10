@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd
-import shapely
+import shapely.ops
+import shapely.geometry
 
 from src import utility
 from src.base import Base
@@ -9,8 +10,6 @@ from src.data.scout_data import ScoutData
 from src.logger import logger
 
 
-# noinspection PyUnresolvedReferences
-# To solve warnings for shapely methods
 class DistrictBoundaries(Base):
     def __init__(self, scout_data_object: ScoutData):
         super().__init__()
@@ -25,9 +24,6 @@ class DistrictBoundaries(Base):
         Aims to create a circular boundary around every section of maximal size
         that doesn't overlap or leave gaps between Districts.
         """
-
-        if not self.has_ons_data():
-            raise Exception("Must have ons data added before creating district boundaries")
 
         # Find all the District IDs and names
         districts = self.scout_data.data[[ScoutCensus.column_labels["id"]["DISTRICT"], ScoutCensus.column_labels["name"]["DISTRICT"]]].drop_duplicates()
@@ -122,7 +118,6 @@ class DistrictBoundaries(Base):
         as requires the results of the buffer distance of other points, and
         in this case returns 0.
 
-        :param row: row containing 'nearest points' and 'indexes of interest' columns
         :param gpd.GeoDataFrame all_points: Contains all points.
         """
         if point_details["buffer_distance"] == 0:
@@ -187,7 +182,6 @@ class DistrictBoundaries(Base):
         the minimum distance from the row to the subset.
 
         :param row: Data for specific point
-        :param gpd.GeoDataFrame other_data: Other rows of a GeoDataFrame
 
         :returns list: Sorted list of dictionaries containing points and distances
         """
