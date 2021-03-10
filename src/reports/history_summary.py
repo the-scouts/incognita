@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class HistorySummary(Base):
     def __init__(self, scout_data_object: ScoutData, **kwargs):
-        super().__init__(settings=True, **kwargs)
+        super().__init__()
 
         self.scout_data = scout_data_object
 
@@ -23,7 +23,7 @@ class HistorySummary(Base):
         logger.info("Beginning group_history_summary")
         report = self._history_summary(years, "Group ID", ScoutCensus.column_labels["id"]["GROUP"], unit_type="Group")
         if report_name:
-            utility.save_report(report, self.settings["Output folder"], report_name, logger=logger)
+            utility.save_report(report, report_name)
         return report
 
     def section_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
@@ -31,7 +31,7 @@ class HistorySummary(Base):
         logger.info("Beginning section_history_summary")
         report = self._history_summary(years, "compass ID", "compass")
         if report_name:
-            utility.save_report(report, self.settings["Output folder"], report_name, logger=logger)
+            utility.save_report(report, report_name)
         return report
 
     def _history_summary(self, years: list, id_name: str, census_col: str, unit_type: str = None) -> pd.DataFrame:
@@ -451,5 +451,5 @@ class HistorySummary(Base):
 
         output_data.reset_index(drop=True, inplace=True)
         if report_name:
-            utility.save_report(output_data, self.settings["Output folder"], report_name, logger=logger)
+            utility.save_report(output_data, report_name)
         return output_data

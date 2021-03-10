@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from src.logger import logger
 from src.data.scout_census import ScoutCensus
 
 if TYPE_CHECKING:
@@ -155,10 +156,9 @@ def _try_downcast(series: pd.Series) -> pd.Series:
         return series
 
 
-def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger: logging.Logger = None):
-    if logger:
-        logger.info(f"Writing to {report_name}")
-    report.to_csv(output_path + report_name + ".csv", index=False, encoding="utf-8-sig")
+def save_report(report: pd.DataFrame, report_name: str):
+    logger.info(f"Writing to {report_name}")
+    report.to_csv(OUTPUT_FOLDER + report_name + ".csv", index=False, encoding="utf-8-sig")
 
 
 ensure_roots_exist()
