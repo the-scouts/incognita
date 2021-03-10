@@ -7,7 +7,6 @@ import pytest
 from src.base import Base
 from src.base import time_function
 from src.log_util import logger
-from src.utility import LOGS_ROOT
 from src.utility import SCRIPTS_ROOT
 
 
@@ -16,12 +15,6 @@ def add(number1: Real, number2: Real) -> Real:
 
 
 class ExampleClassLogger(Base):
-    def __init__(self, path: bool = True):
-        if path:
-            super().__init__(log_path=LOGS_ROOT / "tests.log")
-        else:
-            super().__init__()
-
     @time_function
     def add(self, number1: Real, number2: Real) -> Real:
         logger.info("Example Function")
@@ -34,17 +27,13 @@ class ExampleClassSettings(Base):
 
 
 @pytest.fixture
-def ec_logger():
+def ec_logger() -> ExampleClassLogger:
     """Returns an ExampleClassLogger instance"""
-
-    def _instantiator(path: bool = True) -> ExampleClassLogger:
-        return ExampleClassLogger(path)
-
-    return _instantiator
+    return ExampleClassLogger()
 
 
 @pytest.fixture
-def ec_settings():
+def ec_settings() -> ExampleClassSettings:
     """Returns an ExampleClassSettings instance"""
     return ExampleClassSettings()
 
@@ -79,26 +68,14 @@ def test_time_function_no_logger_entity():
 
 def test_time_function_logger_output(caplog, ec_logger):
     caplog.set_level(logging.INFO)
-    ec_logger().add(2, 2)
+    ec_logger.add(2, 2)
 
     assert "Calling function add" in caplog.text
     assert "add took 0.0" in caplog.text
 
 
-def test_base_logger_creation(ec_logger):
-    assert isinstance(ec_logger().logger, logging.Logger)
-
-
-def test_base_logger_retrieval(ec_logger):
-    ec0 = ec_logger(path=True)
-    ec1 = ec_logger(path=False)
-
-    assert ec1.logger is not None
-    assert ec0.logger == ec1.logger
-
-
 def test_base_close_script(caplog, ec_logger):
     caplog.set_level(logging.INFO)
-    ec_logger().close()
+    ec_logger.close()
 
     assert "Script finished, 0.00 seconds elapsed." in caplog.text
