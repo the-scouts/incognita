@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import cycle
-from typing import Dict, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union
 import webbrowser
 
 import branca
