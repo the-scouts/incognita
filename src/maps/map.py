@@ -80,6 +80,16 @@ class Map(Base):
         :param dict scale: Allows a fixed value scale, default is boundaries at
                            0%, 20%, 40%, 60%, 80% and 100%.
         :param float threshold: If an area's value is significant enough to be displayed
+
+
+        Adds features from self.geo_data to map
+
+        :param str name: the name of the Layer, as it will appear in the layer controls
+        :param bool show: whether to show the layer by default
+        :param colormap.ColorMap colourmap: branca colour map object
+        :param str col_name: column of dataframe used. Used for a unique key.
+        :param float significance_threshold: If an area's value is significant enough to be displayed
+        :return: None
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
         self.set_boundary(reports)
@@ -108,7 +118,39 @@ class Map(Base):
 
         logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
         logger.info(f"Colour scale index values\n{colourmap_index}")
-        self.add_areas(dimension["legend"], show=show, colourmap=colourmap, col_name=dimension["column"], significance_threshold=threshold)
+
+        name: str = dimension["legend"]
+        show: bool = show
+        colourmap: colormap.ColorMap = colourmap
+        col_name: str = dimension["column"]
+        significance_threshold: float = threshold
+
+        logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
+        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
+        logger.debug(f"Merged_data\n{merged_data}")
+        if len(merged_data.index) == 0:
+            logger.error("Data unsuccesfully merged resulting in zero records")
+            raise Exception("Data unsuccesfully merged resulting in zero records")
+
+        boundary_name = f"{self.boundary_name}_{col_name}"
+
+        # fmt: off
+        folium.GeoJson(
+            data=merged_data.to_json(),
+            name=name,
+            style_function=lambda x: {
+                "fillColor": self._map_colourmap(x["properties"], boundary_name, significance_threshold, colourmap),
+                "color": "black",
+                "fillOpacity": self._map_opacity(x["properties"], boundary_name, significance_threshold),
+                "weight": 0.10,
+            },
+            tooltip=folium.GeoJsonTooltip(fields=[self.boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
+            show=show,
+        ).add_to(self.map)
+        # fmt: on
+        colourmap.add_to(self.map)
+        del merged_data, name
+
         # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: dict = None):
@@ -448,42 +490,6 @@ class Map(Base):
         # Covert shape file to world co-ordinates
         self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(f"epsg:{utility.WGS_84}")
         # logger.debug(f"geo_data\n{self.geo_data}")
-
-    def add_areas(self, name: str, show: bool, colourmap: colormap.ColorMap, col_name: str, significance_threshold: float):
-        """Adds features from self.geo_data to map
-
-        :param str name: the name of the Layer, as it will appear in the layer controls
-        :param bool show: whether to show the layer by default
-        :param colormap.ColorMap colourmap: branca colour map object
-        :param str col_name: column of dataframe used. Used for a unique key.
-        :param float significance_threshold: If an area's value is significant enough to be displayed
-        :return: None
-        """
-        logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
-        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
-        logger.debug(f"Merged_data\n{merged_data}")
-        if len(merged_data.index) == 0:
-            logger.error("Data unsuccesfully merged resulting in zero records")
-            raise Exception("Data unsuccesfully merged resulting in zero records")
-
-        boundary_name = f"{self.boundary_name}_{col_name}"
-
-        # fmt: off
-        folium.GeoJson(
-            data=merged_data.to_json(),
-            name=name,
-            style_function=lambda x: {
-                "fillColor": self._map_colourmap(x["properties"], boundary_name, significance_threshold, colourmap),
-                "color": "black",
-                "fillOpacity": self._map_opacity(x["properties"], boundary_name, significance_threshold),
-                "weight": 0.10,
-            },
-            tooltip=folium.GeoJsonTooltip(fields=[self.boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
-            show=show,
-        ).add_to(self.map)
-        # fmt: on
-        colourmap.add_to(self.map)
-        del merged_data, name
 
     def _map_colourmap(self, properties: dict, boundary_name: str, threshold: float, colourmap: colormap.ColorMap) -> str:
         """Returns colour from colour map function and value
