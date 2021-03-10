@@ -4,19 +4,19 @@ from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
-import shapely
+import shapely.geometry
 
 from src import utility
 from src.base import Base
 from src.logger import logger
 
-# For type hints
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from src.data.ons_pd import ONSPostcodeDirectory
     from src.data.scout_data import ScoutData
 
 
-# noinspection PyUnresolvedReferences
 class Geography(Base):
     """Stores information about the (administrative) geography type currently used and methods for selecting and
     excluding regions.
