@@ -32,21 +32,11 @@ def time_function(method: Callable):
     def wrapper(self, *args, **kwargs):
         # record a start time for the function
         start_time = time.time()
-
-        # Try to log calling the function
-        try:
-            logger.info(f"Calling function {method.__name__}")
-        except AttributeError:
-            pass
+        logger.info(f"Calling function {method.__name__}")
 
         # call the original method with the passed arguments and keyword arguments, and store the result
         output = method(self, *args, **kwargs)
-
-        # Try to log how long the function took
-        try:
-            logger.info(f"{method.__name__} took {time.time() - start_time:.2f} seconds")
-        except AttributeError:
-            pass
+        logger.info(f"{method.__name__} took {time.time() - start_time:.2f} seconds")
 
         # return the output of the original function
         return output
