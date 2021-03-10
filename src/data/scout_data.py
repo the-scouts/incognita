@@ -37,7 +37,6 @@ class ScoutData(Base):
     def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None, load_census_data=True):
         super().__init__(settings=True)
         logger.info(f"Starting at {datetime.now().time()}")
-        logger.finished(f"Logging setup", start_time=self.start_time)
 
         logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
@@ -46,7 +45,7 @@ class ScoutData(Base):
         self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
         self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
-        logger.finished(f"Loading Scout Census data", start_time=self.start_time)
+        logger.info(f"Loading Scout Census data finished, {time.time() - self.start_time:.2f} seconds elapsed.")
 
         if merged_csv:
             logger.info("Loading ONS data")
@@ -59,7 +58,7 @@ class ScoutData(Base):
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
-            logger.finished(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data ", start_time=start_time)
+            logger.info(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data finished, {time.time() - start_time:.2f} seconds elapsed.")
 
     def merge_ons_postcode_directory(self, ons_pd: ONSPostcodeDirectory):
         """Merges census extract data with ONS data

@@ -62,4 +62,4 @@ class Base:
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """
         start_time = start_time if start_time else self.start_time
-        logger.finished(f"Script", start_time=start_time)
+        logger.info(f"Script finished, {time.time() - start_time:.2f} seconds elapsed.")
