@@ -11,7 +11,7 @@
     "National Statistical folder": "National Statistical data/",
     "Boundaries folder": "Boundary shape files/",
 
-    "Output folder": "../Output/",
+    "Output folder": "Output/",
 
     "Scout Mappings":
     {
@@ -19,7 +19,7 @@
       {
         "name": "D_ID",
         "codes": {"path": "Scout Census Data/district_id_mapping.csv", "key": "D_ID", "key_type": "Int32", "name": "D_name"},
-        "boundary": {"shapefile": "../../scripts/districts_buffered.geojson", "key": "id", "name": "name"},
+        "boundary": {"shapefile": "../../../scripts/districts_buffered.geojson", "key": "id", "name": "name"},
         "age_profile": null,
         "age_profile_code_col": null
       },

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_ROOT = PROJECT_ROOT / "data"
 SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
