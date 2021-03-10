@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from itertools import cycle
-from pathlib import Path
 from typing import Dict, TYPE_CHECKING, Union
 import webbrowser
 
@@ -21,6 +20,8 @@ from src.logger import logger
 from src.reports.reports import Reports
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from branca import colormap
 
 
@@ -37,14 +38,14 @@ class Map(Base):
         :var self.score_col_label: tooltip label for the self.SCORE_COL value
         :var self.map: holds the folium map object
         """
-        super().__init__(settings=True)
+        super().__init__()
 
         # Can be set by set_region_of_colour
         self._region_of_colour = None
 
         self.scout_data = scout_data_object
 
-        self.out_file: Path = Path(self.settings["Output folder"], map_name).with_suffix(".html").resolve()
+        self.out_file = utility.OUTPUT_FOLDER.joinpath(map_name).with_suffix(".html")
 
         # Create folium map
         self.map: folium.Map = folium.Map(

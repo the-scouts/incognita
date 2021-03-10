@@ -55,10 +55,6 @@ class Base:
         # record a class-wide start time
         self.start_time = time.time()
 
-        # Load the settings file
-        if settings:
-            self.settings = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
-
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """
         start_time = start_time if start_time else self.start_time

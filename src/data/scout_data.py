@@ -41,7 +41,7 @@ class ScoutData(Base):
         logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
-        census_path = self.settings["Scout Census location"] if not census_path else census_path
+        census_path = utility.SETTINGS["Scout Census location"] if not census_path else census_path
         self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
         self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
@@ -54,7 +54,7 @@ class ScoutData(Base):
             has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
 
             if has_ons_pd_data:
-                self.ons_pd = ONSPostcodeDirectoryMay19(utility.DATA_ROOT / self.settings["Reduced ONS PD location"], load_data=load_ons_pd_data)
+                self.ons_pd = ONSPostcodeDirectoryMay19(utility.DATA_ROOT / utility.SETTINGS["Reduced ONS PD location"], load_data=load_ons_pd_data)
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
@@ -115,9 +115,9 @@ class ScoutData(Base):
 
         :param str ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
         """
-        raw_extract_path = utility.DATA_ROOT / self.settings["Raw Census Extract location"]
+        raw_extract_path = utility.DATA_ROOT / utility.SETTINGS["Raw Census Extract location"]
         output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
-        error_output_path = Path(self.settings["Output folder"], "error_file.csv").resolve()
+        error_output_path = utility.OUTPUT_FOLDER / "error_file.csv"
 
         valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
         postcode_merge_column = "clean_postcode"
