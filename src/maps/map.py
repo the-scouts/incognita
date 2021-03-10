@@ -408,20 +408,40 @@ class Map(Base):
             logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
             raise KeyError(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data.")
 
-    def set_boundary(self, reports: Reports):
-        """
-        Changes the boundary to a new boundary
+    def set_boundary(self, reports: Reports) -> None:
+        """Changes the boundary to a new boundary.
+
+        Loads, filters and converts shapefiles for later use
+
+        Loads shapefile from path into GeoPandas dataframe
+        Filters out unneeded shapes within all shapes loaded
+        Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
         :param reports:
         """
-
         self.map_data = reports.data
         self.boundary_name = reports.shapefile_name
         self.code_name = reports.shapefile_key
         self.CODE_COL = reports.geography_type
+        # map_data, CODE_COL and code_name all must be set before loading shape file
 
-        # map_data, CODE_COL and code_name all must be set before calling _filter_shape_file()
-        self._filter_shape_file(reports.shapefile_path)
+        # Read a shape file. reports.shapefile_path is the path to ESRI shapefile with region information
+        all_shapes = gpd.GeoDataFrame.from_file(reports.shapefile_path)  # NoQA
+
+        if self.code_name not in all_shapes.columns:
+            raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+
+        original_number_of_shapes = len(all_shapes.index)
+        logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
+        logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
+
+        list_codes = self.map_data[self.CODE_COL].drop_duplicates().astype(str).to_list()
+        filtered_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
+        logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
+
+        # Covert shape file to world co-ordinates
+        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(f"epsg:{utility.WGS_84}")
+        # logger.debug(f"geo_data\n{self.geo_data}")
 
         logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
@@ -448,35 +468,6 @@ class Map(Base):
             self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)
         else:
             self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
-
-    def _filter_shape_file(self, shape_file_path: Path):
-        """Loads, filters and converts shapefiles for later use
-
-        Loads shapefile from path into GeoPandas dataframe
-        Filters out unneeded shapes within all shapes loaded
-        Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
-
-        :param Path shape_file_path: path to ESRI shapefile with region information
-        :return: None
-        """
-
-        # Read a shape file
-        all_shapes = gpd.GeoDataFrame.from_file(shape_file_path)  # NoQA
-
-        if self.code_name not in all_shapes.columns:
-            raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
-
-        original_number_of_shapes = len(all_shapes.index)
-        logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
-        logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
-
-        list_codes = self.map_data[self.CODE_COL].drop_duplicates().astype(str).to_list()
-        filtered_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
-        logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
-
-        # Covert shape file to world co-ordinates
-        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(f"epsg:{utility.WGS_84}")
-        # logger.debug(f"geo_data\n{self.geo_data}")
 
     def _map_colourmap(self, properties: dict, boundary_name: str, threshold: float, colourmap: colormap.ColorMap) -> str:
         """Returns colour from colour map function and value
