@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class HistorySummary:
-    def __init__(self, scout_data_object: ScoutData, **kwargs):
+    def __init__(self, scout_data_object: ScoutData):
         self.scout_data = scout_data_object
 
     def group_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
