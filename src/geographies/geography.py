@@ -25,7 +25,7 @@ class Geography(Base):
     """
 
     def __init__(self, geography_name: str, ons_pd_object: ONSPostcodeDirectory):
-        super().__init__(settings=True)
+        super().__init__()
 
         self.geography_metadata_dict = None
         self.geography_region_ids_mapping = None

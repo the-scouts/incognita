@@ -45,11 +45,9 @@ def time_function(method: Callable):
 
 
 class Base:
-    def __init__(self, settings: bool = False):
-        """Acts as a base class for most classes. Provides automatic logging, settings creation,
-          and common methods
-
-        :param bool settings: If true, load settings from the config file
+    def __init__(self):
+        """Acts as a base class for most classes. Provides automatic logging,
+        settings creation, and common methods
         """
 
         # record a class-wide start time

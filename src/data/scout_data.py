@@ -35,7 +35,7 @@ class ScoutData(Base):
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
     def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None, load_census_data=True):
-        super().__init__(settings=True)
+        super().__init__()
         logger.info(f"Starting at {datetime.now().time()}")
 
         logger.info("Loading Scout Census data")

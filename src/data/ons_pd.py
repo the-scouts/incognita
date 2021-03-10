@@ -24,7 +24,7 @@ class ONSPostcodeDirectory(Base):
     COUNTRY_CODES = {}
 
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
-        super().__init__(settings=True)
+        super().__init__()
 
         self.BOUNDARIES = {}
 
