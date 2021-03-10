@@ -1,4 +1,3 @@
-import json
 import logging
 from numbers import Real
 
@@ -7,7 +6,6 @@ import pytest
 from src.base import Base
 from src.base import time_function
 from src.logger import logger
-from src.utility import SCRIPTS_ROOT
 
 
 def add(number1: Real, number2: Real) -> Real:
@@ -28,17 +26,6 @@ def test_time_function_wraps_function():
 def test_time_function_raises_exception_on_non_method_arguments():
     with pytest.raises(ValueError):
         time_function("not a function or method")  # NoQA
-
-
-def test_base_open_settings():
-    assert isinstance(Base(settings=True).settings, dict)
-
-
-def test_base_settings_are_accurate():
-    with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
-        settings = json.load(read_file)["settings"]
-
-    assert Base(settings=True).settings == settings
 
 
 def test_time_function_logger_output(caplog: pytest.LogCaptureFixture):

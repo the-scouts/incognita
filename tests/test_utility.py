@@ -1,7 +1,9 @@
+import json
+
 import pandas as pd
 
 from src import utility
-import src.data.ons_pd as ons_pd
+from src.data import ons_pd
 
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):
@@ -20,3 +22,14 @@ def test_calc_imd_decile():
 
     assert isinstance(imd_decile_data, pd.Series)
     assert imd_decile_data.equals(predicted_result)
+
+
+def test_base_open_settings():
+    assert isinstance(utility.SETTINGS, dict)
+
+
+def test_base_settings_are_accurate():
+    with open(utility.SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
+        settings = json.load(read_file)["settings"]
+
+    assert utility.SETTINGS == settings
