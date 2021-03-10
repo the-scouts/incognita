@@ -21,23 +21,6 @@ class ExampleClassLogger(Base):
         return number1 + number2
 
 
-class ExampleClassSettings(Base):
-    def __init__(self):
-        super().__init__(settings=True)
-
-
-@pytest.fixture
-def ec_logger() -> ExampleClassLogger:
-    """Returns an ExampleClassLogger instance"""
-    return ExampleClassLogger()
-
-
-@pytest.fixture
-def ec_settings() -> ExampleClassSettings:
-    """Returns an ExampleClassSettings instance"""
-    return ExampleClassSettings()
-
-
 def test_time_function_wraps_function():
     assert time_function(add)(2, 2) == add(2, 2)
 
@@ -48,15 +31,15 @@ def test_time_function_raises_exception_on_non_method_arguments():
         time_function("not a function or method")
 
 
-def test_base_open_settings(ec_settings):
-    assert isinstance(ec_settings.settings, dict)
+def test_base_open_settings():
+    assert isinstance(Base(settings=True).settings, dict)
 
 
-def test_base_settings_are_accurate(ec_settings):
+def test_base_settings_are_accurate():
     with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
         settings = json.load(read_file)["settings"]
 
-    assert ec_settings.settings == settings
+    assert Base(settings=True).settings == settings
 
 
 def test_time_function_no_logger_entity():
@@ -66,16 +49,16 @@ def test_time_function_no_logger_entity():
         pytest.fail(f"Unexpected AttributeError in base.test_function")
 
 
-def test_time_function_logger_output(caplog, ec_logger):
+def test_time_function_logger_output(caplog):
     caplog.set_level(logging.INFO)
-    ec_logger.add(2, 2)
+    ExampleClassLogger().add(2, 2)
 
     assert "Calling function add" in caplog.text
     assert "add took 0.0" in caplog.text
 
 
-def test_base_close_script(caplog, ec_logger):
+def test_base_close_script(caplog):
     caplog.set_level(logging.INFO)
-    ec_logger.close()
+    Base().close()
 
     assert "Script finished, 0.00 seconds elapsed." in caplog.text
