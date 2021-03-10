@@ -6,12 +6,10 @@ import time
 from typing import TYPE_CHECKING
 
 from src.log_util import logger
-import src.log_util as log_util
 from src.utility import SCRIPTS_ROOT
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
 
 
 def time_function(method: Callable):
@@ -46,7 +44,7 @@ def time_function(method: Callable):
 
         # Try to log how long the function took
         try:
-            logger.duration(method.__name__, start_time=start_time)
+            logger.info(f"{method.__name__} took {time.time() - start_time:.2f} seconds")
         except AttributeError:
             pass
 
@@ -57,12 +55,11 @@ def time_function(method: Callable):
 
 
 class Base:
-    def __init__(self, settings: bool = False, log_path: Path = None):
+    def __init__(self, settings: bool = False):
         """Acts as a base class for most classes. Provides automatic logging, settings creation,
           and common methods
 
         :param bool settings: If true, load settings from the config file
-        :param Path log_path: Path to store the log. If not set, get the global log
         """
 
         # record a class-wide start time
@@ -71,12 +68,6 @@ class Base:
         # Load the settings file
         if settings:
             self.settings = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
-
-        # The global logger is named log, which means there is only ever one instance
-        # if passed a path to output the log to, create the logger at that path
-        # otherwise retrieve the standard logger
-        if log_path:
-            log_util.set_up_logger(log_path)
 
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """

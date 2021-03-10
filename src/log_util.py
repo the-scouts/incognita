@@ -1,28 +1,28 @@
 from __future__ import annotations
 
 import logging
-import sys
-import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 FINISHED_LEVEL_NUM = logging.INFO + 5
-DURATION_LEVEL_NUM = logging.INFO + 4
 
+# Create root logger
 logger = logging.getLogger("geo_mapping")
 
 
-def set_up_logger(file_path: Path = None) -> logging.Logger:
+def set_up_logger(file_path: Path = None, log_level: int = logging.DEBUG) -> logging.Logger:
     """Creates and returns a logger with preset options
 
     :param file_path: file path to output debug log
+    :param log_level: log level
     :return: logger object
     """
+    import sys
 
     # Set log level
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(log_level)
 
     # Create formatter
     formatter = logging.Formatter(fmt="{filename} - {levelname} - {message}", style="{")
@@ -31,17 +31,21 @@ def set_up_logger(file_path: Path = None) -> logging.Logger:
     if file_path is not None:
         file = logging.FileHandler(file_path, encoding="utf-8", mode="w")
         file.setFormatter(formatter)
+        file.setLevel(log_level)
         logger.addHandler(file)
 
     # set up a log to the console
     console = logging.StreamHandler(stream=sys.stdout)
     console.setFormatter(formatter)
+    console.setLevel(log_level)
     logger.addHandler(console)
 
     return logger
 
 
 def _finished_message(self: logging.Logger, message: str, *args, **kwargs):
+    import time
+
     if self.isEnabledFor(FINISHED_LEVEL_NUM):
         name = kwargs.pop("method_name") if kwargs.get("method_name") else None
         start_time = kwargs.pop("start_time")
