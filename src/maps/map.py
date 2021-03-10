@@ -169,7 +169,7 @@ class Map(Base):
         valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
 
         # Sets the map so it opens in the right area
-        self.set_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
+        self.map.fit_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
 
         # IDs for finding sections
         district_sections_group_code = -1
@@ -502,7 +502,7 @@ class Map(Base):
 
         return default_opacity if abs(area_score) > threshold else default_opacity / 4
 
-    def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections"):
+    def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections") -> None:
         """Adds a leaflet marker to the map using given values
 
         :param float lat: latitude of the marker
@@ -510,9 +510,5 @@ class Map(Base):
         :param folium.Popup popup: popup text for the marker
         :param str colour: colour for the marker
         :param str layer_name: name of the layer that markers are added to
-        :return: None
         """
         folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
-
-    def set_bounds(self, bounds: list):
-        self.map.fit_bounds(bounds)
