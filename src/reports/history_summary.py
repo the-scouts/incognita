@@ -7,7 +7,7 @@ import pandas as pd
 from src import utility
 from src.base import Base
 from src.data.scout_census import ScoutCensus
-from src.log_util import logger
+from src.logger import logger
 
 if TYPE_CHECKING:
     from src.data.scout_data import ScoutData

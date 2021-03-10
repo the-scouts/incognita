@@ -5,7 +5,7 @@ import json
 import time
 from typing import TYPE_CHECKING
 
-from src.log_util import logger
+from src.logger import logger
 from src.utility import SCRIPTS_ROOT
 
 if TYPE_CHECKING:

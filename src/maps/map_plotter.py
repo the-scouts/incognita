@@ -11,7 +11,7 @@ import pandas as pd
 
 from src import utility
 from src.base import Base
-from src.log_util import logger
+from src.logger import logger
 from src.reports.reports import Reports
 
 if TYPE_CHECKING:

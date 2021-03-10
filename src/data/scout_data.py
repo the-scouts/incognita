@@ -13,7 +13,7 @@ from src.base import Base
 from src.data.census_merge_data import CensusMergeData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from src.data.scout_census import ScoutCensus
-from src.log_util import logger
+from src.logger import logger
 
 # type hints
 if TYPE_CHECKING:
