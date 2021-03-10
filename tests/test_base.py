@@ -6,7 +6,7 @@ import pytest
 
 from src.base import Base
 from src.base import time_function
-from src.log_util import logger
+from src.logger import logger
 from src.utility import SCRIPTS_ROOT
 
 

@@ -11,7 +11,7 @@ from src.base import time_function
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.geographies.geography import Geography
-from src.log_util import logger
+from src.logger import logger
 
 if TYPE_CHECKING:
     from pathlib import Path

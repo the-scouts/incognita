@@ -5,7 +5,7 @@ import json
 import time
 from typing import TYPE_CHECKING
 
-from src.log_util import logger
+from src.logger import logger
 from src.utility import SCRIPTS_ROOT
 
 if TYPE_CHECKING:
@@ -62,4 +62,4 @@ class Base:
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """
         start_time = start_time if start_time else self.start_time
-        logger.finished(f"Script", start_time=start_time)
+        logger.info(f"Script finished, {time.time() - start_time:.2f} seconds elapsed.")

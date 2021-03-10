@@ -6,7 +6,7 @@ from src import utility
 from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
-from src.log_util import logger
+from src.logger import logger
 
 
 # noinspection PyUnresolvedReferences
