@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from src.logger import logger
 from src.data.scout_census import ScoutCensus
+from src.logger import logger
 
 if TYPE_CHECKING:
     import logging

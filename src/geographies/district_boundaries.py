@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
-import shapely.ops
 import shapely.geometry
+import shapely.ops
 
 from src import utility
 from src.base import Base
