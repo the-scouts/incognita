@@ -41,7 +41,7 @@ class Reports(Base):
         return self.geography.type
 
     def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object: ONSPostcodeDirectory = None):
-        super().__init__(settings=True)
+        super().__init__()
 
         self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
@@ -381,4 +381,4 @@ class Reports(Base):
         return uptake_report
 
     def _save_report(self, report_data: pd.DataFrame, report_name: str):
-        utility.save_report(report_data, self.settings["Output folder"], report_name, logger=logger)
+        utility.save_report(report_data, report_name)

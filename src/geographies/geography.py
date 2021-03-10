@@ -25,7 +25,7 @@ class Geography(Base):
     """
 
     def __init__(self, geography_name: str, ons_pd_object: ONSPostcodeDirectory):
-        super().__init__(settings=True)
+        super().__init__()
 
         self.geography_metadata_dict = None
         self.geography_region_ids_mapping = None
@@ -62,12 +62,12 @@ class Geography(Base):
 
     @property
     def shapefile_path(self) -> Path:
-        shapefiles_root = utility.DATA_ROOT / self.settings["Boundaries folder"]
+        shapefiles_root = utility.DATA_ROOT / utility.SETTINGS["Boundaries folder"]
         return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        age_profiles_root = utility.DATA_ROOT / self.settings["National Statistical folder"]
+        age_profiles_root = utility.DATA_ROOT / utility.SETTINGS["National Statistical folder"]
         return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
@@ -92,7 +92,7 @@ class Geography(Base):
         logger.info(f"Setting the boundary to {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
-        boundaries_dict = {**ons_pd.BOUNDARIES, **self.settings["Scout Mappings"]}
+        boundaries_dict = {**ons_pd.BOUNDARIES, **utility.SETTINGS["Scout Mappings"]}
         if geography_name in boundaries_dict.keys():
             self.geography_metadata_dict = boundaries_dict[geography_name]
 

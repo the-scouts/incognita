@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from src.data.scout_census import ScoutCensus
+from src.logger import logger
 
 if TYPE_CHECKING:
     import logging
@@ -16,14 +18,13 @@ if TYPE_CHECKING:
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_ROOT = PROJECT_ROOT / "data"
+SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
+LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
 
-def get_proj_root() -> Path:
-    return Path(__file__).parent.parent
-
-
-DATA_ROOT = get_proj_root().joinpath("data")
-SCRIPTS_ROOT = get_proj_root().joinpath("scripts")
-LOGS_ROOT = get_proj_root().joinpath("scripts/logs")
+SETTINGS = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
+OUTPUT_FOLDER = PROJECT_ROOT.joinpath(SETTINGS["Output folder"]).absolute()
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
@@ -155,10 +156,9 @@ def _try_downcast(series: pd.Series) -> pd.Series:
         return series
 
 
-def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger: logging.Logger = None):
-    if logger:
-        logger.info(f"Writing to {report_name}")
-    report.to_csv(output_path + report_name + ".csv", index=False, encoding="utf-8-sig")
+def save_report(report: pd.DataFrame, report_name: str):
+    logger.info(f"Writing to {report_name}")
+    report.to_csv(OUTPUT_FOLDER + report_name + ".csv", index=False, encoding="utf-8-sig")
 
 
 ensure_roots_exist()

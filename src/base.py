@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from functools import wraps
-import json
 import time
 from typing import TYPE_CHECKING
 
 from src.logger import logger
-from src.utility import SCRIPTS_ROOT
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -45,19 +43,13 @@ def time_function(method: Callable):
 
 
 class Base:
-    def __init__(self, settings: bool = False):
-        """Acts as a base class for most classes. Provides automatic logging, settings creation,
-          and common methods
-
-        :param bool settings: If true, load settings from the config file
+    def __init__(self):
+        """Acts as a base class for most classes. Provides automatic logging,
+        settings creation, and common methods
         """
 
         # record a class-wide start time
         self.start_time = time.time()
-
-        # Load the settings file
-        if settings:
-            self.settings = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
 
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """

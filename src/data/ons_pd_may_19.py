@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src import utility
 from src.data.ons_pd import ONSPostcodeDirectory
 
 
@@ -53,7 +54,7 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         super().__init__(ons_pd_csv_path, load_data, self.index_column, data_types=self.data_types)
 
         # Folder within the ONS Postcode Directory archive holding names and codes files
-        names_codes_root = Path(self.settings["ONS Names and codes folder"]).resolve()
+        names_codes_root = Path(utility.SETTINGS["ONS Names and codes folder"]).resolve()
 
         # Paths to all shapefiles within the Boundaries folder
         # fmt: off
