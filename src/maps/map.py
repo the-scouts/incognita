@@ -6,9 +6,9 @@ from typing import Dict, TYPE_CHECKING, Union
 import webbrowser
 
 import branca
+import folium
 from folium.map import FeatureGroup
 from folium.plugins import MarkerCluster
-import folium
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -60,35 +60,27 @@ class Map(Base):
         # self.map_labels = folium.TileLayer("CartoDB positron onlylabels", overlay=True)
         self.SCORE_COL: dict = {}
         self.layers: dict = {}
-    
+
         self.score_col_label: str = ""
         self.score_col_key: str = ""
         self.boundary_name: str = ""
         self.code_name: str = ""
         self.CODE_COL: str = ""
         self.map_data: pd.DataFrame = pd.DataFrame()
-    
+
         self.geo_data = None
 
-    def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, threshold: float = 2.5):
+    def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
         """
         Creates a 2D colouring with geometry specified by the boundary
 
         :param dict dimension: specifies the column of the data to score against
         :param Reports reports:
-        :param bool show: if True the colouring is shown by default
+        :param bool show: If True, show the layer by default
         :param dict scale: Allows a fixed value scale, default is boundaries at
                            0%, 20%, 40%, 60%, 80% and 100%.
-        :param float threshold: If an area's value is significant enough to be displayed
-
-
-        Adds features from self.geo_data to map
-
-        :param str name: the name of the Layer, as it will appear in the layer controls
-        :param bool show: whether to show the layer by default
-        :param colormap.ColorMap colourmap: branca colour map object
-        :param str col_name: column of dataframe used. Used for a unique key.
         :param float significance_threshold: If an area's value is significant enough to be displayed
+
         :return: None
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
@@ -119,12 +111,6 @@ class Map(Base):
         logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
         logger.info(f"Colour scale index values\n{colourmap_index}")
 
-        name: str = dimension["legend"]
-        show: bool = show
-        colourmap: colormap.ColorMap = colourmap
-        col_name: str = dimension["column"]
-        significance_threshold: float = threshold
-
         logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
         merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
         logger.debug(f"Merged_data\n{merged_data}")
@@ -132,12 +118,13 @@ class Map(Base):
             logger.error("Data unsuccesfully merged resulting in zero records")
             raise Exception("Data unsuccesfully merged resulting in zero records")
 
-        boundary_name = f"{self.boundary_name}_{col_name}"
+        # dimension['column'] is column of dataframe used. Used for unique key.
+        boundary_name = f"{self.boundary_name}_{dimension['column']}"
 
         # fmt: off
         folium.GeoJson(
             data=merged_data.to_json(),
-            name=name,
+            name=dimension["legend"],  # the name of the Layer, as it will appear in the layer controls,
             style_function=lambda x: {
                 "fillColor": self._map_colourmap(x["properties"], boundary_name, significance_threshold, colourmap),
                 "color": "black",
@@ -149,7 +136,7 @@ class Map(Base):
         ).add_to(self.map)
         # fmt: on
         colourmap.add_to(self.map)
-        del merged_data, name
+        del merged_data
 
         # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
 
