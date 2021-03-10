@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from src import utility
-from src.utility import time_function
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.geographies.geography import Geography
 from src.logger import logger
+from src.utility import time_function
 
 if TYPE_CHECKING:
     from pathlib import Path
