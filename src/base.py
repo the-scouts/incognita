@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from functools import wraps
-import json
 import time
 from typing import TYPE_CHECKING
 
 from src.logger import logger
-from src.utility import SCRIPTS_ROOT
 
 if TYPE_CHECKING:
     from collections.abc import Callable
