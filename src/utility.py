@@ -24,7 +24,7 @@ SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
 
 SETTINGS = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
-OUTPUT_FOLDER = PROJECT_ROOT.joinpath(json.loads(SETTINGS["Output folder"])).absolute()
+OUTPUT_FOLDER = PROJECT_ROOT.joinpath(SETTINGS["Output folder"]).absolute()
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
