@@ -344,10 +344,14 @@ class Map(Base):
         custom_data.apply(add_popup_data, axis=1)
 
     def save_map(self):
-        self.save()
+        """Saves the folium map to a HTML file """
+        # Add layer control to map
+        folium.LayerControl(collapsed=False).add_to(self.map)
+        self.map.save(f"{self.out_file}")
 
     def show_map(self):
-        self.show()
+        """Show the file at self.out_file in the default browser. """
+        webbrowser.open(self.out_file.as_uri())
 
     def set_region_of_colour(self, column: str, value_list: list):
         self._region_of_colour = {"column": column, "value_list": value_list}
@@ -528,13 +532,3 @@ class Map(Base):
 
     def set_bounds(self, bounds: list):
         self.map.fit_bounds(bounds)
-
-    def save(self):
-        """Saves the folium map to a HTML file """
-        # Add layer control to map
-        folium.LayerControl(collapsed=False).add_to(self.map)
-        self.map.save(f"{self.out_file}")
-
-    def show(self):
-        """Show the file at self.out_file in the default browser. """
-        webbrowser.open(self.out_file.as_uri())
