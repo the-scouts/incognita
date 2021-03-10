@@ -23,8 +23,6 @@ class ONSPostcodeDirectory:
     COUNTRY_CODES = {}
 
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
-        self.BOUNDARIES = {}
-
         # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)
         def cols_lambda(col):
             return col in fields if fields else True
