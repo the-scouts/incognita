@@ -120,5 +120,5 @@ loads into heroku correctly.
 
 ***geo_mapping*** is naturally
 [open source](https://github.com/the-scouts/geo_mapping) and is
-licensed under the **[GNU License](https://choosealicense.com/licenses/gpl-3.0)**.
+licensed under the **[MIT license](https://choosealicense.com/licenses/mit)**.
 
