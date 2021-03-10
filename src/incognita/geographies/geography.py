@@ -6,14 +6,14 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
-from src import utility
-from src.logger import logger
+from incognita import utility
+from incognita.logger import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from src.data.ons_pd import ONSPostcodeDirectory
-    from src.data.scout_data import ScoutData
+    from incognita.data.ons_pd import ONSPostcodeDirectory
+    from incognita.data.scout_data import ScoutData
 
 
 class Geography:

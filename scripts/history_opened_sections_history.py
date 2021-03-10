@@ -1,5 +1,5 @@
-from src.data.scout_data import ScoutData
-from src.reports.history_summary import HistorySummary
+from incognita.data.scout_data import ScoutData
+from incognita.reports.history_summary import HistorySummary
 
 if __name__ == "__main__":
     years = [2015, 2016, 2017, 2018, 2019, 2020]

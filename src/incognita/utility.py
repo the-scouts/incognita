@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from src.data.scout_census import ScoutCensus
-from src.logger import logger
+from incognita.data.scout_census import ScoutCensus
+from incognita.logger import logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     import logging
 
-    from src.data.ons_pd import ONSPostcodeDirectory
+    from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
 sections_dict = ScoutCensus.column_labels["sections"]

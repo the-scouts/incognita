@@ -1,7 +1,7 @@
 import pandas as pd
 
-from src.data.scout_data import ScoutData
-from src.reports.history_summary import HistorySummary
+from incognita.data.scout_data import ScoutData
+from incognita.reports.history_summary import HistorySummary
 
 if __name__ == "__main__":
     # Read group list - with a column headed "G_ID"

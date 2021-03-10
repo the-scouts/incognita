@@ -1,7 +1,7 @@
 import pandas as pd
 
-from src.data.scout_census import ScoutCensus
-from src.logger import logger
+from incognita.data.scout_census import ScoutCensus
+from incognita.logger import logger
 
 
 class ONSPostcodeDirectory:

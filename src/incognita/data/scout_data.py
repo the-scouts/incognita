@@ -8,15 +8,15 @@ from typing import TYPE_CHECKING
 import geopandas as gpd
 import pandas as pd
 
-from src import utility
-from src.data.census_merge_data import CensusMergeData
-from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
-from src.data.scout_census import ScoutCensus
-from src.logger import logger
+from incognita import utility
+from incognita.data.census_merge_data import CensusMergeData
+from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita.data.scout_census import ScoutCensus
+from incognita.logger import logger
 
 # type hints
 if TYPE_CHECKING:
-    from src.data.ons_pd import ONSPostcodeDirectory
+    from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
 class ScoutData:

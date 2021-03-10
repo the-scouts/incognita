@@ -5,9 +5,9 @@ the percentage of young people.
 
 This script has no command line options.
 """
-from src.data.scout_data import ScoutData
-from src.maps.map import Map
-from src.reports.reports import Reports
+from incognita.data.scout_data import ScoutData
+from incognita.maps.map import Map
+from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     county_name = "North Yorkshire"

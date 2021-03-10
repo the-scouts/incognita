@@ -5,10 +5,10 @@ from numbers import Real
 import pandas as pd
 import pytest
 
-from src import utility
-from src.data import ons_pd
-from src.logger import logger
-from src.utility import time_function
+from incognita import utility
+from incognita.data import ons_pd
+from incognita.logger import logger
+from incognita.utility import time_function
 
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):

@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from src import utility
-from src.data.scout_census import ScoutCensus
-from src.logger import logger
+from incognita import utility
+from incognita.data.scout_census import ScoutCensus
+from incognita.logger import logger
 
 if TYPE_CHECKING:
-    from src.data.scout_data import ScoutData
+    from incognita.data.scout_data import ScoutData
 
 
 class HistorySummary:
