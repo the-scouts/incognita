@@ -87,6 +87,7 @@ def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_fac
 
 
 @hypothesis.given(LocationDataFrame)
+@hypothesis.settings(deadline=250)  # extend deadline for pip CI testing
 def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame, data):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
