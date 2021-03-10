@@ -85,7 +85,13 @@ class Map(Base):
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
         self.set_boundary(reports)
-        self.set_score_col(dimension)
+
+        # Set score col properties to use for a particular boundary
+        self.score_col_key = f"{self.boundary_name}_{dimension['column']}"
+        self.SCORE_COL[self.score_col_key] = dimension["column"]
+        self.score_col_label = dimension["tooltip"]
+        logger.info(f"Setting score column to {dimension['column']} (displayed: {self.score_col_label})")
+
         self.validate_columns()
 
         non_zero_score_col = self.map_data[dimension["column"]].loc[self.map_data[dimension["column"]] != 0]
@@ -444,17 +450,6 @@ class Map(Base):
         # logger.debug(f"geo_data\n{self.geo_data}")
 
         logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
-
-    def set_score_col(self, dimension: dict):
-        """
-        Sets the SCORE_COL to use for a particular boundary
-
-        :param dict dimension: specifies the score column to use int the data
-        """
-        self.score_col_key = f"{self.boundary_name}_{dimension['column']}"
-        self.SCORE_COL[self.score_col_key] = dimension["column"]
-        self.score_col_label = dimension["tooltip"]
-        logger.info(f"Setting score column to {dimension['column']} (displayed: {self.score_col_label})")
 
     def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True):
         """
