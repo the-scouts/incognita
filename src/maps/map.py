@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 
 from src import utility
-from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.logger import logger
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
     from branca import colormap
 
 
-class Map(Base):
+class Map:
     def __init__(self, scout_data_object: ScoutData, map_name: str):
         """This class enables easy plotting of maps with a shape file.
 
@@ -38,8 +37,6 @@ class Map(Base):
         :var self.score_col_label: tooltip label for the self.SCORE_COL value
         :var self.map: holds the folium map object
         """
-        super().__init__()
-
         # Can be set by set_region_of_colour
         self._region_of_colour = None
 

@@ -1,3 +1,5 @@
+import logging
+
 import geopandas as gpd
 import hypothesis
 from hypothesis.extra.pandas import column
@@ -18,7 +20,7 @@ COLUMN_NAME = "ctry"
 def scout_data_factory():
     """Returns a ScoutData factory"""
 
-    def _scout_data_factory(data_df: pd.DataFrame):
+    def _scout_data_factory(data_df: pd.DataFrame) -> ScoutData:
         sd = ScoutData(load_census_data=False, load_ons_pd_data=False, merged_csv=False)
         sd.data = data_df
         return sd
@@ -27,7 +29,7 @@ def scout_data_factory():
 
 
 @pytest.fixture(scope="module")
-def blank_geo_data_frame():
+def blank_geo_data_frame() -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(columns=("id",), geometry=gpd.points_from_xy(x=(0,), y=(0,)), crs=WGS_84)
 
 
@@ -57,7 +59,7 @@ def test_scout_data_columns(scout_data_factory):
 
 
 @hypothesis.given(CountryDataFrame)
-def test_filter_records_inclusion(scout_data_factory, data):
+def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
     scout_data_stub = scout_data_factory(data)
     scout_data_stub.filter_records(field=COLUMN_NAME, value_list=[first_country_code], mask=True, exclusion_analysis=False)
@@ -67,7 +69,7 @@ def test_filter_records_inclusion(scout_data_factory, data):
 
 
 @hypothesis.given(CountryDataFrame)
-def test_filter_records_exclusion(scout_data_factory, data):
+def test_filter_records_exclusion(scout_data_factory, data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
     scout_data_stub = scout_data_factory(data)
     scout_data_stub.filter_records(field=COLUMN_NAME, value_list=[first_country_code], mask=False, exclusion_analysis=False)
@@ -77,7 +79,7 @@ def test_filter_records_exclusion(scout_data_factory, data):
 
 
 @hypothesis.given(CountryDataFrame)
-def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_factory, data):
+def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_factory, data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
     scout_data_stub = scout_data_factory(data)
 
@@ -88,7 +90,7 @@ def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_fac
 
 @hypothesis.given(LocationDataFrame)
 @hypothesis.settings(deadline=250)  # extend deadline for pip CI testing
-def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame, data):
+def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame: gpd.GeoDataFrame, data: pd.DataFrame):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
 
@@ -98,7 +100,7 @@ def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame, da
 
 @hypothesis.given(LocationDataFrame)
 @hypothesis.settings(deadline=300)  # set deadline to 300 milliseconds per run
-def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame, data):
+def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame: gpd.GeoDataFrame, data: pd.DataFrame):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
 
@@ -106,3 +108,13 @@ def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame, data):
     joined = gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")
     merged = data.merge(joined[["id"]], how="left", left_index=True, right_index=True)
     assert sd.data.equals(merged)
+
+
+def test_close_script(caplog: pytest.LogCaptureFixture, scout_data_factory):
+    scout_data_stub = scout_data_factory(pd.DataFrame())
+
+    caplog.set_level(logging.INFO)
+
+    scout_data_stub.close()
+
+    assert "Script finished, 0.00 seconds elapsed." in caplog.text

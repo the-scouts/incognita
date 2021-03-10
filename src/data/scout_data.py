@@ -9,7 +9,6 @@ import geopandas as gpd
 import pandas as pd
 
 from src import utility
-from src.base import Base
 from src.data.census_merge_data import CensusMergeData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from src.data.scout_census import ScoutCensus
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
     from src.data.ons_pd import ONSPostcodeDirectory
 
 
-class ScoutData(Base):
+class ScoutData:
     """Provides access to manipulate and process data."""
 
     @property
@@ -35,7 +34,9 @@ class ScoutData(Base):
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
     def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None, load_census_data=True):
-        super().__init__()
+        # record a class-wide start time
+        self.start_time = time.time()
+
         logger.info(f"Starting at {datetime.now().time()}")
 
         logger.info("Loading Scout Census data")
@@ -172,3 +173,7 @@ class ScoutData(Base):
         self.data = merged
         if path is not None:
             merged.reset_index(drop=False).to_feather(uid)
+
+    def close(self):
+        """Outputs the duration of the programme """
+        logger.info(f"Script finished, {time.time() - self.start_time:.2f} seconds elapsed.")
