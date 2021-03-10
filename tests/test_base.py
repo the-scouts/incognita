@@ -3,7 +3,7 @@ from numbers import Real
 
 import pytest
 
-from src.base import time_function
+from src.utility import time_function
 from src.logger import logger
 
 
