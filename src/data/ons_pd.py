@@ -1,11 +1,10 @@
 import pandas as pd
 
-from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.logger import logger
 
 
-class ONSPostcodeDirectory(Base):
+class ONSPostcodeDirectory:
     """Used for holding and accessing ONS Postcode Directory data
 
     :param str ons_pd_csv_path: path to the ONS Postcode Directory csv file
@@ -24,8 +23,6 @@ class ONSPostcodeDirectory(Base):
     COUNTRY_CODES = {}
 
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
-        super().__init__()
-
         self.BOUNDARIES = {}
 
         # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)

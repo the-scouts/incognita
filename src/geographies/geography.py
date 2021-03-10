@@ -7,7 +7,6 @@ import pandas as pd
 import shapely.geometry
 
 from src import utility
-from src.base import Base
 from src.logger import logger
 
 if TYPE_CHECKING:
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
     from src.data.scout_data import ScoutData
 
 
-class Geography(Base):
+class Geography:
     """Stores information about the (administrative) geography type currently used and methods for selecting and
     excluding regions.
 
@@ -25,8 +24,6 @@ class Geography(Base):
     """
 
     def __init__(self, geography_name: str, ons_pd_object: ONSPostcodeDirectory):
-        super().__init__()
-
         self.geography_metadata_dict = None
         self.geography_region_ids_mapping = None
 

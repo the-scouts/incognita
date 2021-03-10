@@ -40,18 +40,3 @@ def time_function(method: Callable):
         return output
 
     return wrapper
-
-
-class Base:
-    def __init__(self):
-        """Acts as a base class for most classes. Provides automatic logging,
-        settings creation, and common methods
-        """
-
-        # record a class-wide start time
-        self.start_time = time.time()
-
-    def close(self, start_time: float = None):
-        """Outputs the duration of the programme """
-        start_time = start_time if start_time else self.start_time
-        logger.info(f"Script finished, {time.time() - start_time:.2f} seconds elapsed.")

@@ -3,7 +3,6 @@ from numbers import Real
 
 import pytest
 
-from src.base import Base
 from src.base import time_function
 from src.logger import logger
 
@@ -12,7 +11,7 @@ def add(number1: Real, number2: Real) -> Real:
     return number1 + number2
 
 
-class ExampleClassLogger(Base):
+class ExampleClassLogger:
     @time_function
     def add(self, number1: Real, number2: Real) -> Real:
         logger.info("Example Function")

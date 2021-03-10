@@ -4,16 +4,13 @@ import shapely.geometry
 import shapely.ops
 
 from src import utility
-from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.logger import logger
 
 
-class DistrictBoundaries(Base):
+class DistrictBoundaries:
     def __init__(self, scout_data_object: ScoutData):
-        super().__init__()
-
         self.scout_data: ScoutData = scout_data_object
         self.ons_pd = scout_data_object.ons_pd
 

@@ -5,7 +5,6 @@ from typing import List, TYPE_CHECKING
 import pandas as pd
 
 from src import utility
-from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.logger import logger
 
@@ -13,10 +12,8 @@ if TYPE_CHECKING:
     from src.data.scout_data import ScoutData
 
 
-class HistorySummary(Base):
+class HistorySummary:
     def __init__(self, scout_data_object: ScoutData, **kwargs):
-        super().__init__()
-
         self.scout_data = scout_data_object
 
     def group_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:

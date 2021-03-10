@@ -3,20 +3,16 @@ import re
 import numpy as np
 import pandas as pd
 
-from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.logger import logger
 
 
-class CensusMergeData(Base):
+class CensusMergeData:
     """Merges input data with ScoutCensus data on a given key
 
     Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
     The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
     """
-
-    def __init__(self):
-        super().__init__()
 
     def merge_data(self, census_data: pd.DataFrame, data_to_merge, census_index_column: str) -> pd.DataFrame:
         """Merge census data and input data on key and index.

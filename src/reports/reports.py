@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from src import utility
-from src.base import Base
 from src.base import time_function
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
@@ -19,7 +18,7 @@ if TYPE_CHECKING:
     from src.data.ons_pd import ONSPostcodeDirectory
 
 
-class Reports(Base):
+class Reports:
     @property
     def data(self) -> pd.DataFrame:
         return self.boundary_report
@@ -41,8 +40,6 @@ class Reports(Base):
         return self.geography.type
 
     def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object: ONSPostcodeDirectory = None):
-        super().__init__()
-
         self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name, self.ons_pd)
