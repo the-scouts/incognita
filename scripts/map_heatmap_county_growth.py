@@ -13,7 +13,7 @@ from src.reports.reports import Reports
 if __name__ == "__main__":
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
     #
-    # import src.utility as utility
+    # from src import utility
     # import pandas as pd
     # import geopandas as gpd
     # from time import time

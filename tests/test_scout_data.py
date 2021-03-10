@@ -7,8 +7,9 @@ import hypothesis.strategies as st
 import pandas as pd
 import pytest
 
-from data.scout_census import ScoutCensus
+from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
+from src.utility import WGS_84
 
 COLUMN_NAME = "ctry"
 
@@ -27,16 +28,21 @@ def scout_data_factory():
 
 @pytest.fixture(scope="module")
 def blank_geo_data_frame():
-    gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy(*zip([0] * 2)))
-    gdf["id"] = 0
-    gdf.crs = 4326
-    return gdf
+    return gpd.GeoDataFrame(columns=("id",), geometry=gpd.points_from_xy(x=(0,), y=(0,)), crs=WGS_84)
 
 
-CountryDataFrame = data_frames(columns=[column(name=COLUMN_NAME, elements=st.from_regex(r"^[A-Za-z]{2}[0-9]{8}\Z"))], index=range_indexes(min_size=2))
+CountryDataFrame = data_frames(
+    columns=[
+        column(name=COLUMN_NAME, elements=st.from_regex(r"^[A-Za-z]{2}[0-9]{8}\Z")),
+    ],
+    index=range_indexes(min_size=2),
+)
 
 LocationDataFrame = data_frames(
-    columns=[column(name="lat", elements=st.floats(min_value=-85, max_value=85)), column(name="long", elements=st.floats(min_value=-180, max_value=180))],
+    columns=[
+        column(name="lat", elements=st.floats(min_value=-85, max_value=85)),
+        column(name="long", elements=st.floats(min_value=-180, max_value=180)),
+    ],
     index=range_indexes(min_size=2),
 )
 
@@ -81,19 +87,22 @@ def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_fac
 
 
 @hypothesis.given(LocationDataFrame)
+@hypothesis.settings(deadline=250)  # extend deadline for pip CI testing
 def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame, data):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
 
-    points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat))
-    assert points_data.equals(sd.points_data[points_data.columns])
+    points_data = gpd.points_from_xy(data.long, data.lat, crs=WGS_84)
+    assert points_data.equals(sd.points_data.geometry.array)
 
 
 @hypothesis.given(LocationDataFrame)
+@hypothesis.settings(deadline=300)  # set deadline to 300 milliseconds per run
 def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame, data):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
 
     points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat))
-    merged = data.merge(gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")[["id"]], how="left", left_index=True, right_index=True)
+    joined = gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")
+    merged = data.merge(joined[["id"]], how="left", left_index=True, right_index=True)
     assert sd.data.equals(merged)

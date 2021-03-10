@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 from functools import wraps
 import json
 import time
-from typing import Callable
+from typing import TYPE_CHECKING
 
-import src.log_util as log_util
+from src.log_util import logger
 from src.utility import SCRIPTS_ROOT
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def time_function(method: Callable):
     """This method wraps functions to determine the execution time (clock time) for the function
 
-    The function should be of a class with a self.logger logging object
+    The function should be of a class with a logger logging object
 
     Incredible wrapping SO answer https://stackoverflow.com/a/1594484 (for future ref)
 
@@ -27,21 +32,11 @@ def time_function(method: Callable):
     def wrapper(self, *args, **kwargs):
         # record a start time for the function
         start_time = time.time()
-
-        # Try to log calling the function
-        try:
-            self.logger.info(f"Calling function {method.__name__}")
-        except AttributeError:
-            pass
+        logger.info(f"Calling function {method.__name__}")
 
         # call the original method with the passed arguments and keyword arguments, and store the result
         output = method(self, *args, **kwargs)
-
-        # Try to log how long the function took
-        try:
-            self.logger.duration(method.__name__, start_time=start_time)
-        except AttributeError:
-            pass
+        logger.info(f"{method.__name__} took {time.time() - start_time:.2f} seconds")
 
         # return the output of the original function
         return output
@@ -50,12 +45,11 @@ def time_function(method: Callable):
 
 
 class Base:
-    def __init__(self, settings: bool = False, log_path: str = None):
+    def __init__(self, settings: bool = False):
         """Acts as a base class for most classes. Provides automatic logging, settings creation,
           and common methods
 
         :param bool settings: If true, load settings from the config file
-        :param str log_path: Path to store the log. If not set, get the global log
         """
 
         # record a class-wide start time
@@ -63,19 +57,9 @@ class Base:
 
         # Load the settings file
         if settings:
-            with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
-                self.settings = json.load(read_file)["settings"]
-
-        # The global logger is named log, which means there is only ever one instance
-        # if passed a path to output the log to, create the logger at that path
-        # otherwise retrieve the standard logger
-        if log_path:
-            self.logger = log_util.create_logger("log", log_path)
-        else:
-            # if a logger already exists for script
-            self.logger = log_util.get_logger("log")
+            self.settings = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
 
     def close(self, start_time: float = None):
         """Outputs the duration of the programme """
         start_time = start_time if start_time else self.start_time
-        self.logger.finished(f"Script", start_time=start_time)
+        logger.finished(f"Script", start_time=start_time)

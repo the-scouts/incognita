@@ -30,6 +30,12 @@ WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
 BNG = 27700  # British National Grid
 
 
+def ensure_roots_exist() -> None:
+    """Ensure root dirs exist."""
+    for root_path in (DATA_ROOT, SCRIPTS_ROOT, LOGS_ROOT):
+        root_path.mkdir(parents=True, exist_ok=True)
+
+
 def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: logging.Logger, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
     """Filters the Census records by any field in ONS PD.
 
@@ -153,3 +159,6 @@ def save_report(report: pd.DataFrame, output_path: str, report_name: str, logger
     if logger:
         logger.info(f"Writing to {report_name}")
     report.to_csv(output_path + report_name + ".csv", index=False, encoding="utf-8-sig")
+
+
+ensure_roots_exist()

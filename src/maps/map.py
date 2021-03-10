@@ -8,12 +8,13 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from src import utility
 from src.base import Base
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
+from src.log_util import logger
 from src.maps.map_plotter import MapPlotter
 from src.reports.reports import Reports
-import src.utility as utility
 
 
 class Map(Base):
@@ -63,8 +64,8 @@ class Map(Base):
         colourmap = colourmap.to_step(index=colourmap_step_index)
         colourmap.caption = dimension["legend"]
 
-        self.logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
-        self.logger.info(f"Colour scale index values\n{colourmap_index}")
+        logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
+        logger.info(f"Colour scale index values\n{colourmap_index}")
         self._map_plotter.add_areas(dimension["legend"], show=show, colourmap=colourmap, col_name=dimension["column"], significance_threshold=threshold)
         # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
 
@@ -80,7 +81,7 @@ class Map(Base):
         :param dict layer: Name & properties of layer on map to add meeting places to.
             - Default = {"name"="Sections", "markers_clustered"=False}
         """
-        self.logger.info("Adding section markers to map")
+        logger.info("Adding section markers to map")
 
         # check that sections dataframe has data
         if sections.empty:

@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from src import utility
 from src.base import Base
 from src.base import time_function
 from src.data.scout_census import ScoutCensus
 from src.data.scout_data import ScoutData
 from src.geographies.geography import Geography
-import src.utility as utility
+from src.log_util import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -59,7 +60,7 @@ class Reports(Base):
     def add_shapefile_data(self):
         import copy
 
-        self.logger.info("Adding shapefile data")
+        logger.info("Adding shapefile data")
         # self.scout_data = copy.copy(self.scout_data)
         # self.scout_data.data = self.scout_data.data.copy()
 
@@ -89,7 +90,7 @@ class Reports(Base):
         :returns None: Nothing
         """
 
-        self.logger.debug("Creating mapping from ons boundary to scout district")
+        logger.debug("Creating mapping from ons boundary to scout district")
 
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
@@ -114,7 +115,7 @@ class Reports(Base):
         for keys, value in count_col.iteritems():
             nested_dict[keys[0]][keys[1]] = value
 
-        self.logger.debug("Finished mapping from ons boundary to district")
+        logger.debug("Finished mapping from ons boundary to district")
         return dict(nested_dict)  # Return the mapping
 
     @time_function
@@ -150,14 +151,14 @@ class Reports(Base):
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
         else:
-            self.logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
+            logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values().to_list()
         if len(years) > 1:
             if historical:
-                self.logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
+                logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
             else:
-                self.logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
+                logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
         sections_dict = ScoutCensus.column_labels["sections"]
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
@@ -230,7 +231,7 @@ class Reports(Base):
             district_id = district_records.name
             num_ons_regions_occupied_by_district = district_nums[district_id]
 
-            self.logger.debug(f"{district_id} in {num_ons_regions_occupied_by_district} ons boundaries")
+            logger.debug(f"{district_id} in {num_ons_regions_occupied_by_district} ons boundaries")
 
             return {
                 # QSAs achieved in district, divided by the number of regions the district is in
@@ -249,12 +250,12 @@ class Reports(Base):
         dataframes = []
 
         if opt_groups or opt_number_of_groups:
-            self.logger.debug(f"Adding group data")
+            logger.debug(f"Adding group data")
             group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(_groups_groupby)
             dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=["Groups", "Number of Groups"]))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
-            self.logger.debug(f"Adding young people numbers")
+            logger.debug(f"Adding young people numbers")
             sections_table = grouped_data.apply(_young_people_numbers_groupby)
             dataframes.append(pd.DataFrame(sections_table.values.tolist(), index=sections_table.index))
 
@@ -264,13 +265,13 @@ class Reports(Base):
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
-            self.logger.debug(f"Creating awards mapping")
+            logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
             awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(_awards_per_region, district_numbers)
             awards_per_district_per_regions = pd.DataFrame(awards_per_district_per_regions.values.tolist(), index=awards_per_district_per_regions.index)
 
-            self.logger.debug(f"Adding awards data")
+            logger.debug(f"Adding awards data")
             awards_table: pd.DataFrame = grouped_data.apply(_awards_groupby, awards_per_district_per_regions)
             awards_table: pd.DataFrame = pd.DataFrame(awards_table.values.tolist(), index=awards_table.index)
             top_award = awards_table[f"%-{sections_dict['Beavers']['top_award']}"]
@@ -289,7 +290,7 @@ class Reports(Base):
         output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
 
         if geog_name == "lsoa11":
-            self.logger.debug(f"Adding IMD deciles")
+            logger.debug(f"Adding IMD deciles")
             output_data = output_data.merge(self.ons_pd.data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
 
         self.boundary_report = output_data
@@ -326,7 +327,7 @@ class Reports(Base):
         try:
             age_profile_pd = pd.read_csv(age_profile_path, dtype=data_types)
         except TypeError:
-            self.logger.error("Age profiles must be integers in each age category")
+            logger.error("Age profiles must be integers in each age category")
             raise
 
         # population data
@@ -380,4 +381,4 @@ class Reports(Base):
         return uptake_report
 
     def _save_report(self, report_data: pd.DataFrame, report_name: str):
-        utility.save_report(report_data, self.settings["Output folder"], report_name, logger=self.logger)
+        utility.save_report(report_data, self.settings["Output folder"], report_name, logger=logger)

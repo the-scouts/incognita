@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING
 import geopandas as gpd
 import pandas as pd
 
+from src import utility
 from src.base import Base
 from src.data.census_merge_data import CensusMergeData
 from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from src.data.scout_census import ScoutCensus
-import src.utility as utility
+from src.log_util import logger
 
 # type hints
 if TYPE_CHECKING:
@@ -34,21 +35,21 @@ class ScoutData(Base):
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
     def __init__(self, merged_csv=True, load_ons_pd_data=False, census_path=None, load_census_data=True):
-        super().__init__(settings=True, log_path=str(utility.LOGS_ROOT.joinpath("geo_mapping.log")))
-        self.logger.info(f"Starting at {datetime.now().time()}")
-        self.logger.finished(f"Logging setup", start_time=self.start_time)
+        super().__init__(settings=True)
+        logger.info(f"Starting at {datetime.now().time()}")
+        logger.finished(f"Logging setup", start_time=self.start_time)
 
-        self.logger.info("Loading Scout Census data")
+        logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
         census_path = self.settings["Scout Census location"] if not census_path else census_path
         self.scout_census: ScoutCensus = ScoutCensus(utility.DATA_ROOT / census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
         self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
-        self.logger.finished(f"Loading Scout Census data", start_time=self.start_time)
+        logger.finished(f"Loading Scout Census data", start_time=self.start_time)
 
         if merged_csv:
-            self.logger.info("Loading ONS data")
+            logger.info("Loading ONS data")
             start_time = time.time()
 
             has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
@@ -58,7 +59,7 @@ class ScoutData(Base):
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
-            self.logger.finished(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data ", start_time=start_time)
+            logger.finished(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data ", start_time=start_time)
 
     def merge_ons_postcode_directory(self, ons_pd: ONSPostcodeDirectory):
         """Merges census extract data with ONS data
@@ -70,13 +71,13 @@ class ScoutData(Base):
             "int": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
         }
 
-        self.logger.debug("Initialising merge object")
+        logger.debug("Initialising merge object")
         merge = CensusMergeData()
 
-        self.logger.info("Cleaning the postcodes")
+        logger.info("Cleaning the postcodes")
         merge.clean_and_verify_postcode(self.data, ScoutCensus.column_labels["POSTCODE"])
 
-        self.logger.info("Adding ONS postcode directory data to Census and outputting")
+        logger.info("Adding ONS postcode directory data to Census and outputting")
 
         # initially merge just Country column to test what postcodes can match
         self.data = merge.merge_data(self.data, ons_pd.data["ctry"], "clean_postcode")
@@ -88,7 +89,7 @@ class ScoutData(Base):
         self.data = merge.merge_data(self.data, ons_pd.data, "clean_postcode")
 
         # fill unmerged rows with default values
-        self.logger.info("filling unmerged rows")
+        logger.info("filling unmerged rows")
         self.data = merge.fill_unmerged_rows(self.data, ScoutCensus.column_labels["VALID_POSTCODE"], ons_fields_data_types)
 
         # Filter to useful columns
@@ -129,7 +130,7 @@ class ScoutData(Base):
         self.data.loc[self.data[valid_postcode_label] == 0, error_output_fields].to_csv(error_output_path, index=False, encoding="utf-8-sig")
 
         # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
-        self.logger.info("Writing merged data")
+        logger.info("Writing merged data")
         self.data.to_csv(output_path.with_suffix(".csv"), index=False, encoding="utf-8-sig")
         self.data.to_feather(output_path.with_suffix(".feather"))
 
@@ -143,22 +144,23 @@ class ScoutData(Base):
 
         :returns None: Nothing
         """
-        self.data = utility.filter_records(self.data, field, value_list, self.logger, mask, exclusion_analysis)
+        self.data = utility.filter_records(self.data, field, value_list, logger, mask, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None):
-        uid = Path(f"{hash(self.data.shape)}_{shapes_key}_{path.stem}.feather")
-        if uid.is_file():
-            data = pd.read_feather(uid).set_index("index")
-            assert self.data.equals(data[self.data.columns])
-            self.data = data
-            return
+        if path is not None:
+            uid = Path(f"{hash(self.data.shape)}_{shapes_key}_{path.stem}.feather")
+            if uid.is_file():
+                data = pd.read_feather(uid).set_index("index")
+                assert self.data.equals(data[self.data.columns])
+                self.data = data
+                return
 
         if self.points_data.empty:
             idx = pd.Series(self.data.index, name="object_index")
             self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.data.long, self.data.lat), crs=utility.WGS_84)
 
-        if path:
-            all_shapes = gpd.GeoDataFrame.from_file(path)
+        if path is not None:
+            all_shapes = gpd.GeoDataFrame.from_file(str(path))  # FIXME geopandas does not support os.PathLike (2021-03-09)
         elif gdf is not None:
             all_shapes = gdf
         else:
@@ -169,4 +171,5 @@ class ScoutData(Base):
         merged = self.data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)
         assert self.data.equals(merged[self.data.columns])
         self.data = merged
-        merged.reset_index(drop=False).to_feather(uid)
+        if path is not None:
+            merged.reset_index(drop=False).to_feather(uid)

@@ -2,6 +2,7 @@ import pandas as pd
 
 from src.base import Base
 from src.data.scout_census import ScoutCensus
+from src.log_util import logger
 
 
 class ONSPostcodeDirectory(Base):
@@ -32,13 +33,13 @@ class ONSPostcodeDirectory(Base):
             return col in fields if fields else True
 
         if load_data:
-            self.logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{fields}")
+            logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{fields}")
 
             # Handle index column possibly not existing (if the full ONS PD is loaded then the index column will exist, if using the reduced ONS PD it won't so use automatic index)
             try:
                 self.data = pd.read_csv(ons_pd_csv_path, index_col=index_column, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
             except ValueError:
-                self.logger.debug(f"Loading ONS data with given index colum ({index_column}) failed, trying with pandas-generated index")
+                logger.debug(f"Loading ONS data with given index colum ({index_column}) failed, trying with pandas-generated index")
                 self.data = pd.read_csv(ons_pd_csv_path, index_col=None, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
 
             for field in data_types:
