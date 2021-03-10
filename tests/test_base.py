@@ -25,10 +25,9 @@ def test_time_function_wraps_function():
     assert time_function(add)(2, 2) == add(2, 2)
 
 
-# noinspection PyTypeChecker
 def test_time_function_raises_exception_on_non_method_arguments():
     with pytest.raises(ValueError):
-        time_function("not a function or method")
+        time_function("not a function or method")  # NoQA
 
 
 def test_base_open_settings():
