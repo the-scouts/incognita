@@ -124,19 +124,19 @@ if __name__ == "__main__":
     mapper.add_areas(dimension, cty_reports)
 
     # dimension = {"column": "%-All-2020", "tooltip": "% Uptake 6-18", "legend": "% Uptake 6-18 (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, threshold=0)
+    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
     #
     # dimension = {"column": "%-Beavers-2020", "tooltip": "% Uptake Beavers", "legend": "% Uptake Beavers (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, threshold=0)
+    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
     #
     # dimension = {"column": "%-Cubs-2020", "tooltip": "% Uptake Cubs", "legend": "% Uptake Cubs (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, threshold=0)
+    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
     #
     # dimension = {"column": "%-Scouts-2020", "tooltip": "% Uptake Scouts", "legend": "% Uptake Scouts (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, threshold=0)
+    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
     #
     # dimension = {"column": "%-Explorers-2020", "tooltip": "% Uptake Explorers", "legend": "% Uptake Explorers (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, threshold=0)
+    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
 
     # Save the map and display
     mapper.save_map()

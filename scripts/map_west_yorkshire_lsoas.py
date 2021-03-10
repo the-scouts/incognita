@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # Plot
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    mapper.add_areas(dimension, reports, show=True, threshold=0)
+    mapper.add_areas(dimension, reports, show=True, significance_threshold=0)
     mapper.set_region_of_colour("C_name", [county_name])
     mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(), ["youth membership"])
 
