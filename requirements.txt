@@ -16,3 +16,4 @@ hypothesis
 # dev
 black
 isort
+ipython

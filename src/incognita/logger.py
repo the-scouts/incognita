@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 # Create root logger
-logger = logging.getLogger("geo_mapping")
+logger = logging.getLogger("incognita")
 
 
 def set_up_logger(file_path: Path = None, log_level: int = logging.DEBUG) -> logging.Logger:

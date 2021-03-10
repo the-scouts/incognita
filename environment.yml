@@ -1,4 +1,4 @@
-name: scouts_mapping
+name: incognita
 channels:
   - conda-forge
   - defaults
@@ -24,6 +24,7 @@ dependencies:
   # Development requirements:
   - black
   - isort
+  - ipython
 
 #  # Requirements not on conda:
 #  - pip:

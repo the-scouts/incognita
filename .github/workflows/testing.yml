@@ -71,7 +71,7 @@ jobs:
       - name: Setup Miniconda (Mambaforge)
         uses: conda-incubator/setup-miniconda@master
         with:
-          activate-environment: scouts_mapping
+          activate-environment: incognita
           environment-file: environment.yml
           channel-priority: strict
           # Mamba:
