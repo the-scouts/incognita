@@ -1,0 +1,67 @@
+[tool.incognita.census_extract]
+original = "Scout Census Data/Census 2020 Extract (1).csv"
+merged = "Scout Census Data/Census 2020 Extract (1) with May 2019 fields crown deps.feather"
+
+[tool.incognita.ons_pd]
+full = "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv"
+reduced = "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.csv"
+minified = "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK-minified-old.feather"
+reduced_nystest = "ons_pd_with_nys2.csv"
+
+[tool.incognita.folders]
+ons_pd_names_codes = "ONSPD_MAY_2019_UK/Documents/"
+national_statistical = "National Statistical data/"
+boundaries = "Boundary shape files/"
+output = "Output/"
+
+[tool.incognita.custom_boundaries."District"]
+name = "D_ID"
+
+codes.path = "Scout Census Data/district_id_mapping.csv"
+codes.key = "D_ID"
+codes.key_type = "Int32"
+codes.name = "D_name"
+
+shapefile.path = "../../../scripts/districts_buffered.geojson"
+shapefile.key = "id"
+shapefile.name = "name"
+
+[tool.incognita.custom_boundaries."imd_decile"]
+name = "imd_decile"
+
+codes.path = "Scout Census Data/imd_names_and_codes.csv"
+codes.key = "IMD Decile"
+codes.key_type = "Int32"
+codes.name = "Name"
+
+[tool.incognita.custom_boundaries."NYS"]
+name = "nys_districts"
+
+codes.path = "Scout Census Data/North_Yorkshire_Districts.csv"
+codes.key = "ID"
+codes.key_type = "string"
+codes.name = "District"
+
+shapefile.path = "North_Yorkshire_Districts/North_Yorkshire_Districts.shp"
+shapefile.key = "id"
+shapefile.name = "district"
+
+age_profile.path = "age_by_lsoa_mid_2017_total.csv"
+age_profile.key = "Area Codes"
+age_profile.pivot_key = "lsoa11"
+
+[tool.incognita.custom_boundaries."County"]
+name = "ctyua19cd"
+
+codes.path = "Scout Census Data/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK.csv"
+codes.key = "ctyua19cd"
+codes.key_type = "string"
+codes.name = "ctyua19nm"
+
+shapefile.path = "Counties_UAs_Dec_2019_BUC_and_GADM36_crown_dependencies/Counties_UAs_Dec_2019_BUC_and_GADM36_crown_dependencies.shp"
+shapefile.key = "ctyua19cd"
+shapefile.name = "ctyua19nm"
+
+age_profile.path = "age_by_lsoa_mid_2017_total.csv"
+age_profile.key = "Area Codes"
+age_profile.pivot_key = "lsoa11"
