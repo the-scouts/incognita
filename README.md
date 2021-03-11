@@ -1,6 +1,6 @@
 # Incognita
 
-[![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
+[![codecov](https://codecov.io/gh/the-scouts/incognita/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/incognita)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Incognita is a tool to map UK Scout data and enable geospatial analysis.
@@ -14,7 +14,7 @@ unknowns!*
 ## Where to get it
 
 The source code for the project is hosted on GitHub at
-[the-scouts/geo_mapping](https://github.com/the-scouts/geo_mapping)
+[the-scouts/incognita](https://github.com/the-scouts/incognita)
 
 We **strongly** recommended using `conda` to install *incognita*, however pip 
 can be used with a number of manual installation steps as below.
@@ -126,6 +126,6 @@ loads into heroku correctly.
 ## License
 
 ***Incognita*** is naturally
-[open source](https://github.com/the-scouts/geo_mapping) and is
+[open source](https://github.com/the-scouts/incognita) and is
 licensed under the **[MIT license](https://choosealicense.com/licenses/mit)**.
 
