@@ -1,6 +1,10 @@
 # Incognita
 
-[![codecov](https://codecov.io/gh/the-scouts/incognita/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/incognita)
+![Python Versions](https://img.shields.io/pypi/pyversions/incognita.svg)
+![Status](https://img.shields.io/pypi/status/incognita.svg)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/incognita.svg)](https://pypi.org/project/incognita/)
+[![Conda Latest Release](https://img.shields.io/conda/vn/conda-forge/incognita.svg)](https://anaconda.org/conda-forge/incognita)
+[![License](https://img.shields.io/pypi/l/incognita.svg)](https://github.com/the-scouts/incognita/blob/master/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Incognita is a tool to map UK Scout data and enable geospatial analysis.
