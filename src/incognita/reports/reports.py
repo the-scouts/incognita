@@ -178,7 +178,7 @@ class Reports:
             output = {}
             dicts: pd.Series = group_df.groupby(["Year"], sort=True).apply(_year_groupby).to_list()
             for row in dicts:
-                output = {**output, **row}
+                output |= row
             return output
 
         def _year_groupby(group_df: pd.DataFrame) -> dict:

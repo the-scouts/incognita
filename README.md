@@ -41,7 +41,7 @@ However, to install geopandas using pip on Windows, follow the following steps:
    [GDAL](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal),
    [Fiona](http://www.lfd.uci.edu/~gohlke/pythonlibs/#fiona), and
    [Rtree](http://www.lfd.uci.edu/~gohlke/pythonlibs/#rtree). Choose the
-   correct platform and python version (currently 3.8).
+   correct platform and python version (currently 3.9).
 2. Install any prerequisites listed on Gohlke's site (e.g. C++ re-distributables)
 3. `pip install` the wheels in the following order (preferably in a Virtual
    Environment)
@@ -51,7 +51,7 @@ However, to install geopandas using pip on Windows, follow the following steps:
 4. `pip install geopandas`
 
 ### Dependencies
-This project is written and tested in Python 3.8, and depends on:
+This project is written and tested in Python 3.9, and depends on:
 
 - [geopandas](https://github.com/geopandas/geopandas),
   [pandas](https://github.com/pandas-dev/pandas) - for (geospatial) data

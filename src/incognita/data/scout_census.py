@@ -122,7 +122,7 @@ class ScoutCensus:
         data_values_16 = {key: "Int16" for key in cols_int_16}
         data_values_32 = {key: "Int32" for key in cols_int_32}
         data_values_cat = {key: "category" for key in cols_categorical}
-        data_values_sections = {**data_values_bool, **data_values_16, **data_values_32, **data_values_cat}  # TODO py3.9 |
+        data_values_sections = data_values_bool | data_values_16 | data_values_32 | data_values_cat
         if census_file_path.suffix == ".csv":
             self.data = pd.read_csv(census_file_path, dtype=data_values_sections, encoding="utf-8")
         elif census_file_path.suffix == ".feather":

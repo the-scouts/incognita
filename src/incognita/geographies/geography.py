@@ -89,7 +89,7 @@ class Geography:
         logger.info(f"Setting the boundary to {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
-        boundaries_dict = {**ons_pd.BOUNDARIES, **utility.SETTINGS["Scout Mappings"]}
+        boundaries_dict = ons_pd.BOUNDARIES | utility.SETTINGS["Scout Mappings"]
         if geography_name in boundaries_dict.keys():
             self.geography_metadata_dict = boundaries_dict[geography_name]
 

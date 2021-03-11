@@ -91,7 +91,7 @@ class HistorySummary:
             dicts: pd.Series = df.groupby(["Year"], sort=True).apply(_section_groupby).to_list()
             output = {}
             for row in dicts:
-                output = {**output, **row}
+                output |= row
             return output
 
         def _section_groupby(df):
