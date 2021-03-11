@@ -6,7 +6,7 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
-from incognita import utility
+from incognita.utility import utility
 from incognita.logger import logger
 
 if TYPE_CHECKING:

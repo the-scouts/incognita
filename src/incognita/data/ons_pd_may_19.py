@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from incognita import utility
+from incognita.utility import utility
 from incognita.data.ons_pd import ONSPostcodeDirectory
 
 # Folder within the ONS Postcode Directory archive holding names and codes files

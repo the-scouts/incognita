@@ -10,8 +10,8 @@ import json
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
-from incognita.utility import DATA_ROOT
-from incognita.utility import SCRIPTS_ROOT
+from incognita.utility.utility import DATA_ROOT
+from incognita.utility.utility import SCRIPTS_ROOT
 
 if __name__ == "__main__":
     column_labels = ScoutCensus.column_labels
