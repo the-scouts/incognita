@@ -1,22 +1,29 @@
-# geo_mapping
-Mapping Scouts data to UK administrative regions.
+# Incognita
 
 [![codecov](https://codecov.io/gh/the-scouts/geo_mapping/branch/master/graph/badge.svg)](https://codecov.io/gh/the-scouts/geo_mapping)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+Incognita is a tool to map UK Scout data and enable geospatial analysis.
+
+We use ONS open data to link scout areas (Groups, Districts, etc.) to UK 
+administrative geographies.
+
+*Incognita comes from* Terra Incognita, *or Parts Unknown - solving the known 
+unknowns!*
 
 ## Where to get it
 
 The source code for the project is hosted on GitHub at
 [the-scouts/geo_mapping](https://github.com/the-scouts/geo_mapping)
 
-We **strongly** recommended using `conda` to install *geo_mapping*, however pip can
-be used with a number of manual installation steps as below.
+We **strongly** recommended using `conda` to install *incognita*, however pip 
+can be used with a number of manual installation steps as below.
 
 To install dependencies with Conda, run the following commands in the terminal
 ```shell
 # conda
 conda env update
-conda activate scouts_mapping
+conda activate incognita
 ```
 
 ```shell
@@ -118,7 +125,7 @@ loads into heroku correctly.
 
 ## License
 
-***geo_mapping*** is naturally
+***Incognita*** is naturally
 [open source](https://github.com/the-scouts/geo_mapping) and is
 licensed under the **[MIT license](https://choosealicense.com/licenses/mit)**.
 

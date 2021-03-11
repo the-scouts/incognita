@@ -9,9 +9,9 @@ import hypothesis.strategies as st
 import pandas as pd
 import pytest
 
-from src.data.scout_census import ScoutCensus
-from src.data.scout_data import ScoutData
-from src.utility import WGS_84
+from incognita.data.scout_census import ScoutCensus
+from incognita.data.scout_data import ScoutData
+from incognita.utility import WGS_84
 
 COLUMN_NAME = "ctry"
 

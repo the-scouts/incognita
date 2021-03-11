@@ -1,4 +1,4 @@
-from src.maps.dashboard import Dashboard
+from incognita.maps.dashboard import Dashboard
 
 dashboard = Dashboard()
 

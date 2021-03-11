@@ -3,8 +3,8 @@ import json
 import geopandas as gpd
 import pandas as pd
 
-from src import utility
-from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita import utility
+from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 
 if __name__ == "__main__":
     print("Starting")

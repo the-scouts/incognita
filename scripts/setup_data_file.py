@@ -7,11 +7,11 @@ This script has no command line options.
 """
 import json
 
-from src.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
-from src.data.scout_census import ScoutCensus
-from src.data.scout_data import ScoutData
-from src.utility import DATA_ROOT
-from src.utility import SCRIPTS_ROOT
+from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita.data.scout_census import ScoutCensus
+from incognita.data.scout_data import ScoutData
+from incognita.utility import DATA_ROOT
+from incognita.utility import SCRIPTS_ROOT
 
 if __name__ == "__main__":
     column_labels = ScoutCensus.column_labels

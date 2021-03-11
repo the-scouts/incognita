@@ -1,5 +1,5 @@
-from src.data.scout_data import ScoutData
-from src.reports.reports import Reports
+from incognita.data.scout_data import ScoutData
+from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     county_name = "Gt. London South"

@@ -8,20 +8,20 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from src.data.scout_census import ScoutCensus
-from src.logger import logger
+from incognita.data.scout_census import ScoutCensus
+from incognita.logger import logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     import logging
 
-    from src.data.ons_pd import ONSPostcodeDirectory
+    from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_ROOT = PROJECT_ROOT / "data"
 SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 LOGS_ROOT = PROJECT_ROOT / "scripts/logs"

@@ -5,17 +5,17 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from src import utility
-from src.data.scout_census import ScoutCensus
-from src.data.scout_data import ScoutData
-from src.geographies.geography import Geography
-from src.logger import logger
-from src.utility import time_function
+from incognita import utility
+from incognita.data.scout_census import ScoutCensus
+from incognita.data.scout_data import ScoutData
+from incognita.geographies.geography import Geography
+from incognita.logger import logger
+from incognita.utility import time_function
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from src.data.ons_pd import ONSPostcodeDirectory
+    from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
 class Reports:

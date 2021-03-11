@@ -1,7 +1,7 @@
-from src.data.scout_data import ScoutData
-from src.geographies.district_boundaries import DistrictBoundaries
-from src.maps.map import Map
-from src.reports.reports import Reports
+from incognita.data.scout_data import ScoutData
+from incognita.geographies.district_boundaries import DistrictBoundaries
+from incognita.maps.map import Map
+from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     region_name = "South West"

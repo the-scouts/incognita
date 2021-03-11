@@ -6,14 +6,14 @@ the percentage of young people.
 This script has no command line options.
 """
 
-from src.data.scout_data import ScoutData
-from src.maps.map import Map
-from src.reports.reports import Reports
+from incognita.data.scout_data import ScoutData
+from incognita.maps.map import Map
+from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
     #
-    # from src import utility
+    # from incognita import utility
     # import pandas as pd
     # import geopandas as gpd
     # from time import time

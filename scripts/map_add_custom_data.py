@@ -1,7 +1,7 @@
-from src.data.scout_data import ScoutData
-from src.maps.map import Map
-from src.reports.reports import Reports
-import utility
+from incognita import utility
+from incognita.data.scout_data import ScoutData
+from incognita.maps.map import Map
+from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     county_name = "Central Yorkshire"
