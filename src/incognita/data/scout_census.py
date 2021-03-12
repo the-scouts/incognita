@@ -6,18 +6,21 @@ from pyarrow import feather
 
 class ScoutCensus:
     """Holds and accesses census data from a given file.
-
+    
     Data is read from passed path, and imported with specified data types.
     Attributes are added to the class to aid accessing data in a structured way.
     All column labels from the Census report are set in column_labels and can be
         changed to reflect the input census file.
 
-    :param str census_file_path: path to input file with Census data.
+    Args:
+        census_file_path: path to input file with Census data.
 
-    :var ScoutCensus.column_labels: holds strings of all census csv column headings, structured to help access
-    :var ScoutCensus.DEFAULT_VALUE: holds value for NaN values
-    :var ScoutCensus.UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
-    :var ScoutCensus.UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+    Attributes:
+        column_labels: holds strings of all census csv column headings, structured to help access
+        DEFAULT_VALUE: holds value for NaN values
+        UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
+        UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+
     """
 
     # fmt: off
@@ -139,8 +142,12 @@ class ScoutCensus:
     def get_section_names(level: list) -> list:
         """Return list of section names that exist within a particular organisational level.
 
-        :param list level: Organisational level. Usually Group or District.
-        :return: List of section names.
+        Args:
+            level: Organisational level. Usually Group or District.
+
+        Returns:
+            List of section names.
+
         """
         section_dict: dict
         sections_labels = ScoutCensus.column_labels["sections"].items()
@@ -150,8 +157,12 @@ class ScoutCensus:
     def get_section_type(level: list) -> list:
         """Return list of section types that exist within a particular organisational level.
 
-        :param list level: Organisational level. Usually Group or District.
-        :return: List of section types
+        Args:
+            level: Organisational level. Usually Group or District.
+
+        Returns:
+            List of section types
+
         """
         section_names_list = ScoutCensus.get_section_names(level)
         section_dict: dict = ScoutCensus.column_labels["sections"]

@@ -21,15 +21,19 @@ shapefile_paths = {
 class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     """Used for holding and accessing ONS Postcode Directory data
 
-    :param str ons_pd_csv_path: path to the ONS Postcode Directory csv file
-    :param bool load_data: whether to load data from the file
+    Args:
+        ons_pd_csv_path: path to the ONS Postcode Directory csv file
+        load_data: whether to load data from the file
 
-    :var list ONSPostcodeDirectoryMay19.fields: columns to read from the csv file
-    :var str ONSPostcodeDirectoryMay19.index_column: column to use as the index. Must contain unique values
-    :var dict ONSPostcodeDirectoryMay19.data_types: pandas datatypes for the columns to load
-    :var str ONSPostcodeDirectoryMay19.PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
-    :var dict ONSPostcodeDirectoryMay19.IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
-    :var dict ONSPostcodeDirectoryMay19.COUNTRY_CODES: ONS Postcode Directory codes for each country
+
+    Attributes:
+        fields: columns to read from the csv file
+        index_column: column to use as the index. Must contain unique values
+        data_types: pandas datatypes for the columns to load
+        PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
+        IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
+        COUNTRY_CODES: ONS Postcode Directory codes for each country
+
     """
 
     fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"]

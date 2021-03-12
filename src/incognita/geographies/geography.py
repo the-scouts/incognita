@@ -19,10 +19,12 @@ if TYPE_CHECKING:
 
 
 class Geography:
-    """Stores information about the (administrative) geography type currently used and methods for selecting and
-    excluding regions.
-
-    :var dict Geography.SECTION_AGES: Holds information about scout sections
+    """Stores information about the (administrative) geography type currently 
+    used and methods for selecting and excluding regions.
+    
+    Attributes:
+        geography_metadata_dict: information about the boundary type
+        geography_region_ids_mapping: table of region codes and human-readable names for those codes
     """
 
     def __init__(self, geography_name: str, ons_pd_object: ONSPostcodeDirectory):
@@ -80,13 +82,10 @@ class Geography:
     def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
 
-        :param str geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
-        :param ONSPostcodeDirectory ons_pd: An ONS Postcode Directory object
+        Args:
+            geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
+            ons_pd: An ONS Postcode Directory object
 
-        :var dict self.geography_metadata_dict: information about the boundary type
-        :var self.geography_region_ids_mapping: table of region codes and human-readable names for those codes
-
-        :returns None: Nothing
         """
         logger.info(f"Setting the boundary to {geography_name}")
 
@@ -104,12 +103,15 @@ class Geography:
         """Produces list of ONS Geographical codes that exist within a subset
         of the Scout Census data.
 
-        :param ScoutData scout_data: ScoutData object with data to operate on
-        :param str ons_code: A field of the ONS Postcode Directory
-        :param str column: A field of the Scout Census data
-        :param list value_list: Values to accept
+        Args:
+            scout_data: ScoutData object with data to operate on
+            ons_code: A field of the ONS Postcode Directory
+            column: A field of the Scout Census data
+            value_list: Values to accept
 
-        :returns list: List of ONS Geographical codes of type ons_code.
+        Returns:
+            List of ONS Geographical codes of type ons_code.
+
         """
         logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
 
@@ -126,16 +128,16 @@ class Geography:
 
     def filter_boundaries_regions_data(self, field: str, value_list: list, ons_pd_object: ONSPostcodeDirectory):
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
-
+        
         Requires _set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.
 
-        :param str field: The field on which to filter
-        :param list value_list: The values on which to filter
-        :param ons_pd_object:
+        Args:
+            field: The field on which to filter
+            value_list: The values on which to filter
+            ons_pd_object: returns None: Nothing
 
-        :returns None: Nothing
         """
 
         boundary_subset = None
@@ -167,11 +169,13 @@ class Geography:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
-        :param ScoutData scout_data: ScoutData object with data to operate on
-        :param ONSPostcodeDirectory ons_pd:
-        :param str boundary: ONS boundary to filter on
-        :param str column: Scout boundary (e.g. C_ID)
-        :param list value_list: List of values in the Scout boundary
+        Args:
+            scout_data: ScoutData object with data to operate on
+            ons_pd:
+            boundary: ONS boundary to filter on
+            column: Scout boundary (e.g. C_ID)
+            value_list: List of values in the Scout boundary
+
         """
         ons_value_list = self._get_ons_codes_from_scout_area(scout_data, boundary, column, value_list)
         self.filter_boundaries_regions_data(boundary, ons_value_list, ons_pd)
@@ -182,11 +186,13 @@ class Geography:
 
         TODO investigate some method of actually finding a boundary's neighbours.
 
-        :param ScoutData scout_data: ScoutData object with data to operate on
-        :param str boundary: ONS boundary to filter on
-        :param str field: Scout boundary (e.g. C_ID)
-        :param list value_list: List of values in the Scout boundary
-        :param int distance: How far to extend the buffer by
+        Args:
+            scout_data: ScoutData object with data to operate on
+            boundary: ONS boundary to filter on
+            field: Scout boundary (e.g. C_ID)
+            value_list: List of values in the Scout boundary
+            distance: How far to extend the buffer by
+
         """
 
         # Reduce columns in dataset to minimum requirements

@@ -65,7 +65,9 @@ class ScoutData:
     def merge_ons_postcode_directory(self, ons_pd: ONSPostcodeDirectory):
         """Merges census extract data with ONS data
 
-        :param ONSPostcodeDirectory ons_pd: Refers to the ONS Postcode Directory
+        Args:
+            ons_pd: Refers to the ONS Postcode Director
+
         """
         ons_fields_data_types = {
             "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
@@ -112,10 +114,12 @@ class ScoutData:
 
     def save_merged_data(self, ons_pd_publication_date: str):
         """Save passed dataframe to csv file.
-
+        
         Also output list of errors in the merge process to a text file
 
-        :param str ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
+        Args:
+            ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
+
         """
         raw_extract_path = config.SETTINGS.census_extract.original
         output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
@@ -138,12 +142,12 @@ class ScoutData:
     def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
         """Filters the Census records by any field in ONS PD.
 
-        :param str field: The field on which to filter
-        :param list value_list: The values on which to filter
-        :param bool mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
-        :param bool exclusion_analysis:
+        Args:
+            field: The field on which to filter
+            value_list: The values on which to filter
+            mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
+            exclusion_analysis:
 
-        :returns None: Nothing
         """
         self.data = utility.filter_records(self.data, field, value_list, logger, mask, exclusion_analysis)
 
@@ -176,5 +180,5 @@ class ScoutData:
             merged.reset_index(drop=False).to_feather(uid)
 
     def close(self):
-        """Outputs the duration of the programme """
+        """Outputs the duration of the programme"""
         logger.info(f"Script finished, {time.time() - self.start_time:.2f} seconds elapsed.")

@@ -15,8 +15,7 @@ class DistrictBoundaries:
         self.ons_pd = scout_data_object.ons_pd
 
     def create_district_boundaries(self):
-        """
-        Creates a GeoJSON file for the District Boundaries of the Scout Census.
+        """Creates a GeoJSON file for the District Boundaries of the Scout Census.
 
         Aims to create a circular boundary around every section of maximal size
         that doesn't overlap or leave gaps between Districts.
@@ -110,12 +109,17 @@ class DistrictBoundaries:
 
     @staticmethod
     def _buffer_distance(point_details, all_points: gpd.GeoDataFrame) -> int:
-        """
-        Calculates the buffer distance of a point. Sometimes is inconclusive
+        """Calculates the buffer distance of a point. Sometimes is inconclusive
         as requires the results of the buffer distance of other points, and
         in this case returns 0.
 
-        :param gpd.GeoDataFrame all_points: Contains all points.
+        Args:
+            point_details:
+            all_points: Contains all points.
+
+        Returns:
+            Distance
+
         """
         if point_details["buffer_distance"] == 0:
             distance = 0
@@ -173,14 +177,17 @@ class DistrictBoundaries:
 
     @staticmethod
     def _nearest_other_points(row, all_points: gpd.GeoDataFrame) -> list:
-        """
-        Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
+        """Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
         the points and corresponding distances for all points with twice
         the minimum distance from the row to the subset.
 
-        :param row: Data for specific point
+        Args:
+            row: Data for specific point
+            all_points:
 
-        :returns list: Sorted list of dictionaries containing points and distances
+        Returns:
+            Sorted list of dictionaries containing points and distances
+
         """
         point = row["geometry"]
 
@@ -199,17 +206,19 @@ class DistrictBoundaries:
 
     @staticmethod
     def _indexes_of_interest(row, all_points: gpd.GeoDataFrame) -> pd.Index:
-        """
-        Provides index of all points within 3 times the distance of the
+        """Provides index of all points within 3 times the distance of the
         closest point.
-
+        
         (This is the maximal set of points that could affect the buffer distance
         of this point)
 
-        :param row: Row of a GeoDataFrame - requires a 'nearest_points' column
-        :param gpd.GeoDataFrame all_points: All the points to be considered.
+        Args:
+            row: Row of a GeoDataFrame - requires a 'nearest_points' column
+            all_points: All the points to be considered.
 
-        :returns: Indexes of interest
+        Returns:
+            Indexes of interest
+
         """
 
         # Indexes distance

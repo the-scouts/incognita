@@ -81,9 +81,10 @@ class Reports:
     def _ons_to_district_mapping(self, ons_code: str) -> dict:
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
-        :param str ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
+        Args:
+            ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
+            ons_code:
 
-        :returns None: Nothing
         """
 
         logger.debug("Creating mapping from ons boundary to scout district")
@@ -117,12 +118,14 @@ class Reports:
     @time_function
     def create_boundary_report(self, options: list = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
         """Produces .csv file summarising by boundary provided.
-
+        
         Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
 
-        :param list options: List of data to be included in report
-        :param bool historical: Check to ensure that multiple years of data are intentional
-        :param str report_name:
+        Args:
+            options: List of data to be included in report
+            historical: Check to ensure that multiple years of data are intentional
+            report_name:
+
         """
 
         # Set default option set for `options`
@@ -299,13 +302,16 @@ class Reports:
     @time_function
     def create_uptake_report(self, report_name: str = None) -> pd.DataFrame:
         """Creates a report of scouting uptake in geographic areas
-
+        
         Creates an report by the boundary that has been set, requires a boundary report to already have been run.
         Requires population data by age for the specified boundary.
 
-        :param str report_name: Name to save the report as
+        Args:
+            report_name: Name to save the report as
 
-        :returns pd.DataFrame: Uptake data of Scouts in the boundary
+        Returns:
+            pd.DataFrame: Uptake data of Scouts in the boundary
+
         """
         geog_name = self.geography_type
         try:
