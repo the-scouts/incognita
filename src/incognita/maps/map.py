@@ -16,6 +16,7 @@ from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.reports.reports import Reports
+from incognita.utility import config
 from incognita.utility import utility
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ class Map:
 
         self.scout_data = scout_data_object
 
-        self.out_file = utility.SETTINGS.folders.output.joinpath(map_name).with_suffix(".html")
+        self.out_file = config.SETTINGS.folders.output.joinpath(map_name).with_suffix(".html")
 
         # Create folium map
         self.map: folium.Map = folium.Map(

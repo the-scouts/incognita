@@ -7,6 +7,7 @@ import pandas as pd
 import shapely.geometry
 
 from incognita.logger import logger
+from incognita.utility import config
 from incognita.utility import root
 from incognita.utility import utility
 
@@ -60,12 +61,12 @@ class Geography:
 
     @property
     def shapefile_path(self) -> Path:
-        shapefiles_root = utility.SETTINGS.folders.boundaries
+        shapefiles_root = config.SETTINGS.folders.boundaries
         return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        age_profiles_root = utility.SETTINGS.folders.national_statistical
+        age_profiles_root = config.SETTINGS.folders.national_statistical
         return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
@@ -90,7 +91,7 @@ class Geography:
         logger.info(f"Setting the boundary to {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
-        boundaries_dict = ons_pd.BOUNDARIES | utility.SETTINGS.custom_boundaries.__dict__
+        boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries.__dict__
         if geography_name in boundaries_dict.keys():
             self.geography_metadata_dict = boundaries_dict[geography_name]
 

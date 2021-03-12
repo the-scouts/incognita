@@ -12,7 +12,7 @@ from incognita.data.census_merge_data import CensusMergeData
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
-from incognita.utility import root
+from incognita.utility import config
 from incognita.utility import utility
 
 # type hints
@@ -43,7 +43,7 @@ class ScoutData:
         logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
-        census_path = utility.SETTINGS.census_extract.merged if not census_path else census_path
+        census_path = config.SETTINGS.census_extract.merged if not census_path else census_path
         self.scout_census: ScoutCensus = ScoutCensus(census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
         self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
@@ -56,7 +56,7 @@ class ScoutData:
             has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
 
             if has_ons_pd_data:
-                self.ons_pd = ONSPostcodeDirectoryMay19(utility.SETTINGS.ons_pd.reduced, load_data=load_ons_pd_data)
+                self.ons_pd = ONSPostcodeDirectoryMay19(config.SETTINGS.ons_pd.reduced, load_data=load_ons_pd_data)
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
@@ -117,9 +117,9 @@ class ScoutData:
 
         :param str ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
         """
-        raw_extract_path = utility.SETTINGS.census_extract.original
+        raw_extract_path = config.SETTINGS.census_extract.original
         output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
-        error_output_path = utility.SETTINGS.folders.output / "error_file.csv"
+        error_output_path = config.SETTINGS.folders.output / "error_file.csv"
 
         valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
         postcode_merge_column = "clean_postcode"

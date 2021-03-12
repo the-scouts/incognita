@@ -1,7 +1,7 @@
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
-from incognita.utility import utility
+from incognita.utility import config
 
 if __name__ == "__main__":
     county_name = "Central Yorkshire"
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     dimension = {"column": f"Beavers-{year}", "tooltip": f"Beavers {year}", "legend": "# Beavers"}
     mapper.add_areas(dimension, reports, show=True)
     mapper.add_custom_data(
-        utility.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
+        config.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
         "Primary Schools",
         location_cols="Postcode",
         marker_data=["EstablishmentName"],

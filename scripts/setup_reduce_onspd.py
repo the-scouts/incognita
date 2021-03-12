@@ -2,6 +2,7 @@ import geopandas as gpd
 import pandas as pd
 
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita.utility import config
 from incognita.utility import utility
 
 if __name__ == "__main__":
@@ -9,7 +10,7 @@ if __name__ == "__main__":
     fields = ["oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "imd", "imd_decile"]
 
     # Load Full ONS Postcode Directory
-    data = pd.read_csv(utility.SETTINGS.ons_pd.full, dtype=ONSPostcodeDirectoryMay19.data_types, encoding="utf-8")
+    data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ONSPostcodeDirectoryMay19.data_types, encoding="utf-8")
     print("Loaded data")
 
     # Add IMD Decile

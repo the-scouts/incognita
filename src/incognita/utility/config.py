@@ -5,6 +5,7 @@ from typing import Optional, TYPE_CHECKING
 
 import pydantic
 import pydantic.validators
+import toml
 
 from incognita.utility import root
 
@@ -84,3 +85,7 @@ class Config(pydantic.BaseModel):
     ons_pd: ONSPostcodeDirectoryPaths
     folders: FolderPaths
     custom_boundaries: dict[str, CustomBoundary]
+
+
+_SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())["tool"]["incognita"]
+SETTINGS = Config(**_SETTINGS_TOML)

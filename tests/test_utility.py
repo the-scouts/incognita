@@ -39,14 +39,14 @@ def test_settings_are_accurate():
     with open(root.PROJECT_ROOT.joinpath("incognita-config.toml"), "r") as read_file:
         settings = toml.load(read_file)["tool"]["incognita"]
 
-    assert utility._SETTINGS_TOML == settings
+    assert config._SETTINGS_TOML == settings
 
 
 def test_settings_model_is_accurate():
     with open(root.PROJECT_ROOT.joinpath("incognita-config.toml"), "r") as read_file:
         settings = toml.load(read_file)["tool"]["incognita"]
 
-    assert utility.SETTINGS == config.Config(**settings)
+    assert config.SETTINGS == config.Config(**settings)
 
 
 class ExampleClassLogger:
