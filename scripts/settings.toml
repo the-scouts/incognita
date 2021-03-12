@@ -1,35 +1,35 @@
 [tool.incognita.census_extract]
-original = "Scout Census Data/Census 2020 Extract (1).csv"
-merged = "Scout Census Data/Census 2020 Extract (1) with May 2019 fields crown deps.feather"
+original = "./data/Scout Census Data/Census 2020 Extract (1).csv"
+merged = "data/Scout Census Data/Census 2020 Extract (1) with May 2019 fields crown deps.feather"
 
 [tool.incognita.ons_pd]
-full = "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv"
-reduced = "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.csv"
-minified = "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK-minified-old.feather"
-reduced_nystest = "ons_pd_with_nys2.csv"
+full = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv"
+reduced = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.csv"
+minified = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK-minified-old.feather"
+reduced_nystest = "data/ons_pd_with_nys2.csv"
 
 [tool.incognita.folders]
-ons_pd_names_codes = "ONSPD_MAY_2019_UK/Documents/"
-national_statistical = "National Statistical data/"
-boundaries = "Boundary shape files/"
+ons_pd_names_codes = "data/ONSPD_MAY_2019_UK/Documents/"
+national_statistical = "data/National Statistical data/"
+boundaries = "data/Boundary shape files/"
 output = "Output/"
 
 [tool.incognita.custom_boundaries."District"]
 name = "D_ID"
 
-codes.path = "Scout Census Data/district_id_mapping.csv"
+codes.path = "data/Scout Census Data/district_id_mapping.csv"
 codes.key = "D_ID"
 codes.key_type = "Int32"
 codes.name = "D_name"
 
-shapefile.path = "../../../scripts/districts_buffered.geojson"
+shapefile.path = "scripts/districts_buffered.geojson"
 shapefile.key = "id"
 shapefile.name = "name"
 
 [tool.incognita.custom_boundaries."imd_decile"]
 name = "imd_decile"
 
-codes.path = "Scout Census Data/imd_names_and_codes.csv"
+codes.path = "data/Scout Census Data/imd_names_and_codes.csv"
 codes.key = "IMD Decile"
 codes.key_type = "Int32"
 codes.name = "Name"
@@ -37,7 +37,7 @@ codes.name = "Name"
 [tool.incognita.custom_boundaries."NYS"]
 name = "nys_districts"
 
-codes.path = "Scout Census Data/North_Yorkshire_Districts.csv"
+codes.path = "data/Scout Census Data/North_Yorkshire_Districts.csv"
 codes.key = "ID"
 codes.key_type = "string"
 codes.name = "District"

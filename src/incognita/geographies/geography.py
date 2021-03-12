@@ -6,6 +6,7 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
+from incognita.utility import root
 from incognita.utility import utility
 from incognita.logger import logger
 
@@ -43,7 +44,7 @@ class Geography:
 
     @property
     def codes_map_path(self) -> Path:
-        return utility.DATA_ROOT / self.geography_metadata_dict["codes"].get("path")
+        return root.DATA_ROOT / self.geography_metadata_dict["codes"].get("path")
 
     @property
     def codes_map_name(self) -> str:
@@ -59,12 +60,12 @@ class Geography:
 
     @property
     def shapefile_path(self) -> Path:
-        shapefiles_root = utility.DATA_ROOT / utility.SETTINGS["Boundaries folder"]
+        shapefiles_root = root.DATA_ROOT / utility.SETTINGS.folders.boundaries
         return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        age_profiles_root = utility.DATA_ROOT / utility.SETTINGS["National Statistical folder"]
+        age_profiles_root = root.DATA_ROOT / utility.SETTINGS.folders.national_statistical
         return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
 
     @property
@@ -89,7 +90,7 @@ class Geography:
         logger.info(f"Setting the boundary to {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
-        boundaries_dict = ons_pd.BOUNDARIES | utility.SETTINGS["Scout Mappings"]
+        boundaries_dict = ons_pd.BOUNDARIES | utility.SETTINGS.custom_boundaries.__dict__
         if geography_name in boundaries_dict.keys():
             self.geography_metadata_dict = boundaries_dict[geography_name]
 

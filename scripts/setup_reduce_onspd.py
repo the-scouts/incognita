@@ -3,7 +3,7 @@ import json
 import geopandas as gpd
 import pandas as pd
 
-from incognita import utility
+from incognita.utility import utility
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 
 if __name__ == "__main__":

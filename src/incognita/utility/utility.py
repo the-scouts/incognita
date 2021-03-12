@@ -182,4 +182,4 @@ def _try_downcast(series: pd.Series) -> pd.Series:
 
 def save_report(report: pd.DataFrame, report_name: str):
     logger.info(f"Writing to {report_name}")
-    report.to_csv(OUTPUT_FOLDER / f"{report_name}.csv", index=False, encoding="utf-8-sig")
+    report.to_csv(SETTINGS.folders.output / f"{report_name}.csv", index=False, encoding="utf-8-sig")

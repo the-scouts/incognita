@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from incognita import utility
+from incognita.utility import utility
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
 

@@ -4,7 +4,7 @@ from incognita.utility import utility
 from incognita.data.ons_pd import ONSPostcodeDirectory
 
 # Folder within the ONS Postcode Directory archive holding names and codes files
-names_codes_root = Path(utility.SETTINGS["ONS Names and codes folder"]).resolve()
+names_codes_root = utility.SETTINGS.folders.ons_pd_names_codes
 
 # Paths to all shapefiles within the Boundaries folder
 # fmt: off

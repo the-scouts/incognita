@@ -12,7 +12,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from incognita import utility
+from incognita.utility import utility
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
@@ -42,7 +42,7 @@ class Map:
 
         self.scout_data = scout_data_object
 
-        self.out_file = utility.OUTPUT_FOLDER.joinpath(map_name).with_suffix(".html")
+        self.out_file = utility.SETTINGS.folders.output.joinpath(map_name).with_suffix(".html")
 
         # Create folium map
         self.map: folium.Map = folium.Map(

@@ -6,7 +6,7 @@ from typing import Optional, TYPE_CHECKING
 import pydantic
 import pydantic.validators
 
-from incognita.utility.root import PROJECT_ROOT
+from incognita.utility import root
 
 if TYPE_CHECKING:
     import pydantic.typing
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def concretise_path(value: Path) -> Path:
     """Make relative config paths concrete by prepending project root."""
     try:
-        return (PROJECT_ROOT / value).resolve()
+        return (root.PROJECT_ROOT / value).resolve()
     except TypeError:
         raise pydantic.errors.PathError()
 

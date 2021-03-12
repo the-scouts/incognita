@@ -9,7 +9,8 @@ LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
 def ensure_roots_exist() -> None:
     """Ensure root dirs exist."""
     for root_path in (DATA_ROOT, SCRIPTS_ROOT, LOGS_ROOT):
-        root_path.mkdir(parents=True, exist_ok=True)
+        if not root_path.exists():
+            root_path.mkdir(parents=True, exist_ok=True)
 
 
 ensure_roots_exist()

@@ -1,14 +1,16 @@
-import json
 import logging
 from numbers import Real
 
 import pandas as pd
 import pytest
+import toml
 
-from incognita import utility
+from incognita.utility.config import Config
+from incognita.utility import utility
 from incognita.data import ons_pd
 from incognita.logger import logger
 from incognita.utility.utility import time_function
+from incognita.utility import root
 
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):
@@ -34,10 +36,17 @@ def test_calc_imd_decile():
 
 
 def test_settings_are_accurate():
-    with open(utility.SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
-        settings = json.load(read_file)["settings"]
+    with open(root.SCRIPTS_ROOT.joinpath("settings.toml"), "r") as read_file:
+        settings = toml.load(read_file)["tool"]["incognita"]
 
-    assert utility.SETTINGS == settings
+    assert utility._SETTINGS_TOML == settings
+
+
+def test_settings_model_is_accurate():
+    with open(root.SCRIPTS_ROOT.joinpath("settings.toml"), "r") as read_file:
+        settings = toml.load(read_file)["tool"]["incognita"]
+
+    assert utility.SETTINGS == Config(**settings)
 
 
 class ExampleClassLogger:

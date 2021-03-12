@@ -13,7 +13,7 @@ from incognita.reports.reports import Reports
 if __name__ == "__main__":
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
     #
-    # from incognita import utility
+    # from incognita.utility import utility
     # import pandas as pd
     # import geopandas as gpd
     # from time import time

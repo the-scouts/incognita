@@ -1,4 +1,4 @@
-from incognita import utility
+from incognita.utility import utility
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
