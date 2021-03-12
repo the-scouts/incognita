@@ -80,7 +80,7 @@ class CustomBoundary(pydantic.BaseModel):
     age_profile: CustomBoundaryAgeProfile = CustomBoundaryAgeProfile()
 
 
-class Config(pydantic.BaseModel):
+class ConfigModel(pydantic.BaseModel):
     census_extract: CensusPaths
     ons_pd: ONSPostcodeDirectoryPaths
     folders: FolderPaths
@@ -88,4 +88,4 @@ class Config(pydantic.BaseModel):
 
 
 _SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())["tool"]["incognita"]
-SETTINGS = Config(**_SETTINGS_TOML)
+SETTINGS = ConfigModel(**_SETTINGS_TOML)
