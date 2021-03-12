@@ -18,21 +18,21 @@ if __name__ == "__main__":
     # import geopandas as gpd
     # from time import time
     # start = time()
-    # # a = geofeather.from_geofeather(utility.DATA_ROOT / scout_data.settings["Minified ONS PD location"]) # 60-80s
-    # ons_full = pd.read_feather(utility.DATA_ROOT / scout_data.settings["Minified ONS PD location"])
+    # # a = geofeather.from_geofeather(utility.SETTINGS.ons_pd.minified) # 60-80s
+    # ons_full = pd.read_feather(utility.SETTINGS.ons_pd.minified)
     # geo_column = gpd.points_from_xy(ons_full.long, ons_full.lat)
     # reduced_data_with_geo = gpd.GeoDataFrame(ons_full, geometry=geo_column)
     # reduced_data_with_geo.crs = utility.WGS_84
     # print(f"Loading ONS took: {time() - start:.3f}s")
     # start = time()
-    # counties = gpd.GeoDataFrame.from_file(utility.DATA_ROOT / "Boundary shape files/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC.shp")
+    # counties = gpd.GeoDataFrame.from_file(root.DATA_ROOT / "Boundary shape files/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC.shp")
     # counties = counties[['ctyua19cd', 'geometry']]
     # print(f"Loading shapefile took: {time() - start:.3f}s")
     # start = time()
     # a = gpd.sjoin(reduced_data_with_geo.to_crs("epsg:27700"), counties, how="left",  op='within') # 793s - speed up!!
     # print(f"Spatial join: {time() - start:.3f}s")
     # c = a[['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'imd', 'imd_decile', 'ctyua19cd']].drop_duplicates()
-    # c.to_feather(utility.DATA_ROOT / "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.feather")
+    # c.to_feather(root.DATA_ROOT / "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.feather")
 
     # TODO show growth by yp numbers ✔
     # TODO produce separate YP and Adults maps ✔

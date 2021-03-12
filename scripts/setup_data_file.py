@@ -5,24 +5,16 @@ Directory.
 
 This script has no command line options.
 """
-import json
-
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
-from incognita.utility.utility import DATA_ROOT
-from incognita.utility.utility import SCRIPTS_ROOT
+from incognita.utility import utility
 
 if __name__ == "__main__":
     column_labels = ScoutCensus.column_labels
 
-    # get census extract path
-    with open(SCRIPTS_ROOT.joinpath("settings.json"), "r") as read_file:
-        settings = json.load(read_file)["settings"]
-        census_extract_path = settings["Raw Census Extract location"]
-
-    # load census extract
-    scout_data = ScoutData(merged_csv=False, census_path=census_extract_path)
+    # load raw census extract
+    scout_data = ScoutData(merged_csv=False, census_path=utility.SETTINGS.census_extract.original)
 
     # combine all youth membership columns into a single total
     for section, section_dict in column_labels["sections"].items():
@@ -32,7 +24,7 @@ if __name__ == "__main__":
     scout_data.data[column_labels["name"]["ITEM"]] = scout_data.data[column_labels["name"]["ITEM"]].str.replace("`", "")
 
     # load ONS postcode directory
-    ons_pd = ONSPostcodeDirectoryMay19(DATA_ROOT / scout_data.settings["Full ONS PD location"])
+    ons_pd = ONSPostcodeDirectoryMay19(utility.SETTINGS.ons_pd.full)
 
     # merge the census extract and ONS postcode directory, and save the data to file
     scout_data.merge_ons_postcode_directory(ons_pd)

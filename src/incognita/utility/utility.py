@@ -9,7 +9,7 @@ import toml
 
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
-from incognita.utility.config import Config
+from incognita.utility import config
 from incognita.utility import root
 
 
@@ -24,7 +24,7 @@ sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
 _SETTINGS_TOML = toml.loads((root.SCRIPTS_ROOT / "settings.toml").read_text())["tool"]["incognita"]
-SETTINGS = Config(**_SETTINGS_TOML)
+SETTINGS = config.Config(**_SETTINGS_TOML)
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)

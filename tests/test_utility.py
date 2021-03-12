@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import toml
 
-from incognita.utility.config import Config
+from incognita.utility import config
 from incognita.utility import utility
 from incognita.data import ons_pd
 from incognita.logger import logger
@@ -46,7 +46,7 @@ def test_settings_model_is_accurate():
     with open(root.SCRIPTS_ROOT.joinpath("settings.toml"), "r") as read_file:
         settings = toml.load(read_file)["tool"]["incognita"]
 
-    assert utility.SETTINGS == Config(**settings)
+    assert utility.SETTINGS == config.Config(**settings)
 
 
 class ExampleClassLogger:
