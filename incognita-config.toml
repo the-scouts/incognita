@@ -1,20 +1,20 @@
-[tool.incognita.census_extract]
+[census_extract]
 original = "data/Scout Census Data/Census 2020 Extract (1).csv"
 merged = "data/Scout Census Data/Census 2020 Extract (1) with May 2019 fields crown deps.feather"
 
-[tool.incognita.ons_pd]
+[ons_pd]
 full = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv"
 reduced = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.csv"
 minified = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK-minified-old.feather"
 reduced_nystest = "data/ons_pd_with_nys2.csv"
 
-[tool.incognita.folders]
+[folders]
 ons_pd_names_codes = "data/ONSPD_MAY_2019_UK/Documents/"
 national_statistical = "data/National Statistical data/"
 boundaries = "data/Boundary shape files/"
 output = "Output/"
 
-[tool.incognita.custom_boundaries."District"]
+[custom_boundaries."District"]
 name = "D_ID"
 
 codes.path = "data/Scout Census Data/district_id_mapping.csv"
@@ -26,7 +26,7 @@ shapefile.path = "scripts/districts_buffered.geojson"
 shapefile.key = "id"
 shapefile.name = "name"
 
-[tool.incognita.custom_boundaries."imd_decile"]
+[custom_boundaries."imd_decile"]
 name = "imd_decile"
 
 codes.path = "data/Scout Census Data/imd_names_and_codes.csv"
@@ -34,7 +34,7 @@ codes.key = "IMD Decile"
 codes.key_type = "Int32"
 codes.name = "Name"
 
-[tool.incognita.custom_boundaries."NYS"]
+[custom_boundaries."NYS"]
 name = "nys_districts"
 
 codes.path = "data/Scout Census Data/North_Yorkshire_Districts.csv"
@@ -50,7 +50,7 @@ age_profile.path = "age_by_lsoa_mid_2017_total.csv"
 age_profile.key = "Area Codes"
 age_profile.pivot_key = "lsoa11"
 
-[tool.incognita.custom_boundaries."County"]
+[custom_boundaries."County"]
 name = "ctyua19cd"
 
 codes.path = "Scout Census Data/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK.csv"

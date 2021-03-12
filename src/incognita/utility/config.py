@@ -87,5 +87,5 @@ class ConfigModel(pydantic.BaseModel):
     custom_boundaries: dict[str, CustomBoundary]
 
 
-_SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())["tool"]["incognita"]
+_SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())
 SETTINGS = ConfigModel(**_SETTINGS_TOML)
