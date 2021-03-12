@@ -36,14 +36,14 @@ def test_calc_imd_decile():
 
 
 def test_settings_are_accurate():
-    with open(root.SCRIPTS_ROOT.joinpath("settings.toml"), "r") as read_file:
+    with open(root.PROJECT_ROOT.joinpath("settings.toml"), "r") as read_file:
         settings = toml.load(read_file)["tool"]["incognita"]
 
     assert utility._SETTINGS_TOML == settings
 
 
 def test_settings_model_is_accurate():
-    with open(root.SCRIPTS_ROOT.joinpath("settings.toml"), "r") as read_file:
+    with open(root.PROJECT_ROOT.joinpath("settings.toml"), "r") as read_file:
         settings = toml.load(read_file)["tool"]["incognita"]
 
     assert utility.SETTINGS == config.Config(**settings)
