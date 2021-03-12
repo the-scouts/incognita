@@ -3,10 +3,10 @@ import pandas as pd
 import shapely.geometry
 import shapely.ops
 
-from incognita import utility
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
+from incognita.utility import utility
 
 
 class DistrictBoundaries:

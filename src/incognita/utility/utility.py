@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from functools import wraps
-import json
-from pathlib import Path
 import time
 from typing import TYPE_CHECKING
 
@@ -10,6 +8,7 @@ import pandas as pd
 
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
+from incognita.utility import config
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -21,23 +20,9 @@ if TYPE_CHECKING:
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-DATA_ROOT = PROJECT_ROOT / "data"
-SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
-LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
-
-SETTINGS = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
-OUTPUT_FOLDER = PROJECT_ROOT.joinpath(SETTINGS["Output folder"]).absolute()
-
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
 BNG = 27700  # British National Grid
-
-
-def ensure_roots_exist() -> None:
-    """Ensure root dirs exist."""
-    for root_path in (DATA_ROOT, SCRIPTS_ROOT, LOGS_ROOT):
-        root_path.mkdir(parents=True, exist_ok=True)
 
 
 def time_function(method: Callable):
@@ -191,7 +176,4 @@ def _try_downcast(series: pd.Series) -> pd.Series:
 
 def save_report(report: pd.DataFrame, report_name: str):
     logger.info(f"Writing to {report_name}")
-    report.to_csv(OUTPUT_FOLDER / f"{report_name}.csv", index=False, encoding="utf-8-sig")
-
-
-ensure_roots_exist()
+    report.to_csv(config.SETTINGS.folders.output / f"{report_name}.csv", index=False, encoding="utf-8-sig")

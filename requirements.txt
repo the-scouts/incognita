@@ -8,6 +8,8 @@ shapely
 dash
 pyarrow
 pygeos
+toml
+pydantic
 
 # testing
 pytest

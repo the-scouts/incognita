@@ -21,7 +21,7 @@ class ONSPostcodeDirectory:
     PUBLICATION_DATE = None
     IMD_MAX = {"England": None, "Wales": None, "Scotland": None, "Northern Ireland": None}
     COUNTRY_CODES = {}
-    BOUNDARIES = {}
+    BOUNDARIES = {}  # TODO convert to model
 
     def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
         # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)

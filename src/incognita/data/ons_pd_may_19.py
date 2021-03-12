@@ -1,10 +1,8 @@
-from pathlib import Path
-
-from incognita import utility
 from incognita.data.ons_pd import ONSPostcodeDirectory
+from incognita.utility import config
 
 # Folder within the ONS Postcode Directory archive holding names and codes files
-names_codes_root = Path(utility.SETTINGS["ONS Names and codes folder"]).resolve()
+names_codes_root = config.SETTINGS.folders.ons_pd_names_codes
 
 # Paths to all shapefiles within the Boundaries folder
 # fmt: off

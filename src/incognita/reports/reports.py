@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from incognita import utility
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
-from incognita.utility import time_function
+from incognita.utility import utility
+from incognita.utility.utility import time_function
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -55,7 +55,6 @@ class Reports:
 
     @time_function
     def add_shapefile_data(self):
-        import copy
 
         logger.info("Adding shapefile data")
         # self.scout_data = copy.copy(self.scout_data)

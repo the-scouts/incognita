@@ -11,7 +11,7 @@ import pytest
 
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
-from incognita.utility import WGS_84
+from incognita.utility.utility import WGS_84
 
 COLUMN_NAME = "ctry"
 
