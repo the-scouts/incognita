@@ -5,12 +5,13 @@ import time
 from typing import TYPE_CHECKING
 
 import pandas as pd
+import toml
 
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
-from incognita.utility.root import LOGS_ROOT
-from incognita.utility.root import PROJECT_ROOT
-from incognita.utility.root import SCRIPTS_ROOT
+from incognita.utility.config import Config
+from incognita.utility import root
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,8 +23,8 @@ if TYPE_CHECKING:
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
-SETTINGS = json.loads(SCRIPTS_ROOT.joinpath("settings.json").read_text())["settings"]
-OUTPUT_FOLDER = PROJECT_ROOT.joinpath(SETTINGS["Output folder"]).absolute()
+_SETTINGS_TOML = toml.loads((root.SCRIPTS_ROOT / "settings.toml").read_text())["tool"]["incognita"]
+SETTINGS = Config(**_SETTINGS_TOML)
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)

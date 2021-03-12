@@ -1,6 +1,6 @@
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 DATA_ROOT = PROJECT_ROOT / "data"
 SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 LOGS_ROOT = PROJECT_ROOT / "scripts/logs"
