@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
@@ -24,15 +25,21 @@ def concretise_path(value: Path) -> Path:
 class ProjectFilePath(pydantic.FilePath):
     @classmethod
     def __get_validators__(cls) -> pydantic.typing.CallableGenerator:
-        yield concretise_path
-        yield from super().__get_validators__()
+        if os.getenv("CI"):  # CI doesn't have files in incognita-config.toml
+            yield pydantic.validators.path_validator
+        else:
+            yield concretise_path
+            yield from super().__get_validators__()
 
 
 class ProjectDirectoryPath(pydantic.DirectoryPath):
     @classmethod
     def __get_validators__(cls) -> pydantic.typing.CallableGenerator:
-        yield concretise_path
-        yield from super().__get_validators__()
+        if os.getenv("CI"):  # CI doesn't have files in incognita-config.toml
+            yield pydantic.validators.path_validator
+        else:
+            yield concretise_path
+            yield from super().__get_validators__()
 
 
 class CensusPaths(pydantic.BaseModel):
