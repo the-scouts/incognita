@@ -34,7 +34,7 @@ class ScoutData:
 
     DEFAULT_VALUE = ScoutCensus.DEFAULT_VALUE
 
-    def __init__(self, merged_csv: bool= True, load_ons_pd_data: bool = False, census_path: Path = None, load_census_data: bool = True):
+    def __init__(self, merged_csv: bool = True, load_ons_pd_data: bool = False, census_path: Path = None, load_census_data: bool = True):
         # record a class-wide start time
         self.start_time = time.time()
 

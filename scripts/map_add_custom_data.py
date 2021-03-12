@@ -25,7 +25,8 @@ if __name__ == "__main__":
     dimension = {"column": f"Beavers-{year}", "tooltip": f"Beavers {year}", "legend": "# Beavers"}
     mapper.add_areas(dimension, reports, show=True)
     mapper.add_custom_data(
-        utility.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv", "Primary Schools",
+        utility.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
+        "Primary Schools",
         location_cols="Postcode",
         marker_data=["EstablishmentName"],
     )
