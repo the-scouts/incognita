@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 sections_dict = ScoutCensus.column_labels["sections"]
 section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
 
-_SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "settings.toml").read_text())["tool"]["incognita"]
+_SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())["tool"]["incognita"]
 SETTINGS = config.Config(**_SETTINGS_TOML)
 
 # EPSG values for the co-ordinate reference systems that we use
