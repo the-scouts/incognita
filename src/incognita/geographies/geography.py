@@ -6,9 +6,9 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
+from incognita.logger import logger
 from incognita.utility import root
 from incognita.utility import utility
-from incognita.logger import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -60,12 +60,12 @@ class Geography:
 
     @property
     def shapefile_path(self) -> Path:
-        shapefiles_root = root.DATA_ROOT / utility.SETTINGS.folders.boundaries
+        shapefiles_root = utility.SETTINGS.folders.boundaries
         return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
 
     @property
     def age_profile_path(self) -> Path:
-        age_profiles_root = root.DATA_ROOT / utility.SETTINGS.folders.national_statistical
+        age_profiles_root = utility.SETTINGS.folders.national_statistical
         return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
 
     @property

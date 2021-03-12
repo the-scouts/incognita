@@ -12,7 +12,6 @@ from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import root
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     import logging

@@ -12,11 +12,11 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from incognita.utility import utility
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.reports.reports import Reports
+from incognita.utility import utility
 
 if TYPE_CHECKING:
     from pathlib import Path

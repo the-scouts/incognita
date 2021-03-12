@@ -9,6 +9,7 @@ This script has no command line options.
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import utility
 
 if __name__ == "__main__":
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
@@ -25,14 +26,14 @@ if __name__ == "__main__":
     # reduced_data_with_geo.crs = utility.WGS_84
     # print(f"Loading ONS took: {time() - start:.3f}s")
     # start = time()
-    # counties = gpd.GeoDataFrame.from_file(root.DATA_ROOT / "Boundary shape files/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC.shp")
+    # counties = gpd.GeoDataFrame.from_file(utility.SETTINGS.folders.boundaries / "Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC.shp")
     # counties = counties[['ctyua19cd', 'geometry']]
     # print(f"Loading shapefile took: {time() - start:.3f}s")
     # start = time()
     # a = gpd.sjoin(reduced_data_with_geo.to_crs("epsg:27700"), counties, how="left",  op='within') # 793s - speed up!!
     # print(f"Spatial join: {time() - start:.3f}s")
     # c = a[['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'imd', 'imd_decile', 'ctyua19cd']].drop_duplicates()
-    # c.to_feather(root.DATA_ROOT / "ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.feather")
+    # c.to_feather(utility.SETTINGS.ons_pd.reduced.with_suffix(".feather"))
 
     # TODO show growth by yp numbers ✔
     # TODO produce separate YP and Adults maps ✔

@@ -1,8 +1,8 @@
 import geopandas as gpd
 import pandas as pd
 
-from incognita.utility import utility
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita.utility import utility
 
 if __name__ == "__main__":
     print("Starting")

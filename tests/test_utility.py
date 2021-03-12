@@ -5,12 +5,12 @@ import pandas as pd
 import pytest
 import toml
 
-from incognita.utility import config
-from incognita.utility import utility
 from incognita.data import ons_pd
 from incognita.logger import logger
-from incognita.utility.utility import time_function
+from incognita.utility import config
 from incognita.utility import root
+from incognita.utility import utility
+from incognita.utility.utility import time_function
 
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):
