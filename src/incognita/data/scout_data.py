@@ -24,7 +24,7 @@ class ScoutData:
     """Provides access to manipulate and process data."""
 
     @property
-    def columns(self):
+    def columns(self) -> list[str]:
         """Returns ID and name columns of the dataset"""
         id_cols = self.scout_census.column_labels["id"].values()
         name_cols = self.scout_census.column_labels["name"].values()
@@ -62,10 +62,12 @@ class ScoutData:
 
             logger.info(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data finished, {time.time() - start_time:.2f} seconds elapsed.")
 
-    def merge_ons_postcode_directory(self, ons_pd: ONSPostcodeDirectory):
+    def merge_ons_postcode_directory(self, ons_pd: ONSPostcodeDirectory) -> None:
         """Merges census extract data with ONS data
 
-        :param ONSPostcodeDirectory ons_pd: Refers to the ONS Postcode Directory
+        Args:
+            ons_pd: Refers to the ONS Postcode Director
+
         """
         ons_fields_data_types = {
             "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
@@ -110,12 +112,14 @@ class ScoutData:
         # Add IMD decile column
         self.data["imd_decile"] = utility.calc_imd_decile(self.data["imd"], self.data["ctry"], ons_pd).astype("UInt8")
 
-    def save_merged_data(self, ons_pd_publication_date: str):
+    def save_merged_data(self, ons_pd_publication_date: str) -> None:
         """Save passed dataframe to csv file.
 
         Also output list of errors in the merge process to a text file
 
-        :param str ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
+        Args:
+            ons_pd_publication_date: Refers to the ONS Postcode Directory's publication date
+
         """
         raw_extract_path = config.SETTINGS.census_extract.original
         output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
@@ -135,19 +139,19 @@ class ScoutData:
         self.data.to_csv(output_path.with_suffix(".csv"), index=False, encoding="utf-8-sig")
         self.data.to_feather(output_path.with_suffix(".feather"))
 
-    def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False):
+    def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
 
-        :param str field: The field on which to filter
-        :param list value_list: The values on which to filter
-        :param bool mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
-        :param bool exclusion_analysis:
+        Args:
+            field: The field on which to filter
+            value_list: The values on which to filter
+            mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
+            exclusion_analysis:
 
-        :returns None: Nothing
         """
         self.data = utility.filter_records(self.data, field, value_list, logger, mask, exclusion_analysis)
 
-    def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None):
+    def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:
             uid = Path(f"{hash(self.data.shape)}_{shapes_key}_{path.stem}.feather")
             if uid.is_file():
@@ -175,6 +179,6 @@ class ScoutData:
         if path is not None:
             merged.reset_index(drop=False).to_feather(uid)
 
-    def close(self):
-        """Outputs the duration of the programme """
+    def close(self) -> None:
+        """Outputs the duration of the programme"""
         logger.info(f"Script finished, {time.time() - self.start_time:.2f} seconds elapsed.")

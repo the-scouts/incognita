@@ -12,12 +12,15 @@ class ScoutCensus:
     All column labels from the Census report are set in column_labels and can be
         changed to reflect the input census file.
 
-    :param str census_file_path: path to input file with Census data.
+    Args:
+        census_file_path: path to input file with Census data.
 
-    :var ScoutCensus.column_labels: holds strings of all census csv column headings, structured to help access
-    :var ScoutCensus.DEFAULT_VALUE: holds value for NaN values
-    :var ScoutCensus.UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
-    :var ScoutCensus.UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+    Attributes:
+        column_labels: holds strings of all census csv column headings, structured to help access
+        DEFAULT_VALUE: holds value for NaN values
+        UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
+        UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
+
     """
 
     # fmt: off
@@ -97,7 +100,7 @@ class ScoutCensus:
     UNIT_LEVEL_GROUP = "Group"
     UNIT_LEVEL_DISTRICT = "District"
 
-    def __init__(self, census_file_path: Path, load_data=True):
+    def __init__(self, census_file_path: Path, load_data: bool = True):
         if not load_data:
             self.data = pd.DataFrame()
             return
@@ -136,22 +139,30 @@ class ScoutCensus:
             raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
 
     @staticmethod
-    def get_section_names(level: list) -> list:
+    def get_section_names(level: list[str]) -> list[str]:
         """Return list of section names that exist within a particular organisational level.
 
-        :param list level: Organisational level. Usually Group or District.
-        :return: List of section names.
+        Args:
+            level: Organisational level. Usually Group or District.
+
+        Returns:
+            List of section names.
+
         """
         section_dict: dict
-        sections_labels = ScoutCensus.column_labels["sections"].items()
-        return [section_name for section_name, section_dict in sections_labels if section_dict["level"] in level]
+        sections_labels = ScoutCensus.column_labels["sections"]
+        return [section_name for section_name, section_dict in sections_labels.items() if section_dict["level"] in level]
 
     @staticmethod
-    def get_section_type(level: list) -> list:
+    def get_section_type(level: list[str]) -> list[str]:
         """Return list of section types that exist within a particular organisational level.
 
-        :param list level: Organisational level. Usually Group or District.
-        :return: List of section types
+        Args:
+            level: Organisational level. Usually Group or District.
+
+        Returns:
+            List of section types
+
         """
         section_names_list = ScoutCensus.get_section_names(level)
         section_dict: dict = ScoutCensus.column_labels["sections"]

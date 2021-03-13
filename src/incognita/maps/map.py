@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import cycle
-from typing import TYPE_CHECKING, Union
+from typing import Literal, TYPE_CHECKING, Union
 import webbrowser
 
 import branca
@@ -26,17 +26,24 @@ if TYPE_CHECKING:
 
 
 class Map:
+    """This class enables easy plotting of maps with a shape file.
+
+    Attributes:
+        map_data: contains shapefile paths, and labels for region codes and names
+        CODE_COL: holds the name of the region class, e.g. oslaua, pcon
+        SCORE_COL: holds the column name of the choropleth dimension
+        score_col_label: tooltip label for the self.SCORE_COL value
+        map: holds the folium map object
+
+    """
+
     def __init__(self, scout_data_object: ScoutData, map_name: str):
-        """This class enables easy plotting of maps with a shape file.
+        """Initialise Map class.
 
-        :param scout_data_object: ScoutData object with data
-        :map_name map_name: Filename for the saved map
+        Args:
+            scout_data_object: ScoutData object with data
+            map_name: Filename for the saved map
 
-        :var dictionary self.map_data: contains shapefile paths, and labels for region codes and names
-        :var str self.CODE_COL: holds the name of the region class, e.g. oslaua, pcon
-        :var self.SCORE_COL: holds the column name of the choropleth dimension
-        :var self.score_col_label: tooltip label for the self.SCORE_COL value
-        :var self.map: holds the folium map object
         """
         # Can be set by set_region_of_colour
         self._region_of_colour = None
@@ -70,17 +77,17 @@ class Map:
         self.geo_data = None
 
     def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
-        """
-        Creates a 2D colouring with geometry specified by the boundary
+        """Creates a 2D colouring with geometry specified by the boundary
 
-        :param dict dimension: specifies the column of the data to score against
-        :param Reports reports:
-        :param bool show: If True, show the layer by default
-        :param dict scale: Allows a fixed value scale, default is boundaries at
-                           0%, 20%, 40%, 60%, 80% and 100%.
-        :param float significance_threshold: If an area's value is significant enough to be displayed
+        Args:
+            dimension: specifies the column of the data to score against
+            reports:
+            show: If True, show the layer by default
+            scale:
+                Allows a fixed value scale, default is boundaries at
+                0%, 20%, 40%, 60%, 80% and 100%.
+            significance_threshold: If an area's value is significant enough to be displayed
 
-        :return: None
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
         self.set_boundary(reports)
@@ -145,17 +152,19 @@ class Map:
 
         # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
 
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: dict = None):
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list, layer: dict = None) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
-        :param pd.DataFrame sections: Census records relating to Sections with lat and long Columns
-        :param str or dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-        :param list marker_data: List of strings which determines content for popup, including:
-            - youth membership
-            - awards
-        :param dict layer: Name & properties of layer on map to add meeting places to.
-            - Default = {"name"="Sections", "markers_clustered"=False}
+        Args:
+            sections: Census records relating to Sections with lat and long Columns
+            colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+            marker_data: List of strings which determines content for popup, including:
+                - youth membership
+                - awards
+            layer: Name & properties of layer on map to add meeting places to.
+                - Default = {"name"="Sections", "markers_clustered"=False}
+
         """
         logger.info("Adding section markers to map")
 
@@ -295,24 +304,28 @@ class Map:
             popup = folium.Popup(html, max_width=2650)
             self.add_marker(lat, long, popup, marker_colour, layer["name"])
 
-    def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False):
+    def add_sections_to_map(
+        self, scout_data_object: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
+    ) -> None:
         """Filter sections and add to map.
 
         If a single section is specified, plots that section onto the map in
         markers of colour identified by colour, with data indicated by marker_data.
 
         If else, all sections are plotted from the latest year of data. This
-        mesans all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
+        means all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
         that have returned in the latest year of the dataset.
 
-        :param ScoutData scout_data_object:
-        :param str or dict colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-        :param list marker_data: List of strings which determines content for popup, including:
-            - youth membership
-            - awards
-        :param str single_section: One of Beavers, Cubs, Scouts, Explorers, Network
-        :param str layer: The layer of the map that the setions are added to
-        :param bool cluster_markers: Should we cluster the markers?
+        Args:
+            scout_data_object:
+            colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+            marker_data: List of strings which determines content for popup, including:
+                - youth membership
+                - awards
+            single_section: One of Beavers, Cubs, Scouts, Explorers, Network
+            layer: The layer of the map that the setions are added to
+            cluster_markers: Should we cluster the markers?
+
         """
         data: pd.DataFrame = scout_data_object.data
         unit_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
@@ -332,16 +345,20 @@ class Map:
         layer_data = dict(name=layer, markers_clustered=cluster_markers)
         self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_data)
 
-    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols, markers_clustered: bool = False, marker_data: list = None):
+    def add_custom_data(
+        self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None
+    ) -> None:
         """Function to add custom data as markers on map
 
-        :param str csv_file_path: file path to open csv file
-        :param str layer_name: Name of layer that the markers will be added to
-        :param str or dict location_cols: Indicates whether adding data with postcodes or co-ordinates
-            - if postcodes, str "Postcodes"
-            - if co-ordinates, dict of co-ordinate data with keys ["crs", "x", "y"]
-        :param bool markers_clustered: Whether to cluster the markers or not
-        :param list marker_data: list of strings for values in data that should be in popup
+        Args:
+            csv_file_path: file path to open csv file
+            layer_name: Name of layer that the markers will be added to
+            location_cols: Indicates whether adding data with postcodes or co-ordinates
+                - if postcodes, str "Postcodes"
+                - if co-ordinates, dict of co-ordinate data with keys ["crs", "x", "y"]
+            markers_clustered: Whether to cluster the markers or not
+            marker_data: list of strings for values in data that should be in popup
+
         """
 
         custom_data = pd.read_csv(csv_file_path)
@@ -377,17 +394,17 @@ class Map:
 
         custom_data.apply(add_popup_data, axis=1)
 
-    def save_map(self):
-        """Saves the folium map to a HTML file """
+    def save_map(self) -> None:
+        """Saves the folium map to a HTML file"""
         # Add layer control to map
         folium.LayerControl(collapsed=False).add_to(self.map)
         self.map.save(f"{self.out_file}")
 
-    def show_map(self):
-        """Show the file at self.out_file in the default browser. """
+    def show_map(self) -> None:
+        """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    def set_region_of_colour(self, column: str, value_list: list):
+    def set_region_of_colour(self, column: str, value_list: list) -> None:
         self._region_of_colour = {"column": column, "value_list": value_list}
 
     def generic_colour_mapping(self, grouping_column: str) -> dict:
@@ -408,7 +425,7 @@ class Map:
     def county_colour_mapping(self) -> dict:
         return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])
 
-    def validate_columns(self):
+    def validate_columns(self) -> None:
         if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:
             logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
             raise KeyError(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data.")
@@ -422,7 +439,6 @@ class Map:
         Filters out unneeded shapes within all shapes loaded
         Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
-        :param reports:
         """
         self.map_data = reports.data
         self.boundary_name = reports.shapefile_name
@@ -450,13 +466,14 @@ class Map:
 
         logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
-    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True):
-        """
-        Adds a maker layer to the map
+    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True) -> None:
+        """Adds a maker layer to the map
 
-        :param str name: The name of the layer - appears in LayerControl on Map
-        :param bool markers_clustered: Whether the markers should cluster or not
-        :param bool show:
+        Args:
+            name: The name of the layer - appears in LayerControl on Map
+            markers_clustered: Whether the markers should cluster or not
+            show:
+
         """
         if markers_clustered:
             self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)
@@ -466,11 +483,15 @@ class Map:
     def _map_colourmap(self, properties: dict, boundary_name: str, threshold: float, colourmap: colormap.ColorMap) -> str:
         """Returns colour from colour map function and value
 
-        :param properties: dictionary of properties
-        :param boundary_name:
-        :param threshold:
-        :param colourmap: a Branca Colormap object to calculate the region's colour
-        :return str: hexadecimal colour value "#RRGGBB"
+        Args:
+            properties: dictionary of properties
+            boundary_name:
+            threshold:
+            colourmap: a Branca Colormap object to calculate the region's colour
+
+        Returns:
+            hexadecimal colour value "#RRGGBB"
+
         """
         # logger.debug(f"Colouring {properties} by {self.SCORE_COL[boundary_name]}")
         area_score = properties.get(self.SCORE_COL[boundary_name])
@@ -499,10 +520,12 @@ class Map:
     def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections") -> None:
         """Adds a leaflet marker to the map using given values
 
-        :param float lat: latitude of the marker
-        :param float long: longitude of the marker
-        :param folium.Popup popup: popup text for the marker
-        :param str colour: colour for the marker
-        :param str layer_name: name of the layer that markers are added to
+        Args:
+            lat: latitude of the marker
+            long: longitude of the marker
+            popup: popup text for the marker
+            colour: colour for the marker
+            layer_name: name of the layer that markers are added to
+
         """
         folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])

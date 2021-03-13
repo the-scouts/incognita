@@ -13,9 +13,13 @@ logger = logging.getLogger("incognita")
 def set_up_logger(file_path: Path = None, log_level: int = logging.DEBUG) -> logging.Logger:
     """Creates and returns a logger with preset options
 
-    :param file_path: file path to output debug log
-    :param log_level: log level
-    :return: logger object
+    Args:
+        file_path: file path to output debug log
+        log_level: log level
+
+    Returns:
+        logger object
+
     """
     import sys
 

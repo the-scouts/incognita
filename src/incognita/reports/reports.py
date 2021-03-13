@@ -54,7 +54,7 @@ class Reports:
     }
 
     @time_function
-    def add_shapefile_data(self):
+    def add_shapefile_data(self) -> None:
 
         logger.info("Adding shapefile data")
         # self.scout_data = copy.copy(self.scout_data)
@@ -64,7 +64,7 @@ class Reports:
         self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography_type})
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False):
+    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
 
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
@@ -81,9 +81,10 @@ class Reports:
     def _ons_to_district_mapping(self, ons_code: str) -> dict:
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
 
-        :param str ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
+        Args:
+            ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
+            ons_code:
 
-        :returns None: Nothing
         """
 
         logger.debug("Creating mapping from ons boundary to scout district")
@@ -120,9 +121,11 @@ class Reports:
 
         Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
 
-        :param list options: List of data to be included in report
-        :param bool historical: Check to ensure that multiple years of data are intentional
-        :param str report_name:
+        Args:
+            options: List of data to be included in report
+            historical: Check to ensure that multiple years of data are intentional
+            report_name:
+
         """
 
         # Set default option set for `options`
@@ -303,9 +306,12 @@ class Reports:
         Creates an report by the boundary that has been set, requires a boundary report to already have been run.
         Requires population data by age for the specified boundary.
 
-        :param str report_name: Name to save the report as
+        Args:
+            report_name: Name to save the report as
 
-        :returns pd.DataFrame: Uptake data of Scouts in the boundary
+        Returns:
+            Uptake data of Scouts in the boundary
+
         """
         geog_name = self.geography_type
         try:
@@ -376,5 +382,5 @@ class Reports:
         self.boundary_report = uptake_report
         return uptake_report
 
-    def _save_report(self, report_data: pd.DataFrame, report_name: str):
+    def _save_report(self, report_data: pd.DataFrame, report_name: str) -> None:
         utility.save_report(report_data, report_name)

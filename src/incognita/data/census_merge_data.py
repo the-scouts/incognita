@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -14,14 +15,17 @@ class CensusMergeData:
     The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
     """
 
-    def merge_data(self, census_data: pd.DataFrame, data_to_merge, census_index_column: str) -> pd.DataFrame:
+    def merge_data(self, census_data: pd.DataFrame, data_to_merge: Any, census_index_column: str) -> pd.DataFrame:
         """Merge census data and input data on key and index.
 
-        :param pd.DataFrame census_data: pandas DataFrame with census data
-        :param pd.Series or pd.DataFrame data_to_merge: pandas DataFrame with index col as index to merge
-        :param str census_index_column: column label to merge on in census data
+        Args:
+            census_data: pandas DataFrame with census data
+            data_to_merge: pandas DataFrame with index col as index to merge
+            census_index_column: column label to merge on in census data
 
-        :return: Dataframe with merged data, and an indicator in each row signifying merge success
+        Returns:
+            Dataframe with merged data, and an indicator in each row signifying merge success
+
         """
         # Column heading denoting a valid postcode in the row
         valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
@@ -38,8 +42,12 @@ class CensusMergeData:
     def _postcode_cleaner(postcode: pd.Series) -> pd.Series:
         """Cleans postcode to ONS postcode directory format.
 
-        :param pd.Series postcode: pandas series of postcodes
-        :return pd.Series: cleaned postcode
+        Args:
+            postcode: pandas series of postcodes
+
+        Returns:
+            Cleaned postcode
+
         """
 
         # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
@@ -83,10 +91,14 @@ class CensusMergeData:
         Fills all passed fields in rows where there has been no data merged
         Fills categorical fields with ScoutCensus.DEFAULT_VALUE and numerical fields with 0
 
-        :param pd.DataFrame census_data: DataFrame with census data
-        :param str row_has_merged: column label for column with booleans of if the merge was successful
-        :param dict fields_data_types: dict of data types containing lists of fields
-        :return: dataframe with filled values
+        Args:
+            census_data: DataFrame with census data
+            row_has_merged: column label for column with booleans of if the merge was successful
+            fields_data_types: dict of data types containing lists of fields
+
+        Returns:
+            dataframe with filled values
+
         """
         for field in fields_data_types["categorical"]:
             census_data.loc[census_data[row_has_merged] == 0, field] = ScoutCensus.DEFAULT_VALUE
@@ -101,9 +113,10 @@ class CensusMergeData:
         Cleans postcode data from passed table and index
         Gets index of postcode column, and inserts new columns after postcode column
 
-        :param pd.DataFrame census_data: table of data with a postcode column
-        :param str postcode_column: heading of the postcode column in the table
-        :return: None
+        Args:
+            census_data: table of data with a postcode column
+            postcode_column: heading of the postcode column in the table
+
         """
         # Gets the index of the postcode column, and increments as insertion is from the left.
         # Columns must be inserted in number order otherwise it wont't make sense
@@ -133,9 +146,13 @@ class CensusMergeData:
         - If section has no valid postcodes, use most common (mode) postcode from sections in group in that year, then try successive years
         - If group or district has no valid postcode in 2010-2016, use following years (e.g. if 2010 not valid, try 2011, 12, 13 etc.)
 
-        :param census_data: Dataframe of census data including invalid postcodes
-        :param pd.Series merge_test_column: a column from the ONS Postcode Directory to test validity of the postcode by attempting to merge
-        :return: modified data table with more correct postcodes
+        Args:
+            census_data: Dataframe of census data including invalid postcodes
+            merge_test_column: a column from the ONS Postcode Directory to test validity of the postcode by attempting to merge
+
+        Returns:
+            modified data table with more correct postcodes
+
         """
 
         logger.info("filling postcodes in sections with invalid postcodes")
@@ -174,16 +191,19 @@ class CensusMergeData:
         census_data = census_data.set_index(index_cols, drop=False)
 
         def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: int):
-            """
-            Gets all records with ID from given column and index level, then clears the indexing
+            """Gets all records with ID from given column and index level, then clears the indexing
             Returns the first row's postcode. As the index is sorted, this will return the earliest correct year.
             TODO change to use modal result instead of first (If section has no valid postcodes, use most common
                 (modal) postcode from sections in group in that year, then try successive years)
 
-            :param row_object:
-            :param str column_label: Label to index for
-            :param int index_level: Level of the multiindex to use
-            :return: updated row_object
+            Args:
+              row_object:
+              column_label: Label to index for
+              index_level: Level of the multiindex to use
+
+            Returns:
+                Updated row_object
+
             """
             try:
                 # get all rows from the lookup with the same ID in the passed column
