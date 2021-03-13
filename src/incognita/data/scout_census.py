@@ -6,7 +6,7 @@ from pyarrow import feather
 
 class ScoutCensus:
     """Holds and accesses census data from a given file.
-    
+
     Data is read from passed path, and imported with specified data types.
     Attributes are added to the class to aid accessing data in a structured way.
     All column labels from the Census report are set in column_labels and can be

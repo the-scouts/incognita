@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 
 
 class Geography:
-    """Stores information about the (administrative) geography type currently 
+    """Stores information about the (administrative) geography type currently
     used and methods for selecting and excluding regions.
-    
+
     Attributes:
         geography_metadata_dict: information about the boundary type
         geography_region_ids_mapping: table of region codes and human-readable names for those codes
@@ -128,7 +128,7 @@ class Geography:
 
     def filter_boundaries_regions_data(self, field: str, value_list: list, ons_pd_object: ONSPostcodeDirectory) -> None:
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
-        
+
         Requires _set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.

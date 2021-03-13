@@ -114,7 +114,7 @@ class ScoutData:
 
     def save_merged_data(self, ons_pd_publication_date: str) -> None:
         """Save passed dataframe to csv file.
-        
+
         Also output list of errors in the merge process to a text file
 
         Args:

@@ -36,9 +36,10 @@ class Map:
         map: holds the folium map object
 
     """
+
     def __init__(self, scout_data_object: ScoutData, map_name: str):
         """Initialise Map class.
-    
+
         Args:
             scout_data_object: ScoutData object with data
             map_name: Filename for the saved map
@@ -303,12 +304,14 @@ class Map:
             popup = folium.Popup(html, max_width=2650)
             self.add_marker(lat, long, popup, marker_colour, layer["name"])
 
-    def add_sections_to_map(self, scout_data_object: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False) -> None:
+    def add_sections_to_map(
+        self, scout_data_object: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
+    ) -> None:
         """Filter sections and add to map.
-        
+
         If a single section is specified, plots that section onto the map in
         markers of colour identified by colour, with data indicated by marker_data.
-        
+
         If else, all sections are plotted from the latest year of data. This
         means all Beaver Colonies, Cub Packs, Scout Troops and Explorer Units,
         that have returned in the latest year of the dataset.
@@ -342,7 +345,9 @@ class Map:
         layer_data = dict(name=layer, markers_clustered=cluster_markers)
         self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_data)
 
-    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None) -> None:
+    def add_custom_data(
+        self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None
+    ) -> None:
         """Function to add custom data as markers on map
 
         Args:
@@ -427,9 +432,9 @@ class Map:
 
     def set_boundary(self, reports: Reports) -> None:
         """Changes the boundary to a new boundary.
-        
+
         Loads, filters and converts shapefiles for later use
-        
+
         Loads shapefile from path into GeoPandas dataframe
         Filters out unneeded shapes within all shapes loaded
         Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG

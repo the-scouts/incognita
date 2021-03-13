@@ -118,7 +118,7 @@ class Reports:
     @time_function
     def create_boundary_report(self, options: list = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
         """Produces .csv file summarising by boundary provided.
-        
+
         Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
 
         Args:
@@ -302,7 +302,7 @@ class Reports:
     @time_function
     def create_uptake_report(self, report_name: str = None) -> pd.DataFrame:
         """Creates a report of scouting uptake in geographic areas
-        
+
         Creates an report by the boundary that has been set, requires a boundary report to already have been run.
         Requires population data by age for the specified boundary.
 

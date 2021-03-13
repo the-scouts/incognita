@@ -208,7 +208,7 @@ class DistrictBoundaries:
     def _indexes_of_interest(row: pd.Series, all_points: gpd.GeoDataFrame) -> pd.Index:
         """Provides index of all points within 3 times the distance of the
         closest point.
-        
+
         (This is the maximal set of points that could affect the buffer distance
         of this point)
 

@@ -27,9 +27,9 @@ BNG = 27700  # British National Grid
 
 def time_function(method: Callable) -> Callable:
     """This method wraps functions to determine the execution time (clock time) for the function
-    
+
     Incredible wrapping SO answer https://stackoverflow.com/a/1594484 (for future ref)
-    
+
     The 'wrapped' method is the method that actually replaces all the normal method calls, with the
       normal method call inside
 

@@ -137,10 +137,10 @@ class CensusMergeData:
 
     def try_fix_invalid_postcodes(self, census_data: pd.DataFrame, merge_test_column: pd.Series) -> pd.DataFrame:
         """Uses various methods attempting to provide every record with a valid postcode
-        
+
         Currently only implemented for sections with youth membership.
         TODO: implement for all entity types
-        
+
         Methodology:
         - If section has an invalid postcode in 2017 or 2018, use 2019's if valid (all are valid or missing in 2019)
         - If section has no valid postcodes, use most common (mode) postcode from sections in group in that year, then try successive years
