@@ -25,7 +25,7 @@ WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
 BNG = 27700  # British National Grid
 
 
-def time_function(method: Callable):
+def time_function(method: Callable) -> Callable:
     """This method wraps functions to determine the execution time (clock time) for the function
     
     Incredible wrapping SO answer https://stackoverflow.com/a/1594484 (for future ref)
@@ -71,7 +71,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: log
         exclusion_analysis:
 
     Returns:
-        pd.DataFrame: Nothing
+        Filtered data
 
     """
     # Count number of rows
@@ -145,18 +145,12 @@ def section_from_type_vector(section_type: pd.Series) -> pd.Series:
 
 
 def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: ONSPostcodeDirectory) -> pd.Series:
-
-    """
+    """Calculate IMD decile from ranks, country codes and ONS metadata.
 
     Args:
         imd_ranks:
         country_codes:
         ons_object:
-
-    Attributes:
-        country_names:
-        imd_max:
-        imd_deciles:
 
     """
 
@@ -187,6 +181,6 @@ def _try_downcast(series: pd.Series) -> pd.Series:
         return series
 
 
-def save_report(report: pd.DataFrame, report_name: str):
+def save_report(report: pd.DataFrame, report_name: str) -> None:
     logger.info(f"Writing to {report_name}")
     report.to_csv(config.SETTINGS.folders.output / f"{report_name}.csv", index=False, encoding="utf-8-sig")

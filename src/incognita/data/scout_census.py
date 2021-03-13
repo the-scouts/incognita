@@ -100,7 +100,7 @@ class ScoutCensus:
     UNIT_LEVEL_GROUP = "Group"
     UNIT_LEVEL_DISTRICT = "District"
 
-    def __init__(self, census_file_path: Path, load_data=True):
+    def __init__(self, census_file_path: Path, load_data: bool = True):
         if not load_data:
             self.data = pd.DataFrame()
             return
@@ -139,7 +139,7 @@ class ScoutCensus:
             raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
 
     @staticmethod
-    def get_section_names(level: list) -> list:
+    def get_section_names(level: list[str]) -> list[str]:
         """Return list of section names that exist within a particular organisational level.
 
         Args:
@@ -150,11 +150,11 @@ class ScoutCensus:
 
         """
         section_dict: dict
-        sections_labels = ScoutCensus.column_labels["sections"].items()
-        return [section_name for section_name, section_dict in sections_labels if section_dict["level"] in level]
+        sections_labels = ScoutCensus.column_labels["sections"]
+        return [section_name for section_name, section_dict in sections_labels.items() if section_dict["level"] in level]
 
     @staticmethod
-    def get_section_type(level: list) -> list:
+    def get_section_type(level: list[str]) -> list[str]:
         """Return list of section types that exist within a particular organisational level.
 
         Args:

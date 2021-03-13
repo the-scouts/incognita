@@ -14,7 +14,7 @@ class DistrictBoundaries:
         self.scout_data: ScoutData = scout_data_object
         self.ons_pd = scout_data_object.ons_pd
 
-    def create_district_boundaries(self):
+    def create_district_boundaries(self) -> None:
         """Creates a GeoJSON file for the District Boundaries of the Scout Census.
 
         Aims to create a circular boundary around every section of maximal size
@@ -108,7 +108,7 @@ class DistrictBoundaries:
         output_gpd.to_file("districts_buffered.geojson", driver="GeoJSON")
 
     @staticmethod
-    def _buffer_distance(point_details, all_points: gpd.GeoDataFrame) -> int:
+    def _buffer_distance(point_details: pd.Series, all_points: gpd.GeoDataFrame) -> int:
         """Calculates the buffer distance of a point. Sometimes is inconclusive
         as requires the results of the buffer distance of other points, and
         in this case returns 0.
@@ -176,7 +176,7 @@ class DistrictBoundaries:
         return distance
 
     @staticmethod
-    def _nearest_other_points(row, all_points: gpd.GeoDataFrame) -> list:
+    def _nearest_other_points(row: pd.Series, all_points: gpd.GeoDataFrame) -> list:
         """Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
         the points and corresponding distances for all points with twice
         the minimum distance from the row to the subset.
@@ -205,7 +205,7 @@ class DistrictBoundaries:
         return points
 
     @staticmethod
-    def _indexes_of_interest(row, all_points: gpd.GeoDataFrame) -> pd.Index:
+    def _indexes_of_interest(row: pd.Series, all_points: gpd.GeoDataFrame) -> pd.Index:
         """Provides index of all points within 3 times the distance of the
         closest point.
         

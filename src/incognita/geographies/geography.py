@@ -79,7 +79,7 @@ class Geography:
     def age_profile_pivot(self) -> str:
         return self.geography_metadata_dict["age_profile"].get("pivot_key")
 
-    def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
+    def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory) -> None:
         """Sets the geography_metadata_dict and geography_region_ids_mapping members
 
         Args:
@@ -126,7 +126,7 @@ class Geography:
 
         return ons_codes
 
-    def filter_boundaries_regions_data(self, field: str, value_list: list, ons_pd_object: ONSPostcodeDirectory):
+    def filter_boundaries_regions_data(self, field: str, value_list: list, ons_pd_object: ONSPostcodeDirectory) -> None:
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
         
         Requires _set_boundary to have been called.
@@ -165,7 +165,7 @@ class Geography:
         self.geography_region_ids_mapping = self.geography_region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
         logger.info(f"Resulting in {len(self.geography_region_ids_mapping)} {name} boundaries")
 
-    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_pd: ONSPostcodeDirectory, boundary: str, column: str, value_list: list):
+    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_pd: ONSPostcodeDirectory, boundary: str, column: str, value_list: list) -> None:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -180,7 +180,7 @@ class Geography:
         ons_value_list = self._get_ons_codes_from_scout_area(scout_data, boundary, column, value_list)
         self.filter_boundaries_regions_data(boundary, ons_value_list, ons_pd)
 
-    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: list, distance: int = 3000):
+    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: list, distance: int = 3000) -> None:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 

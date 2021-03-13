@@ -1,5 +1,6 @@
 import logging
 from numbers import Real
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -15,7 +16,7 @@ from incognita.utility.utility import time_function
 
 class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):
     def __init__(self):
-        super().__init__(load_data=False, ons_pd_csv_path="")
+        super().__init__(load_data=False, ons_pd_csv_path=Path(""))
         self.IMD_MAX = {"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890}
         self.COUNTRY_CODES = {"E92000001": "England", "W92000004": "Wales", "S92000003": "Scotland", "N92000002": "Northern Ireland"}
 

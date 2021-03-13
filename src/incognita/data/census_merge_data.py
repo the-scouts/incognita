@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ class CensusMergeData:
     The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
     """
 
-    def merge_data(self, census_data: pd.DataFrame, data_to_merge, census_index_column: str) -> pd.DataFrame:
+    def merge_data(self, census_data: pd.DataFrame, data_to_merge: Any, census_index_column: str) -> pd.DataFrame:
         """Merge census data and input data on key and index.
 
         Args:

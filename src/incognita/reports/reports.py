@@ -54,7 +54,7 @@ class Reports:
     }
 
     @time_function
-    def add_shapefile_data(self):
+    def add_shapefile_data(self) -> None:
 
         logger.info("Adding shapefile data")
         # self.scout_data = copy.copy(self.scout_data)
@@ -64,7 +64,7 @@ class Reports:
         self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography_type})
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False):
+    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
 
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
@@ -310,7 +310,7 @@ class Reports:
             report_name: Name to save the report as
 
         Returns:
-            pd.DataFrame: Uptake data of Scouts in the boundary
+            Uptake data of Scouts in the boundary
 
         """
         geog_name = self.geography_type
@@ -382,5 +382,5 @@ class Reports:
         self.boundary_report = uptake_report
         return uptake_report
 
-    def _save_report(self, report_data: pd.DataFrame, report_name: str):
+    def _save_report(self, report_data: pd.DataFrame, report_name: str) -> None:
         utility.save_report(report_data, report_name)

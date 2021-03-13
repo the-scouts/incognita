@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 from incognita.data.scout_census import ScoutCensus
@@ -26,7 +28,7 @@ class ONSPostcodeDirectory:
     COUNTRY_CODES = {}
     BOUNDARIES = {}  # TODO convert to model
 
-    def __init__(self, ons_pd_csv_path, load_data=True, index_column=None, fields=None, data_types=None):
+    def __init__(self, ons_pd_csv_path: os.PathLike, load_data: bool = True, index_column: str = None, fields: bool = None, data_types: dict = None):
         # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)
         def cols_lambda(col):
             return col in fields if fields else True

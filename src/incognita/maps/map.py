@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import cycle
-from typing import TYPE_CHECKING, Union
+from typing import Literal, TYPE_CHECKING, Union
 import webbrowser
 
 import branca
@@ -151,7 +151,7 @@ class Map:
 
         # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
 
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour, marker_data: list, layer: dict = None):
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list, layer: dict = None) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
@@ -303,7 +303,7 @@ class Map:
             popup = folium.Popup(html, max_width=2650)
             self.add_marker(lat, long, popup, marker_colour, layer["name"])
 
-    def add_sections_to_map(self, scout_data_object: ScoutData, colour, marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False):
+    def add_sections_to_map(self, scout_data_object: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False) -> None:
         """Filter sections and add to map.
         
         If a single section is specified, plots that section onto the map in
@@ -342,7 +342,7 @@ class Map:
         layer_data = dict(name=layer, markers_clustered=cluster_markers)
         self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_data)
 
-    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols, markers_clustered: bool = False, marker_data: list = None):
+    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None) -> None:
         """Function to add custom data as markers on map
 
         Args:
@@ -389,17 +389,17 @@ class Map:
 
         custom_data.apply(add_popup_data, axis=1)
 
-    def save_map(self):
+    def save_map(self) -> None:
         """Saves the folium map to a HTML file"""
         # Add layer control to map
         folium.LayerControl(collapsed=False).add_to(self.map)
         self.map.save(f"{self.out_file}")
 
-    def show_map(self):
+    def show_map(self) -> None:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    def set_region_of_colour(self, column: str, value_list: list):
+    def set_region_of_colour(self, column: str, value_list: list) -> None:
         self._region_of_colour = {"column": column, "value_list": value_list}
 
     def generic_colour_mapping(self, grouping_column: str) -> dict:
@@ -420,7 +420,7 @@ class Map:
     def county_colour_mapping(self) -> dict:
         return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])
 
-    def validate_columns(self):
+    def validate_columns(self) -> None:
         if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:
             logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
             raise KeyError(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data.")
@@ -461,7 +461,7 @@ class Map:
 
         logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
 
-    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True):
+    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True) -> None:
         """Adds a maker layer to the map
 
         Args:
