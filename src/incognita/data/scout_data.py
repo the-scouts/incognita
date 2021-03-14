@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 import time
-from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
@@ -13,9 +11,6 @@ from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import utility
-
-if TYPE_CHECKING:
-    from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
 class ScoutData:
@@ -36,7 +31,8 @@ class ScoutData:
         # record a class-wide start time
         self.start_time = time.time()
 
-        logger.info(f"Starting at {datetime.now().time()}")
+        now = time.localtime()
+        logger.info(f"Starting at {now.tm_hour}:{now.tm_min}:{now.tm_sec}")
 
         logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
@@ -80,13 +76,15 @@ class ScoutData:
                 assert self.data.equals(data[self.data.columns])
                 self.data = data
                 return
+        else:
+            uid = None
 
         if self.points_data.empty:
             idx = pd.Series(self.data.index, name="object_index")
             self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.data.long, self.data.lat), crs=utility.WGS_84)
 
         if path is not None:
-            all_shapes = gpd.GeoDataFrame.from_file(str(path))  # FIXME geopandas does not support os.PathLike (2021-03-09)
+            all_shapes = gpd.read_file(path)
         elif gdf is not None:
             all_shapes = gdf
         else:
@@ -97,7 +95,7 @@ class ScoutData:
         merged = self.data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)
         assert self.data.equals(merged[self.data.columns])
         self.data = merged
-        if path is not None:
+        if path is not None and uid is not None:
             merged.reset_index(drop=False).to_feather(uid)
 
     def close(self) -> None:
