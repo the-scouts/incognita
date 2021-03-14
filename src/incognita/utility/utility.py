@@ -4,15 +4,14 @@ from functools import wraps
 import time
 from typing import TYPE_CHECKING
 
-import pandas as pd
-
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
 from incognita.utility import config
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    import logging
+
+    import pandas as pd
 
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
@@ -59,14 +58,13 @@ def time_function(method: Callable) -> Callable:
     return wrapper
 
 
-def filter_records(data: pd.DataFrame, field: str, value_list: list, logger: logging.Logger, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
+def filter_records(data: pd.DataFrame, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
     """Filters the Census records by any field in ONS PD.
 
     Args:
         data:
         field: The field on which to filter
         value_list: The values on which to filter
-        logger:
         mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
         exclusion_analysis:
 

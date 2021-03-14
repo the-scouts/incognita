@@ -66,7 +66,7 @@ class ScoutData:
             exclusion_analysis:
 
         """
-        self.data = utility.filter_records(self.data, field, value_list, logger, mask, exclusion_analysis)
+        self.data = utility.filter_records(self.data, field, value_list, mask, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:
