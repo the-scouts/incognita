@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import geopandas as gpd
 import pandas as pd
 
-from incognita.data.census_merge_data import CensusMergeData
+from incognita.preprocessing.census_merge_data import CensusMergeData
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
