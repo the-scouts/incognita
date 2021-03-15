@@ -43,7 +43,13 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     merge.clean_and_verify_postcode(data, ScoutCensus.column_labels["POSTCODE"])
 
     logger.info(f"Loading ONS postcode data.")
-    ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
+    ons_pd_data = pd.read_csv(
+        config.SETTINGS.ons_pd.full,
+        index_col=ons_pd.index_column,
+        dtype=ons_pd.data_types,
+        usecols=ons_pd.fields,
+        encoding="utf-8",
+    )
 
     logger.info("Adding ONS postcode directory data to Census and outputting")
 
@@ -123,7 +129,7 @@ if __name__ == "__main__":
     scout_data.data[column_labels["name"]["ITEM"]] = scout_data.data[column_labels["name"]["ITEM"]].str.replace("`", "")
 
     # load ONS postcode directory
-    ons_pd = ONSPostcodeDirectoryMay19(load_data=config.SETTINGS.ons_pd.full)
+    ons_pd = ONSPostcodeDirectoryMay19()
 
     # merge the census extract and ONS postcode directory, and save the data to file
     data = merge_ons_postcode_directory(scout_data.data, ons_pd)
