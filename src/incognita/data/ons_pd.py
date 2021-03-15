@@ -1,13 +1,43 @@
-import os
+from pathlib import Path
 from typing import Optional
 
-import pandas as pd
-
-from incognita.data.scout_census import ScoutCensus
-from incognita.logger import logger
+import pydantic
 
 
-class ONSPostcodeDirectory:
+# class DeprivationMaximums(pydantic.BaseModel):
+#     england: int
+#     wales: int
+#     scotland: int
+#     northern_ireland: int
+
+
+class BoundaryCodes(pydantic.BaseModel):
+    path: Optional[Path]
+    key: Optional[str]
+    key_type: Optional[str]
+    name: Optional[str]
+
+
+class BoundaryShapeFile(pydantic.BaseModel):
+    path: Path
+    key: str
+    name: str
+
+
+class BoundaryAgeProfile(pydantic.BaseModel):
+    path: Path
+    key: str
+    pivot_key: str
+
+
+class Boundary(pydantic.BaseModel):
+    name: str
+    codes: BoundaryCodes
+    shapefile: Optional[BoundaryShapeFile] = None
+    age_profile: Optional[BoundaryAgeProfile] = None
+
+
+class ONSPostcodeDirectory(pydantic.BaseModel):
     """Used for holding and accessing ONS Postcode Directory data
 
     Attributes:
@@ -17,7 +47,8 @@ class ONSPostcodeDirectory:
 
     """
 
-    PUBLICATION_DATE = None
-    IMD_MAX = {"England": None, "Wales": None, "Scotland": None, "Northern Ireland": None}
-    COUNTRY_CODES = {}
-    BOUNDARIES = {}  # TODO convert to model
+    PUBLICATION_DATE: str
+    # IMD_MAX: DeprivationMaximums
+    IMD_MAX: dict[str, int]
+    COUNTRY_CODES: dict[str, str]
+    BOUNDARIES: dict[str, Boundary]
