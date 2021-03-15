@@ -9,6 +9,10 @@ import pydantic.validators
 import toml
 
 from incognita.utility import root
+from incognita.data.ons_pd import Boundary
+from incognita.data.ons_pd import BoundaryShapeFile
+from incognita.data.ons_pd import BoundaryAgeProfile
+from incognita.data.ons_pd import BoundaryCodes
 
 if TYPE_CHECKING:
     import pydantic.typing
@@ -61,26 +65,26 @@ class FolderPaths(pydantic.BaseModel):
     output: ProjectDirectoryPath
 
 
-class CustomBoundaryCodes(pydantic.BaseModel):
+class CustomBoundaryCodes(BoundaryCodes):
     path: Optional[Path] = None
     key: Optional[str] = None
     key_type: Optional[str] = None  # TODO literal dtypes
     name: Optional[str] = None
 
 
-class CustomBoundaryShapeFile(pydantic.BaseModel):
+class CustomBoundaryShapeFile(BoundaryShapeFile):
     path: Optional[Path] = None
     key: Optional[str] = None
     name: Optional[str] = None
 
 
-class CustomBoundaryAgeProfile(pydantic.BaseModel):
+class CustomBoundaryAgeProfile(BoundaryAgeProfile):
     path: Optional[Path] = None
     key: Optional[str] = None
     pivot_key: Optional[str] = None
 
 
-class CustomBoundary(pydantic.BaseModel):
+class CustomBoundary(Boundary):
     name: str
     codes: CustomBoundaryCodes = CustomBoundaryCodes()
     shapefile: CustomBoundaryShapeFile = CustomBoundaryShapeFile()
