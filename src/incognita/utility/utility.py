@@ -152,8 +152,9 @@ def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: 
 
     """
 
-    country_names = country_codes.map(ons_object.COUNTRY_CODES)
-    imd_max = country_names.map(ons_object.IMD_MAX)
+    # Map country codes to maximum IMD rank in each country, and broadcast to the array
+    code_imd_map = {code: ons_object.IMD_MAX[country] for code, country in ons_object.COUNTRY_CODES.items()}
+    imd_max = country_codes.map(code_imd_map).astype("Int32")
 
     # One of the two series must be of a 'normal' int dtype - excluding the new ones that can deal with NAs
     imd_max = _try_downcast(imd_max)
@@ -162,17 +163,16 @@ def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: 
     if not imd_max.empty:
         # upside down floor division to get ceiling
         # https://stackoverflow.com/a/17511341
-        imd_deciles = -((-imd_ranks * 10).floordiv(imd_max))
-        return imd_deciles
+        return -((-imd_ranks * 10).floordiv(imd_max))
     else:
         raise Exception("No IMD values found to calculate deciles from")
 
 
 def _try_downcast(series: pd.Series) -> pd.Series:
     try:
-        uint_series = series.astype("uint16")
-        if series.equals(uint_series):
-            return uint_series
+        int_series = series.astype("int32")
+        if series.eq(int_series).all():
+            return int_series
         else:
             return series
     except ValueError:
