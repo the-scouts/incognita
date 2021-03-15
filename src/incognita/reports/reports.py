@@ -35,10 +35,6 @@ class Reports:
     def shapefile_path(self) -> Path:
         return self.geography.shapefile_path
 
-    @property
-    def geography_type(self) -> str:
-        return self.geography.type
-
     def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object: ONSPostcodeDirectory = None):
         self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
@@ -61,7 +57,7 @@ class Reports:
         # self.scout_data.data = self.scout_data.data.copy()
 
         self.scout_data.add_shape_data(self.shapefile_key, path=self.shapefile_path)
-        self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography_type})
+        self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography.type})
 
     @time_function
     def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
@@ -145,7 +141,7 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
         # fmt: on
 
-        geog_name = self.geography_type  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography.type  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
@@ -313,7 +309,7 @@ class Reports:
             Uptake data of Scouts in the boundary
 
         """
-        geog_name = self.geography_type
+        geog_name = self.geography.type
         try:
             age_profile_path = self.geography.age_profile_path
             age_profile_key = self.geography.age_profile_key
