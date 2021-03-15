@@ -14,7 +14,7 @@ if __name__ == "__main__":
     year = 2020
 
     # setup data
-    scout_data = ScoutData(load_ons_pd_data=True)
+    scout_data = ScoutData(load_ons_pd_data=True)  # ONS PD data needed for IMD deciles
     scout_data.filter_records("Year", [year])
     scout_data.filter_records("X_name", ["England", "Scotland", "Wales", "Northern Ireland"])
     scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)

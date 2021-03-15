@@ -6,7 +6,7 @@ if __name__ == "__main__":
     county_name = "Birmingham"
     year = 2020
 
-    scout_data = ScoutData(load_ons_pd_data=True)
+    scout_data = ScoutData(load_ons_pd_data=True)  # ONS PD data needed for IMD deciles
     scout_data.filter_records("Year", [year])  # 2016, 2017, 2018, 2019, 2020
     scout_data.filter_records("C_name", [county_name])  # "Shropshire", "West Mercia"
     scout_data.filter_records("postcode_is_valid", [1])
