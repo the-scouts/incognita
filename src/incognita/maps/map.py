@@ -365,7 +365,8 @@ class Map:
 
         if location_cols == "Postcodes":
             # Merge with ONS Postcode Directory to obtain dataframe with lat/long
-            ons_pd_data = self.scout_data.ons_pd.data
+            logger.debug(f"Loading ONS postcode data.")
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
             custom_data = pd.merge(custom_data, ons_pd_data, how="left", left_on=location_cols, right_index=True, sort=False)
             location_cols = {"crs": utility.WGS_84, "x": "long", "y": "lat"}
 

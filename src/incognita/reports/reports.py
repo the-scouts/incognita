@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import pandas as pd
 
@@ -9,6 +9,7 @@ from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
+from incognita.utility import config
 from incognita.utility import utility
 from incognita.utility.utility import time_function
 
@@ -41,6 +42,8 @@ class Reports:
         self.geography = Geography(geography_name, self.ons_pd)
 
         self.boundary_report = None
+
+        self.ons_pd_data: Optional[pd.DataFrame] = None
 
     SECTION_AGES = {
         "Beavers": {"ages": ["6", "7"]},
@@ -285,8 +288,12 @@ class Reports:
         output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
 
         if geog_name == "lsoa11":
+            logger.debug(f"Loading ONS postcode data.")
+            if self.ons_pd_data is None:
+                self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
+
             logger.debug(f"Adding IMD deciles")
-            output_data = output_data.merge(self.ons_pd.data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
+            output_data = output_data.merge(self.ons_pd_data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
 
         self.boundary_report = output_data
 
@@ -341,9 +348,13 @@ class Reports:
 
         # Pivot age profile to current geography type if needed
         if self.geography.age_profile_pivot and self.geography.age_profile_pivot != geog_name:
+            logger.debug(f"Loading ONS postcode data.")
+            if self.ons_pd_data is None:
+                self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
+
             pivot_key = self.geography.age_profile_pivot
 
-            ons_data_subset = self.ons_pd.data[[geog_name, pivot_key]]
+            ons_data_subset = self.ons_pd_data[[geog_name, pivot_key]]
             merged_age_profile = reduced_age_profile_pd.merge(ons_data_subset, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
             merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_name])
             pivoted_age_profile = merged_age_profile_no_na.groupby(geog_name).sum().astype("UInt32")

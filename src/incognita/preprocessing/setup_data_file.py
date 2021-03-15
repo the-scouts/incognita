@@ -42,16 +42,19 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     logger.info("Cleaning the postcodes")
     merge.clean_and_verify_postcode(data, ScoutCensus.column_labels["POSTCODE"])
 
+    logger.info(f"Loading ONS postcode data.")
+    ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
+
     logger.info("Adding ONS postcode directory data to Census and outputting")
 
     # initially merge just Country column to test what postcodes can match
-    data = merge.merge_data(data, ons_pd.data["ctry"], "clean_postcode")
+    data = merge.merge_data(data, ons_pd_data["ctry"], "clean_postcode")
 
     # attempt to fix invalid postcodes
-    data = merge.try_fix_invalid_postcodes(data, ons_pd.data["ctry"])
+    data = merge.try_fix_invalid_postcodes(data, ons_pd_data["ctry"])
 
     # fully merge the data
-    data = merge.merge_data(data, ons_pd.data, "clean_postcode")
+    data = merge.merge_data(data, ons_pd_data, "clean_postcode")
 
     # fill unmerged rows with default values
     logger.info("filling unmerged rows")
