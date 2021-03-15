@@ -21,7 +21,7 @@ def scout_data_factory():
     """Returns a ScoutData factory"""
 
     def _scout_data_factory(data_df: pd.DataFrame) -> ScoutData:
-        sd = ScoutData(load_census_data=False, load_ons_pd_data=False, merged_csv=False)
+        sd = ScoutData(load_census_data=False, merged_csv=False)
         sd.data = data_df
         return sd
 

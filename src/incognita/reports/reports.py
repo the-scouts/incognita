@@ -36,8 +36,8 @@ class Reports:
     def shapefile_path(self) -> Path:
         return self.geography.shapefile_path
 
-    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object: ONSPostcodeDirectory = None):
-        self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
+    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd: ONSPostcodeDirectory = None):
+        self.ons_pd = scout_data_object.ons_pd if ons_pd is None else ons_pd  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name, self.ons_pd)
 

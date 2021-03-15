@@ -27,11 +27,11 @@ class Geography:
         geography_region_ids_mapping: table of region codes and human-readable names for those codes
     """
 
-    def __init__(self, geography_name: str, ons_pd_object: ONSPostcodeDirectory):
+    def __init__(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
         self.geography_metadata_dict = None
         self.geography_region_ids_mapping = None
 
-        self._set_boundary(geography_name, ons_pd_object)
+        self._set_boundary(geography_name, ons_pd)
 
     @property
     def type(self) -> str:
@@ -126,7 +126,7 @@ class Geography:
 
         return ons_codes
 
-    def filter_boundaries_regions_data(self, field: str, value_list: list, ons_pd_object: ONSPostcodeDirectory) -> None:
+    def filter_boundaries_regions_data(self, field: str, value_list: list) -> None:
         """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
         Requires _set_boundary to have been called.
@@ -136,7 +136,9 @@ class Geography:
         Args:
             field: The field on which to filter
             value_list: The values on which to filter
-            ons_pd_object: returns None: Nothing
+
+        Returns:
+             None
 
         """
 
@@ -147,15 +149,13 @@ class Geography:
         # 'field' is the start geography and 'name' is the target geography
         # Returns a list
         logger.info(f"Filtering {len(self.geography_region_ids_mapping)} {name} boundaries by {field} being in {value_list}")
+        logger.debug(f"Loading ONS postcode data.")
+        ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
-            ons_records_in_value_list = ons_pd_object.data[field].isin(value_list)
-            boundary_subset = ons_pd_object.data.loc[ons_records_in_value_list, name].drop_duplicates().to_list()
-        except AttributeError:
-            msg = "No data in ONS PD object. Ensure ScoutData object is created with load_ons_pd_data being True"
-            logger.exception(msg)
-            raise AttributeError(msg) from None
+            ons_records_in_value_list = ons_pd_data[field].isin(value_list)
+            boundary_subset = ons_pd_data.loc[ons_records_in_value_list, name].drop_duplicates().to_list()
         except KeyError:
-            msg = f"{name} not in ONS PD dataframe. \nValid values are: {ons_pd_object.data.columns.to_list()}"
+            msg = f"{name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
             logger.error(msg)
             raise KeyError(msg) from None
         logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
@@ -178,7 +178,7 @@ class Geography:
 
         """
         ons_value_list = self._get_ons_codes_from_scout_area(scout_data, boundary, column, value_list)
-        self.filter_boundaries_regions_data(boundary, ons_value_list, ons_pd)
+        self.filter_boundaries_regions_data(boundary, ons_value_list)
 
     def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: list, distance: int = 3000) -> None:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
@@ -225,4 +225,4 @@ class Geography:
         nearby_values = nearby_values.drop_duplicates().to_list()
         logger.info(f"Found {nearby_values}")
 
-        self.filter_boundaries_regions_data(boundary, nearby_values, scout_data.ons_pd)
+        self.filter_boundaries_regions_data(boundary, nearby_values)
