@@ -28,12 +28,12 @@ class ONSPostcodeDirectory:
     COUNTRY_CODES = {}
     BOUNDARIES = {}  # TODO convert to model
 
-    def __init__(self, ons_pd_csv_path: os.PathLike, load_data: bool = True, index_column: str = None, fields: bool = None, data_types: dict = None):
+    def __init__(self, ons_pd_csv_path: Optional[os.PathLike] = None, index_column: str = None, fields: bool = None, data_types: dict = None):
         # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)
         def cols_lambda(col):
             return col in fields if fields else True
 
-        if load_data:
+        if ons_pd_csv_path is not None:
             logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{fields}")
 
             # Handle index column possibly not existing (if the full ONS PD is loaded then the index column will exist, if using the reduced ONS PD it won't so use automatic index)

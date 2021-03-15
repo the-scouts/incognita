@@ -50,7 +50,10 @@ class ScoutData:
             has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
 
             if has_ons_pd_data:
-                self.ons_pd = ONSPostcodeDirectoryMay19(config.SETTINGS.ons_pd.reduced, load_data=load_ons_pd_data)
+                if load_ons_pd_data:
+                    self.ons_pd = ONSPostcodeDirectoryMay19(load_data=config.SETTINGS.ons_pd.reduced)
+                else:
+                    self.ons_pd = ONSPostcodeDirectoryMay19()
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 

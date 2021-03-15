@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from incognita.data.ons_pd import ONSPostcodeDirectory
 from incognita.utility import config
@@ -153,5 +154,5 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     }
     # fmt: on
 
-    def __init__(self, ons_pd_csv_path: os.PathLike, load_data: bool = True):
-        super().__init__(ons_pd_csv_path, load_data, self.index_column, data_types=self.data_types)
+    def __init__(self, *, load_data: Optional[os.PathLike] = None):
+        super().__init__(load_data, self.index_column, data_types=self.data_types)
