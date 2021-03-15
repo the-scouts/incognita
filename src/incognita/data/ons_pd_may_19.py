@@ -1,7 +1,5 @@
-import os
-from typing import Optional
-
 from incognita.data.ons_pd import ONSPostcodeDirectory
+from incognita.data.ons_pd import Boundary
 from incognita.utility import config
 
 # Folder within the ONS Postcode Directory archive holding names and codes files
@@ -21,22 +19,10 @@ shapefile_paths = {
 # fmt: on
 
 
-class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
-    """Used for holding and accessing ONS Postcode Directory data
-
-    Attributes:
-        fields: columns to read from the csv file
-        index_column: column to use as the index. Must contain unique values
-        data_types: pandas datatypes for the columns to load
-        PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
-        IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
-        COUNTRY_CODES: ONS Postcode Directory codes for each country
-
-    """
-
-    fields = ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"]
-    index_column = "pcd"
-    data_types = {
+ons_postcode_directory_may_19 = ONSPostcodeDirectory(
+    fields=["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"],
+    index_column="pcd",
+    data_types={
         "oscty": "category",
         "oslaua": "category",
         "osward": "category",
@@ -49,27 +35,19 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
         "long": "float32",
         "imd": "UInt16",  # should be uint16 but not atm because the NaN thing
         "imd_decile": "UInt8",  # should be uint8 but not atm because the NaN thing
-    }  # capitalise Int as of Optional Integer NA Support pandas 24 # Int capitalised as this ignores NaNs
-
-    # Date of ONS postcode directory
-    PUBLICATION_DATE = "May 2019"
-
-    # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017
-    IMD_MAX = {"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890}
-
-    COUNTRY_CODES = {
+    },  # Int capitalised as this ignores NaNs
+    PUBLICATION_DATE="May 2019",
+    IMD_MAX={"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890},
+    COUNTRY_CODES={
         "E92000001": "England",
         "W92000004": "Wales",
         "S92000003": "Scotland",
         "N92000002": "Northern Ireland",
         # "L93000001": "Channel Islands",
         # "M83000003": "Isle of Man"
-    }
-
-    # Dictionary holding dictionaries with information for each type of boundary
-    # fmt: off
-    BOUNDARIES = {
-        "lad": {
+    },
+    BOUNDARIES={
+        "lad": Boundary(**{
             # Local Authority Districts
             "name": "oslaua",
             "codes": {
@@ -79,8 +57,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
             },
             "boundary": {"shapefile": shapefile_paths["LADs"], "key": "lad19cd", "name": "lad19nm", },
             "age_profile": {"path": "lad_by_age.csv", "key": "Code"},
-        },
-        "cty": {
+        }),
+        "cty": Boundary(**{
             # Counties
             "name": "oslaua",
             "codes": {
@@ -89,9 +67,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "LAD19NM",
             },
             "boundary": {"shapefile": shapefile_paths["County"], "key": "ctyua17cd", "name": "ctyua17nm", },
-            "age_profile": {"path": None, "key": None},
-        },
-        "osward": {
+        }),
+        "osward": Boundary(**{
             # Council Wards
             "name": "osward",
             "codes": {
@@ -101,8 +78,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
             },
             "boundary": {"shapefile": shapefile_paths["Ward"], "key": "WD19CD", "name": "WD19NM", },
             "age_profile": {"path": "osward_by_age_mid_2018_population_may_2019_wards.csv", "key": "Ward Code"},
-        },
-        "pcon": {
+        }),
+        "pcon": Boundary(**{
             # Parliamentary Constituencies
             "name": "pcon",
             "codes": {
@@ -112,8 +89,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
             },
             "boundary": {"shapefile": shapefile_paths["PCon"], "key": "pcon17cd", "name": "pcon17nm", },
             "age_profile": {"path": "pcon_by_age.csv", "key": "PCON11CD"},
-        },
-        "lsoa": {
+        }),
+        "lsoa": Boundary(**{
             # Lower Level Super Output Areas
             "name": "lsoa11",
             "codes": {
@@ -122,9 +99,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "LSOA11NM",
             },
             "boundary": {"shapefile": shapefile_paths["LSOA"], "key": "LSOA11CD", "name": "LSOA11NM", },
-            "age_profile": {"path": None, "key": None},
-        },
-        "msoa": {
+        }),
+        "msoa": Boundary(**{
             # Middle Layer Super Output Areas
             "name": "msoa11",
             "codes": {
@@ -133,9 +109,8 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "MSOA11NM",
             },
             "boundary": {"shapefile": shapefile_paths["MSOA"], "key": "msoa11cd", "name": None, },
-            "age_profile": {"path": None, "key": None},
-        },
-        "iz": {
+        }),
+        "iz": Boundary(**{
             # Intermediate Zones (codepages identical to MSOA but different shapefiles)
             "name": "msoa11",
             "codes": {
@@ -144,8 +119,6 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
                 "name": "MSOA11NM",
             },
             "boundary": {"shapefile": shapefile_paths["IZ"], "key": "InterZone", "name": None, },
-            "age_profile": {"path": None, "key": None},
-        },
-    }
-    # fmt: on
-
+        }),
+    },
+)
