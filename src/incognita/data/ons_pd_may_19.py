@@ -155,4 +155,4 @@ class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     # fmt: on
 
     def __init__(self, *, load_data: Optional[os.PathLike] = None):
-        super().__init__(load_data, self.index_column, data_types=self.data_types)
+        super().__init__(load_data=load_data)

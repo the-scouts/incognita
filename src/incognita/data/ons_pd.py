@@ -11,11 +11,7 @@ class ONSPostcodeDirectory:
     """Used for holding and accessing ONS Postcode Directory data
 
     Args:
-        ons_pd_csv_path: path to the ONS Postcode Directory csv file
-        load_data: whether to load data from the file
-        index_column: column to use as the index. Must contain unique values
-        fields: columns to read from the csv file
-        data_types: pandas datatypes for the columns to load
+        load_data: path to the reduced ONS Postcode Directory file
 
     Attributes:
         PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
@@ -29,21 +25,8 @@ class ONSPostcodeDirectory:
     COUNTRY_CODES = {}
     BOUNDARIES = {}  # TODO convert to model
 
-    def __init__(self, ons_pd_csv_path: Optional[os.PathLike] = None, index_column: str = None, fields: bool = None, data_types: dict = None):
+    def __init__(self, *, load_data: Optional[os.PathLike] = None):
         # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)
-        def cols_lambda(col):
-            return col in fields if fields else True
-
-        if ons_pd_csv_path is not None:
-            logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{fields}")
-
-            # Handle index column possibly not existing (if the full ONS PD is loaded then the index column will exist, if using the reduced ONS PD it won't so use automatic index)
-            try:
-                self.data = pd.read_csv(ons_pd_csv_path, index_col=index_column, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
-            except ValueError:
-                logger.debug(f"Loading ONS data with given index colum ({index_column}) failed, trying with pandas-generated index")
-                self.data = pd.read_csv(ons_pd_csv_path, index_col=None, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
-
-            for field in data_types:
-                if data_types[field] == "category":
-                    self.data[field] = self.data[field].cat.add_categories([ScoutCensus.DEFAULT_VALUE])
+        if load_data is not None:
+            logger.debug(f"Loading ONS data from {load_data}.")
+            self.data = pd.read_feather(load_data)

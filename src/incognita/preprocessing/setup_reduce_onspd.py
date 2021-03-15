@@ -2,39 +2,56 @@ import geopandas as gpd
 import pandas as pd
 
 from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+# from incognita.data import scout_census
 from incognita.utility import config
 from incognita.utility import utility
+from incognita.logger import logger
+from incognita.logger import set_up_logger
 
 if __name__ == "__main__":
-    print("Starting")
-    fields = ["oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "imd", "imd_decile"]
+    set_up_logger()
+
+    logger.info("Starting")
+    may_19_fields = set(ONSPostcodeDirectoryMay19.fields)
+    to_keep = ("oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "imd", "imd_decile")  # 'lat', 'long', 'nys_districts', 'pcd'
+    fields = [f for f in to_keep if f in may_19_fields]
 
     # Load Full ONS Postcode Directory
     data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ONSPostcodeDirectoryMay19.data_types, encoding="utf-8")
-    print("Loaded data")
+    logger.info("Loaded data")
+
+    orig = data.copy()
+    logger.info("DEBUG - copied original data")
 
     # Add IMD Decile
-    ons_pd = ONSPostcodeDirectoryMay19("", load_data=False)
-    data["imd_decile"] = utility.calc_imd_decile(data["imd"], data["ctry"], ons_pd).astype("UInt8")
-    del ons_pd
-    print("IMD Deciles added")
+    data["imd_decile"] = utility.calc_imd_decile(data["imd"], data["ctry"], ONSPostcodeDirectoryMay19()).astype("UInt8")
+    logger.info("IMD Deciles added")
+
+    # # TODO Needed?:
+    # for field, dtype in data.dtypes.items():
+    #     if dtype == "category":
+    #         data[field] = data[field].cat.add_categories([scout_census.ScoutCensus.DEFAULT_VALUE])
 
     # Save minified full ONS Postcode Directory
-    reduced_data_with_lat_long = data[fields + ["lat", "long"]].drop_duplicates().reset_index()
-    geo_column = gpd.points_from_xy(reduced_data_with_lat_long.long, reduced_data_with_lat_long.lat)
-    reduced_data_with_geo = gpd.GeoDataFrame(reduced_data_with_lat_long, geometry=geo_column)
-    del reduced_data_with_lat_long, geo_column
-    reduced_data_with_geo = reduced_data_with_geo.drop("lat").drop("long")
-    reduced_data_with_geo.crs = utility.WGS_84
-    reduced_data_with_geo.to_feather(ons_pd_location.parent / f"{ons_pd_location.stem}-minified.feather")
+    reduced_data_with_coords = data[fields + ["lat", "long"]].copy()
+    # reduced_data_with_coords[["lat", "long"]] = reduced_data_with_coords[["lat", "long"]].round(4)  # Limit to 3dp (~100m resolution)
+    reduced_data_with_coords = reduced_data_with_coords.drop_duplicates().reset_index()
+    reduced_data_with_geo = gpd.GeoDataFrame(
+        reduced_data_with_coords,
+        geometry=gpd.points_from_xy(reduced_data_with_coords.long, reduced_data_with_coords.lat),
+        crs=utility.WGS_84
+    ).drop(columns=["lat", "long"])
+    del reduced_data_with_coords
+    reduced_data_with_geo.to_feather(config.SETTINGS.ons_pd.minified)
     del reduced_data_with_geo
-    print("Minified data saved")
+    logger.info("Minified data saved")
 
     # Get needed columns and delete duplicate rows
     reduced_data = data[fields].drop_duplicates()
     del data
-    print("Reduced data")
+    logger.info("Reduced data")
 
-    print("Saving data")
-    reduced_data.to_csv(ons_pd_location.parent / f"{ons_pd_location.stem} reduced.csv", index=False, encoding="utf-8-sig")
-    print("Done")
+    logger.info("Saving data")
+    reduced_data.to_csv(config.SETTINGS.ons_pd.reduced.with_suffix(".csv"), index=False, encoding="utf-8-sig")
+    reduced_data.to_feather(config.SETTINGS.ons_pd.reduced.with_suffix(".feather"), index=False, encoding="utf-8-sig")
+    logger.info("Done")
