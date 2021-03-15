@@ -24,11 +24,6 @@ shapefile_paths = {
 class ONSPostcodeDirectoryMay19(ONSPostcodeDirectory):
     """Used for holding and accessing ONS Postcode Directory data
 
-    Args:
-        ons_pd_csv_path: path to the ONS Postcode Directory csv file
-        load_data: whether to load data from the file
-
-
     Attributes:
         fields: columns to read from the csv file
         index_column: column to use as the index. Must contain unique values
