@@ -27,7 +27,7 @@ if __name__ == "__main__":
     mapper.add_custom_data(
         config.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
         "Primary Schools",
-        location_cols="Postcode",
+        location_cols="Postcodes",
         marker_data=["EstablishmentName"],
     )
     mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"], single_section="Beavers")
