@@ -14,7 +14,7 @@ if __name__ == "__main__":
     country_codes = ["E92000001", "W92000004"]
 
     # setup data
-    scout_data = ScoutData(load_ons_pd_data=True)  # ONS PD data needed for IMD deciles
+    scout_data = ScoutData()
     scout_data.filter_records("Year", [2020])
     scout_data.filter_records("X_name", countries)
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])

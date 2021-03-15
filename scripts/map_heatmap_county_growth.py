@@ -48,7 +48,7 @@ if __name__ == "__main__":
     years = [2019, 2020]
 
     # setup data
-    scout_data = ScoutData(load_ons_pd_data=True)  # ONS PD data needed for create_uptake_report age_profile pivot
+    scout_data = ScoutData()
     scout_data.filter_records("Year", years)
     scout_data.filter_records("X_name", country_names)
     # scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)

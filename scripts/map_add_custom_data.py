@@ -8,7 +8,7 @@ if __name__ == "__main__":
     la_code = "E08000035"  # Leeds LA code
     year = 2020
 
-    scout_data = ScoutData(load_ons_pd_data=True)  # ONS PD data needed for IMD deciles; add_custom_data(location_cols="Postcodes")
+    scout_data = ScoutData()
     scout_data.filter_records("Year", [year])
     scout_data.filter_records("oslaua", [la_code])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
