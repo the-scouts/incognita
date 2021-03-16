@@ -7,6 +7,7 @@ import pandas as pd
 import shapely.geometry
 
 from incognita.logger import logger
+from incognita.data.ons_pd import Boundary
 from incognita.utility import config
 from incognita.utility import root
 from incognita.utility import utility
@@ -28,76 +29,82 @@ class Geography:
     """
 
     def __init__(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
-        self.geography_metadata_dict = None
-        self.geography_region_ids_mapping = None
+        boundary, codes_map = self._load_boundary(geography_name, ons_pd)
 
-        self._set_boundary(geography_name, ons_pd)
+        self.geography_metadata_dict: Boundary = boundary
+        self.geography_region_ids_mapping: pd.DataFrame = codes_map
+
 
     @property
     def type(self) -> str:
-        return self.geography_metadata_dict.get("name")
+        return self.geography_metadata_dict.name
 
     @property
     def codes_map_key(self) -> str:
-        return self.geography_metadata_dict["codes"]["key"]
-
-    @property
-    def codes_map_key_type(self) -> str:
-        return self.geography_metadata_dict["codes"]["key_type"]
-
-    @property
-    def codes_map_path(self) -> Path:
-        return root.DATA_ROOT / self.geography_metadata_dict["codes"].get("path")
+        return self.geography_metadata_dict.codes.key
 
     @property
     def codes_map_name(self) -> str:
-        return self.geography_metadata_dict["codes"]["name"]
+        return self.geography_metadata_dict.codes.name
 
     @property
     def shapefile_key(self) -> str:
-        return self.geography_metadata_dict["shapefile"]["key"]
+        return self.geography_metadata_dict.shapefile.key
 
     @property
     def shapefile_name(self) -> str:
-        return self.geography_metadata_dict["shapefile"]["name"]
+        return self.geography_metadata_dict.shapefile.name
 
     @property
     def shapefile_path(self) -> Path:
         shapefiles_root = config.SETTINGS.folders.boundaries
-        return shapefiles_root / self.geography_metadata_dict["shapefile"]["path"]
+        return shapefiles_root / self.geography_metadata_dict.shapefile.path
 
     @property
     def age_profile_path(self) -> Path:
         age_profiles_root = config.SETTINGS.folders.national_statistical
-        return age_profiles_root / self.geography_metadata_dict["age_profile"].get("path")
+        return age_profiles_root / self.geography_metadata_dict.age_profile.path
 
     @property
     def age_profile_key(self) -> str:
-        return self.geography_metadata_dict["age_profile"].get("key")
+        return self.geography_metadata_dict.age_profile.key
 
     @property
     def age_profile_pivot(self) -> str:
-        return self.geography_metadata_dict["age_profile"].get("pivot_key")
+        return self.geography_metadata_dict.age_profile.pivot_key
 
-    def _set_boundary(self, geography_name: str, ons_pd: ONSPostcodeDirectory) -> None:
-        """Sets the geography_metadata_dict and geography_region_ids_mapping members
+    @staticmethod
+    def _load_boundary(geography_name: str, ons_pd: ONSPostcodeDirectory) -> tuple[Boundary, pd.DataFrame]:
+        """Loads metadata for a given geography type.
 
         Args:
-            geography_name: The type of boundary, e.g. lsoa11, pcon etc. Must be a key in ONSPostcodeDirectory.BOUNDARIES.
-            ons_pd: An ONS Postcode Directory object
+            geography_name:
+                The type of boundary, e.g. lsoa11, pcon etc. Must be a key in
+                ONSPostcodeDirectory.BOUNDARIES or in the custom-boundaries
+                table in incognita-config.toml
+            ons_pd:
+                A reference to an ONS Postcode Directory model instance
+
+        Returns:
+            boundary: incognita.data.ons_pd.Boundary object with geography metadata
+            codes_map: dataframe mapping boundary codes -> names
 
         """
         logger.info(f"Setting the boundary to {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
-        boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries.__dict__
-        if geography_name in boundaries_dict.keys():
-            self.geography_metadata_dict = boundaries_dict[geography_name]
+        boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries
+        if geography_name in boundaries_dict:
+            boundary = boundaries_dict[geography_name]
 
             # Names & Codes file path
-            self.geography_region_ids_mapping = pd.read_csv(self.codes_map_path, dtype={self.codes_map_key: self.codes_map_key_type, self.codes_map_name: "string"})
+            boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
+            codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
+            # TODO normalise codes_map to always have two columns - `codes` and `names`
         else:
-            raise Exception(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
+            raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
+
+        return boundary, codes_map
 
     def _get_ons_codes_from_scout_area(self, scout_data: ScoutData, ons_code: str, column: str, value_list: list) -> list:
         """Produces list of ONS Geographical codes that exist within a subset
