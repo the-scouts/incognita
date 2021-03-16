@@ -133,7 +133,7 @@ class Geography:
 
         self.filter_ons_boundaries(ons_boundary, set(ons_codes))
 
-    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3000) -> None:
+    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3_000) -> None:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 
@@ -144,21 +144,21 @@ class Geography:
             boundary: ONS boundary to filter on
             field: Scout boundary (e.g. C_ID)
             value_list: Values in the Scout boundary
-            distance: How far to extend the buffer by
+            distance: How far to extend the buffer by (meters)
 
         """
 
-        # Reduce columns in dataset to minimum requirements
-        reduced_points = scout_data.data[[field, boundary, "lat", "long"]]
-
         logger.info("Creates geometry")
-        data_with_points = gpd.GeoDataFrame(reduced_points, geometry=gpd.points_from_xy(reduced_points.long, reduced_points.lat))
-        data_with_points = data_with_points.drop(["lat", "long"], axis=1)
+        # Reduce columns in dataset to minimum requirements
+        data_with_points = gpd.GeoDataFrame(
+            scout_data.data[[field, boundary]],
+            geometry=gpd.points_from_xy(scout_data.data.long, scout_data.data.lat),
+            crs=utility.WGS_84,
+        )
 
         # Pivots the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        data_with_points.crs = f"epsg:{utility.WGS_84}"
-        data_with_points = data_with_points.to_crs(f"epsg:{utility.BNG}")
+        data_with_points = data_with_points.to_crs(epsg=utility.BNG)
         # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ordinates)
 
         logger.info(f"Filters for records that satisfy {field} in {value_list}")

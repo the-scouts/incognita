@@ -89,7 +89,7 @@ class ScoutData:
             all_shapes = gdf
         else:
             raise ValueError("A path to a shapefile or a GeoDataFrame must be passed")
-        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(utility.WGS_84)
+        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(epsg=utility.WGS_84)
 
         spatial_merged = gpd.sjoin(self.points_data, shapes, how="left", op="within").set_index("object_index")
         merged = self.data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)

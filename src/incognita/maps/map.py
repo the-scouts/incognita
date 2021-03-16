@@ -371,12 +371,11 @@ class Map:
             location_cols = {"crs": utility.WGS_84, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
-        custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]))
+        custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]), crs=location_cols["crs"])
 
         # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
         if location_cols["crs"] != utility.WGS_84:
-            custom_data.crs = f"epsg:{location_cols['crs']}"
-            custom_data = custom_data.to_crs(f"epsg:{utility.WGS_84}")
+            custom_data = custom_data.to_crs(epsg=utility.WGS_84)
 
         self.add_layer(layer_name, markers_clustered)
 
@@ -462,7 +461,7 @@ class Map:
         logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
-        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(f"epsg:{utility.WGS_84}")
+        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(epsg=utility.WGS_84)
         # logger.debug(f"geo_data\n{self.geo_data}")
 
         logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")

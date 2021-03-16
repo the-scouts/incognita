@@ -22,15 +22,14 @@ if __name__ == "__main__":
     # # a = geofeather.from_geofeather(utility.SETTINGS.ons_pd.minified) # 60-80s
     # ons_full = pd.read_feather(utility.SETTINGS.ons_pd.minified)
     # geo_column = gpd.points_from_xy(ons_full.long, ons_full.lat)
-    # reduced_data_with_geo = gpd.GeoDataFrame(ons_full, geometry=geo_column)
-    # reduced_data_with_geo.crs = utility.WGS_84
+    # reduced_data_with_geo = gpd.GeoDataFrame(ons_full, geometry=geo_column, crs=utility.WGS_84)
     # print(f"Loading ONS took: {time() - start:.3f}s")
     # start = time()
     # counties = gpd.GeoDataFrame.from_file(utility.SETTINGS.folders.boundaries / "Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC.shp")
     # counties = counties[['ctyua19cd', 'geometry']]
     # print(f"Loading shapefile took: {time() - start:.3f}s")
     # start = time()
-    # a = gpd.sjoin(reduced_data_with_geo.to_crs("epsg:27700"), counties, how="left",  op='within') # 793s - speed up!!
+    # a = gpd.sjoin(reduced_data_with_geo.to_crs(epsg=27700), counties, how="left",  op='within') # 793s - speed up!!
     # print(f"Spatial join: {time() - start:.3f}s")
     # c = a[['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'imd', 'imd_decile', 'ctyua19cd']].drop_duplicates()
     # c.to_feather(utility.SETTINGS.ons_pd.reduced.with_suffix(".feather"))
