@@ -8,14 +8,14 @@ if __name__ == "__main__":
     la_code = "E08000035"  # Leeds LA code
     year = 2020
 
-    scout_data = ScoutData(load_ons_pd_data=True)
+    scout_data = ScoutData()
     scout_data.filter_records("Year", [year])
     scout_data.filter_records("oslaua", [la_code])
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     # Generate boundary report
     reports = Reports("lsoa", scout_data)
-    reports.filter_boundaries("oslaua", [la_code])  # Leeds LA code
+    reports.filter_boundaries("oslaua", {la_code})  # Leeds LA code
     reports.create_boundary_report(["Section numbers"], report_name="leeds_sections")
 
     # Create map object
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     mapper.add_custom_data(
         config.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
         "Primary Schools",
-        location_cols="Postcode",
+        location_cols="Postcodes",
         marker_data=["EstablishmentName"],
     )
     mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"], single_section="Beavers")

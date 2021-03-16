@@ -14,7 +14,7 @@ if __name__ == "__main__":
     country_codes = ["E92000001", "W92000004"]
 
     # setup data
-    scout_data = ScoutData(load_ons_pd_data=True)
+    scout_data = ScoutData()
     scout_data.filter_records("Year", [2020])
     scout_data.filter_records("X_name", countries)
     scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
@@ -22,11 +22,11 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
 
     lsoa = Reports("lsoa", scout_data)
-    lsoa.filter_boundaries("ctry", country_codes)
+    lsoa.filter_boundaries("ctry", set(country_codes))
     lsoa.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="lsoa_ew")
 
     # iz = Reports("iz", scout_data)
-    # iz.filter_boundaries(field="ctry", value_list=["S92000003"])
+    # iz.filter_boundaries(field="ctry", value_list={"S92000003"})
     # iz.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="iz_all")
 
     # Create map object

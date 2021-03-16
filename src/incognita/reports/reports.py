@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 
@@ -9,12 +9,11 @@ from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
+from incognita.utility import config
 from incognita.utility import utility
 from incognita.utility.utility import time_function
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
@@ -23,28 +22,14 @@ class Reports:
     def data(self) -> pd.DataFrame:
         return self.boundary_report
 
-    @property
-    def shapefile_name(self) -> str:
-        return self.geography.shapefile_name
-
-    @property
-    def shapefile_key(self) -> str:
-        return self.geography.shapefile_key
-
-    @property
-    def shapefile_path(self) -> Path:
-        return self.geography.shapefile_path
-
-    @property
-    def geography_type(self) -> str:
-        return self.geography.type
-
-    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd_object: ONSPostcodeDirectory = None):
-        self.ons_pd = scout_data_object.ons_pd if ons_pd_object is None else ons_pd_object  # Only needed for BOUNDARIES dict
+    def __init__(self, geography_name: str, scout_data_object: ScoutData):
+        self.ons_pd: ONSPostcodeDirectory = scout_data_object.ons_pd  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name, self.ons_pd)
 
         self.boundary_report = None
+
+        self.ons_pd_data: Optional[pd.DataFrame] = None
 
     SECTION_AGES = {
         "Beavers": {"ages": ["6", "7"]},
@@ -60,21 +45,22 @@ class Reports:
         # self.scout_data = copy.copy(self.scout_data)
         # self.scout_data.data = self.scout_data.data.copy()
 
-        self.scout_data.add_shape_data(self.shapefile_key, path=self.shapefile_path)
-        self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography_type})
+        shapefile_key = self.geography.metadata.shapefile.key
+        self.scout_data.add_shape_data(shapefile_key, path=self.geography.metadata.shapefile.path)
+        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography.metadata.name})
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
+    def filter_boundaries(self, field: str, value_list: set, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
 
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
-            self.geography.filter_boundaries_regions_data(field, value_list, self.ons_pd)
+            self.geography.filter_ons_boundaries(field, value_list)
         elif field in self.scout_data.columns:
             # Chose which filter to use for scout areas
             if near:
                 self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
             else:
-                self.geography.filter_boundaries_by_scout_area(self.scout_data, self.ons_pd, boundary, field, value_list)
+                self.geography.filter_boundaries_by_scout_area(self.scout_data, boundary, field, value_list)
         else:
             raise ValueError(f"Field value {field} not valid. Valid values are {[*self.ons_pd.fields, *self.scout_data.columns]}")
 
@@ -83,7 +69,6 @@ class Reports:
 
         Args:
             ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
-            ons_code:
 
         """
 
@@ -92,7 +77,7 @@ class Reports:
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
 
-        region_ids = self.geography.geography_region_ids_mapping[self.geography.codes_map_key].dropna().drop_duplicates()
+        region_ids = self.geography.region_ids_mapping[self.geography.metadata.codes.key].dropna().drop_duplicates()
 
         district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
@@ -145,7 +130,7 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
         # fmt: on
 
-        geog_name = self.geography_type  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography.metadata.name  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
@@ -260,7 +245,7 @@ class Reports:
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
-            geog_names = [self.ons_pd.BOUNDARIES[boundary]["name"] for boundary in self.ons_pd.BOUNDARIES]
+            geog_names = {self.ons_pd.BOUNDARIES[boundary].name for boundary in self.ons_pd.BOUNDARIES}
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
@@ -278,19 +263,23 @@ class Reports:
             awards_table[f"%-{sections_dict['Beavers']['top_award']}"] = top_award.clip(upper=max_value)
             dataframes.append(awards_table)
 
-        renamed_cols_dict = {self.geography.codes_map_name: "Name", self.geography.codes_map_key: geog_name}
+        renamed_cols_dict = {self.geography.metadata.codes.name: "Name", self.geography.metadata.codes.key: geog_name}
 
         # areas_data holds area names and codes for each area
         # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = self.geography.geography_region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
+        areas_data: pd.DataFrame = self.geography.region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
 
         # TODO find a way to keep DUMMY geography coding
         merged_dataframes = pd.concat(dataframes, axis=1)
         output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
 
         if geog_name == "lsoa11":
+            logger.debug(f"Loading ONS postcode data.")
+            if self.ons_pd_data is None:
+                self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
+
             logger.debug(f"Adding IMD deciles")
-            output_data = output_data.merge(self.ons_pd.data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
+            output_data = output_data.merge(self.ons_pd_data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
 
         self.boundary_report = output_data
 
@@ -313,10 +302,10 @@ class Reports:
             Uptake data of Scouts in the boundary
 
         """
-        geog_name = self.geography_type
+        geog_name = self.geography.metadata.name
         try:
-            age_profile_path = self.geography.age_profile_path
-            age_profile_key = self.geography.age_profile_key
+            age_profile_path = config.SETTINGS.folders.national_statistical / self.geography.metadata.age_profile.path
+            age_profile_key = self.geography.metadata.age_profile.key
         except KeyError:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 
@@ -344,10 +333,13 @@ class Reports:
         reduced_age_profile_pd = age_profile_pd[cols]
 
         # Pivot age profile to current geography type if needed
-        if self.geography.age_profile_pivot and self.geography.age_profile_pivot != geog_name:
-            pivot_key = self.geography.age_profile_pivot
+        pivot_key = self.geography.metadata.age_profile.pivot_key
+        if pivot_key and pivot_key != geog_name:
+            logger.debug(f"Loading ONS postcode data.")
+            if self.ons_pd_data is None:
+                self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
 
-            ons_data_subset = self.ons_pd.data[[geog_name, pivot_key]]
+            ons_data_subset = self.ons_pd_data[[geog_name, pivot_key]]
             merged_age_profile = reduced_age_profile_pd.merge(ons_data_subset, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
             merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_name])
             pivoted_age_profile = merged_age_profile_no_na.groupby(geog_name).sum().astype("UInt32")

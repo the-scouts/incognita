@@ -8,6 +8,10 @@ import pydantic
 import pydantic.validators
 import toml
 
+from incognita.data.ons_pd import Boundary
+from incognita.data.ons_pd import BoundaryAgeProfile
+from incognita.data.ons_pd import BoundaryCodes
+from incognita.data.ons_pd import BoundaryShapeFile
 from incognita.utility import root
 
 if TYPE_CHECKING:
@@ -55,32 +59,32 @@ class ONSPostcodeDirectoryPaths(pydantic.BaseModel):
 
 
 class FolderPaths(pydantic.BaseModel):
-    ons_pd_names_codes: ProjectDirectoryPath
-    national_statistical: ProjectDirectoryPath
-    boundaries: ProjectDirectoryPath
-    output: ProjectDirectoryPath
+    ons_pd_names_codes: ProjectDirectoryPath  # Folder within the ONS Postcode Directory archive holding names and codes files
+    national_statistical: ProjectDirectoryPath  # Folder for national statistical data (age profiles etc)
+    boundaries: ProjectDirectoryPath  # Folder with all shapefiles
+    output: ProjectDirectoryPath  # Folder for generated files
 
 
-class CustomBoundaryCodes(pydantic.BaseModel):
+class CustomBoundaryCodes(BoundaryCodes):
     path: Optional[Path] = None
     key: Optional[str] = None
     key_type: Optional[str] = None  # TODO literal dtypes
     name: Optional[str] = None
 
 
-class CustomBoundaryShapeFile(pydantic.BaseModel):
+class CustomBoundaryShapeFile(BoundaryShapeFile):
     path: Optional[Path] = None
     key: Optional[str] = None
     name: Optional[str] = None
 
 
-class CustomBoundaryAgeProfile(pydantic.BaseModel):
+class CustomBoundaryAgeProfile(BoundaryAgeProfile):
     path: Optional[Path] = None
     key: Optional[str] = None
     pivot_key: Optional[str] = None
 
 
-class CustomBoundary(pydantic.BaseModel):
+class CustomBoundary(Boundary):
     name: str
     codes: CustomBoundaryCodes = CustomBoundaryCodes()
     shapefile: CustomBoundaryShapeFile = CustomBoundaryShapeFile()
@@ -94,5 +98,15 @@ class ConfigModel(pydantic.BaseModel):
     custom_boundaries: dict[str, CustomBoundary]
 
 
+def _create_settings(toml_string: dict) -> ConfigModel:
+    settings = ConfigModel(**toml_string)
+
+    for boundary in settings.custom_boundaries.values():
+        if boundary.shapefile.path is not None:
+            boundary.shapefile.path = settings.folders.boundaries / boundary.shapefile.path
+
+    return ConfigModel(**settings.__dict__)
+
+
 _SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())
-SETTINGS = ConfigModel(**_SETTINGS_TOML)
+SETTINGS = _create_settings(_SETTINGS_TOML)

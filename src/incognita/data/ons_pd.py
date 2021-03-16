@@ -1,48 +1,53 @@
 import os
+from pathlib import Path
+from typing import Optional, Union
 
-import pandas as pd
+import pydantic
 
-from incognita.data.scout_census import ScoutCensus
-from incognita.logger import logger
+PathLike = Union[Path, str]
+
+# class DeprivationMaximums(pydantic.BaseModel):
+#     england: int
+#     wales: int
+#     scotland: int
+#     northern_ireland: int
 
 
-class ONSPostcodeDirectory:
-    """Used for holding and accessing ONS Postcode Directory data
+class BoundaryCodes(pydantic.BaseModel):
+    path: PathLike
+    key: str
+    key_type: str
+    name: str
 
-    Args:
-        ons_pd_csv_path: path to the ONS Postcode Directory csv file
-        load_data: whether to load data from the file
-        index_column: column to use as the index. Must contain unique values
-        fields: columns to read from the csv file
-        data_types: pandas datatypes for the columns to load
 
-    Attributes:
-        PUBLICATION_DATE: Date of publication of the ONS Postcode Directory data
-        IMD_MAX: Highest ranked Lower Level Super Output Area (or equivalent) in each country
-        COUNTRY_CODES: ONS Postcode Directory codes for each country
+class BoundaryShapeFile(pydantic.BaseModel):
+    path: PathLike
+    key: str
+    name: Optional[str]
 
-    """
 
-    PUBLICATION_DATE = None
-    IMD_MAX = {"England": None, "Wales": None, "Scotland": None, "Northern Ireland": None}
-    COUNTRY_CODES = {}
-    BOUNDARIES = {}  # TODO convert to model
+class BoundaryAgeProfile(pydantic.BaseModel):
+    path: PathLike
+    key: str
+    pivot_key: Optional[str] = None
 
-    def __init__(self, ons_pd_csv_path: os.PathLike, load_data: bool = True, index_column: str = None, fields: bool = None, data_types: dict = None):
-        # TODO: Eventually deprecate this, column filtering should happen elsewhere (setup_ons_pd, mainly)
-        def cols_lambda(col):
-            return col in fields if fields else True
 
-        if load_data:
-            logger.debug(f"Loading ONS data from {ons_pd_csv_path} with the following data:\n{fields}")
+class Boundary(pydantic.BaseModel):
+    name: str  # Column name in the ONS postcode directory file
+    codes: BoundaryCodes
+    shapefile: Optional[BoundaryShapeFile] = None
+    age_profile: Optional[BoundaryAgeProfile] = None
 
-            # Handle index column possibly not existing (if the full ONS PD is loaded then the index column will exist, if using the reduced ONS PD it won't so use automatic index)
-            try:
-                self.data = pd.read_csv(ons_pd_csv_path, index_col=index_column, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
-            except ValueError:
-                logger.debug(f"Loading ONS data with given index colum ({index_column}) failed, trying with pandas-generated index")
-                self.data = pd.read_csv(ons_pd_csv_path, index_col=None, usecols=cols_lambda, dtype=data_types, encoding="utf-8")
 
-            for field in data_types:
-                if data_types[field] == "category":
-                    self.data[field] = self.data[field].cat.add_categories([ScoutCensus.DEFAULT_VALUE])
+class ONSPostcodeDirectory(pydantic.BaseModel):
+    """Used for holding and accessing ONS Postcode Directory data."""
+
+    fields: list[str]  # columns to read from the full csv file
+    index_column: str  # column to use as the index when merging. Must contain unique values
+    data_types: dict[str, str]  # pandas data types for the columns to load
+
+    PUBLICATION_DATE: str  # ONS Postcode Directory Publication date
+    # IMD_MAX: DeprivationMaximums  # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017
+    IMD_MAX: dict[str, int]  # Highest ranked Lower Level Super Output Area (or equivalent) in each country
+    COUNTRY_CODES: dict[str, str]  # ONS Postcode Directory codes for each country
+    BOUNDARIES: dict[str, Boundary]  # Dictionary holding dictionaries with information for each type of boundary

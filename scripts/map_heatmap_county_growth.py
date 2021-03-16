@@ -22,15 +22,14 @@ if __name__ == "__main__":
     # # a = geofeather.from_geofeather(utility.SETTINGS.ons_pd.minified) # 60-80s
     # ons_full = pd.read_feather(utility.SETTINGS.ons_pd.minified)
     # geo_column = gpd.points_from_xy(ons_full.long, ons_full.lat)
-    # reduced_data_with_geo = gpd.GeoDataFrame(ons_full, geometry=geo_column)
-    # reduced_data_with_geo.crs = utility.WGS_84
+    # reduced_data_with_geo = gpd.GeoDataFrame(ons_full, geometry=geo_column, crs=utility.WGS_84)
     # print(f"Loading ONS took: {time() - start:.3f}s")
     # start = time()
     # counties = gpd.GeoDataFrame.from_file(utility.SETTINGS.folders.boundaries / "Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK_BUC.shp")
     # counties = counties[['ctyua19cd', 'geometry']]
     # print(f"Loading shapefile took: {time() - start:.3f}s")
     # start = time()
-    # a = gpd.sjoin(reduced_data_with_geo.to_crs("epsg:27700"), counties, how="left",  op='within') # 793s - speed up!!
+    # a = gpd.sjoin(reduced_data_with_geo.to_crs(epsg=27700), counties, how="left",  op='within') # 793s - speed up!!
     # print(f"Spatial join: {time() - start:.3f}s")
     # c = a[['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'imd', 'imd_decile', 'ctyua19cd']].drop_duplicates()
     # c.to_feather(utility.SETTINGS.ons_pd.reduced.with_suffix(".feather"))
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     years = [2019, 2020]
 
     # setup data
-    scout_data = ScoutData(load_ons_pd_data=True)
+    scout_data = ScoutData()
     scout_data.filter_records("Year", years)
     scout_data.filter_records("X_name", country_names)
     # scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
@@ -64,7 +63,7 @@ if __name__ == "__main__":
     ]
 
     # lad_reports = Reports("lad", scout_data)
-    # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
+    # lad_reports.filter_boundaries("X_name", set(country_names), "oslaua")
     # lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):
     #     j = i * 2
@@ -73,11 +72,9 @@ if __name__ == "__main__":
     # lad_reports.data[f"Sections_change"] = (lad_reports.data[['Colonys-2020', 'Packs-2020', 'Troops-2020', 'Units-2020']].sum(axis=1) / lad_reports.data[['Colonys-2019', 'Packs-2019', 'Troops-2019', 'Units-2019']].sum(axis=1) - 1) * 100
 
     cty_reports = Reports("County", scout_data)
-    cty_reports.ons_pd.fields.append(cty_reports.geography_type)
-    cty_reports.filter_boundaries("ctry", ["W92000004"])
-    cty_reports.geography.geography_region_ids_mapping = cty_reports.geography.geography_region_ids_mapping[
-        cty_reports.geography.geography_region_ids_mapping["ctyua19cd"].str.startswith("W")
-    ]
+    cty_reports.ons_pd.fields.append(cty_reports.geography.metadata.name)
+    cty_reports.filter_boundaries("ctry", {"W92000004"})
+    cty_reports.geography.region_ids_mapping = cty_reports.geography.region_ids_mapping[cty_reports.geography.region_ids_mapping["ctyua19cd"].str.startswith("W")]
     cty_reports.add_shapefile_data()
     cty_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - Counties")
     cty_reports.create_uptake_report(report_name=f"{location_name} - Counties (uptake)")

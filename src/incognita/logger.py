@@ -24,7 +24,7 @@ def set_up_logger(file_path: Path = None, log_level: int = logging.DEBUG) -> log
     import sys
 
     # Create formatter
-    formatter = logging.Formatter(fmt="{filename} - {levelname} - {message}", style="{")
+    formatter = logging.Formatter(fmt="{asctime}.{msecs:03.0f} ({levelname}): {message}", datefmt="%Y-%m-%d %H:%M:%S", style="{")
 
     # set up a log to file
     if file_path is not None:

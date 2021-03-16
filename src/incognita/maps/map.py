@@ -365,17 +365,17 @@ class Map:
 
         if location_cols == "Postcodes":
             # Merge with ONS Postcode Directory to obtain dataframe with lat/long
-            ons_pd_data = self.scout_data.ons_pd.data
+            logger.debug(f"Loading ONS postcode data.")
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
             custom_data = pd.merge(custom_data, ons_pd_data, how="left", left_on=location_cols, right_index=True, sort=False)
             location_cols = {"crs": utility.WGS_84, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
-        custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]))
+        custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]), crs=location_cols["crs"])
 
         # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
         if location_cols["crs"] != utility.WGS_84:
-            custom_data.crs = f"epsg:{location_cols['crs']}"
-            custom_data = custom_data.to_crs(f"epsg:{utility.WGS_84}")
+            custom_data = custom_data.to_crs(epsg=utility.WGS_84)
 
         self.add_layer(layer_name, markers_clustered)
 
@@ -441,13 +441,13 @@ class Map:
 
         """
         self.map_data = reports.data
-        self.boundary_name = reports.shapefile_name
-        self.code_name = reports.shapefile_key
-        self.CODE_COL = reports.geography_type
+        self.boundary_name = reports.geography.metadata.shapefile.name
+        self.code_name = reports.geography.metadata.shapefile.key
+        self.CODE_COL = reports.geography.metadata.name
         # map_data, CODE_COL and code_name all must be set before loading shape file
 
-        # Read a shape file. reports.shapefile_path is the path to ESRI shapefile with region information
-        all_shapes = gpd.GeoDataFrame.from_file(reports.shapefile_path)  # NoQA
+        # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
+        all_shapes = gpd.GeoDataFrame.from_file(reports.geography.metadata.shapefile.path)
 
         if self.code_name not in all_shapes.columns:
             raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
@@ -461,7 +461,7 @@ class Map:
         logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
-        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(f"epsg:{utility.WGS_84}")
+        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(epsg=utility.WGS_84)
         # logger.debug(f"geo_data\n{self.geo_data}")
 
         logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
