@@ -163,19 +163,19 @@ class Geography:
 
         logger.info(f"Filters for records that satisfy {field} in {value_list}")
         filtered_points = data_with_points.loc[data_with_points[field].isin(value_list)]
-        logger.info(f"Resulting in {len(reduced_points.index)} number of Sections")
+        logger.debug(f"Resulting in {len(filtered_points.index)} number of Sections")
 
         logger.info(f"Creating area of interest")
         # Finds the outer boundary of all selected scout units and extends by `distance` in all directions to
         # incorporate nearby regions
         in_area = shapely.geometry.MultiPoint(filtered_points["geometry"].to_list()).convex_hull.buffer(distance)
-        logger.info(f"Is result valid {in_area.geom_type}? {in_area.is_valid}. Area is {in_area.area}")
+        in_area2 = filtered_points.geometry.convex_hull().buffer(distance)  # TODO timings
+        logger.debug(f"Is result valid {in_area.geom_type}? {in_area.is_valid}. Area is {in_area.area}")
 
         logger.info(f"Finding Sections in buffered area of interest")
 
-        nearby_values = data_with_points[data_with_points.geometry.within(in_area)][boundary]
+        nearby_values = data_with_points.loc[data_with_points.geometry.within(in_area), boundary].drop_duplicates().to_list()
         logger.info(f"Found {len(nearby_values)} Sections nearby")
-        nearby_values = nearby_values.drop_duplicates().to_list()
-        logger.info(f"Found {nearby_values}")
+        logger.debug(f"Found {nearby_values}")
 
-        self.filter_ons_boundaries(boundary, nearby_values)
+        self.filter_ons_boundaries(boundary, set(nearby_values))
