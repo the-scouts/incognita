@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import pydantic
 
-PathLike = Union[Path, os.PathLike[str], str]
+PathLike = Union[Path, str]
 
 # class DeprivationMaximums(pydantic.BaseModel):
 #     england: int

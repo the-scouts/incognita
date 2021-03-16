@@ -44,7 +44,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="LAD19NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="Local_Authority_Districts__December_2019__Boundaries_UK_BUC/Local_Authority_Districts__December_2019__Boundaries_UK_BUC.shp",
+                path=config.SETTINGS.folders.boundaries / "Local_Authority_Districts__December_2019__Boundaries_UK_BUC/Local_Authority_Districts__December_2019__Boundaries_UK_BUC.shp",
                 key="lad19cd",
                 name="lad19nm",
             ),
@@ -63,7 +63,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="LAD19NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
+                path=config.SETTINGS.folders.boundaries / "Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp",
                 key="ctyua17cd",
                 name="ctyua17nm",
             ),
@@ -78,7 +78,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="WD19NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp",
+                path=config.SETTINGS.folders.boundaries / "Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp",
                 key="WD19CD",
                 name="WD19NM",
             ),
@@ -97,7 +97,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="PCON14NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
+                path=config.SETTINGS.folders.boundaries / "Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp",
                 key="pcon17cd",
                 name="pcon17nm",
             ),
@@ -116,7 +116,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="LSOA11NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC/Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
+                path=config.SETTINGS.folders.boundaries / "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC/Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC.shp",
                 key="LSOA11CD",
                 name="LSOA11NM",
             ),
@@ -131,7 +131,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="MSOA11NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
+                path=config.SETTINGS.folders.boundaries / "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp",
                 key="msoa11cd",
                 name=None,
             ),
@@ -146,7 +146,7 @@ ons_postcode_directory_may_19 = ONSPostcodeDirectory(
                 name="MSOA11NM",
             ),
             shapefile=BoundaryShapeFile(
-                path="SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp",
+                path=config.SETTINGS.folders.boundaries / "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp",
                 key="InterZone",
                 name=None,
             ),

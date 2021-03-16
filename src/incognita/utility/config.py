@@ -98,5 +98,15 @@ class ConfigModel(pydantic.BaseModel):
     custom_boundaries: dict[str, CustomBoundary]
 
 
+def _create_settings(toml_string: dict) -> ConfigModel:
+    settings = ConfigModel(**toml_string)
+
+    for boundary in settings.custom_boundaries.values():
+        if boundary.shapefile.path is not None:
+            boundary.shapefile.path = settings.folders.boundaries / boundary.shapefile.path
+
+    return ConfigModel(**settings.__dict__)
+
+
 _SETTINGS_TOML = toml.loads((root.PROJECT_ROOT / "incognita-config.toml").read_text())
-SETTINGS = ConfigModel(**_SETTINGS_TOML)
+SETTINGS = _create_settings(_SETTINGS_TOML)
