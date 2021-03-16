@@ -447,8 +447,8 @@ class Map:
         self.CODE_COL = reports.geography.metadata.name
         # map_data, CODE_COL and code_name all must be set before loading shape file
 
-        # Read a shape file. reports.shapefile_path is the path to ESRI shapefile with region information
-        all_shapes = gpd.GeoDataFrame.from_file(reports.shapefile_path)  # NoQA
+        # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
+        all_shapes = gpd.GeoDataFrame.from_file(reports.geography.metadata.shapefile.path)
 
         if self.code_name not in all_shapes.columns:
             raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")

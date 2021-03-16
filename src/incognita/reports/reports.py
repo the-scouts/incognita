@@ -14,8 +14,6 @@ from incognita.utility import utility
 from incognita.utility.utility import time_function
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
@@ -24,16 +22,8 @@ class Reports:
     def data(self) -> pd.DataFrame:
         return self.boundary_report
 
-    @property
-    def shapefile_key(self) -> str:
-        return self.geography.metadata.shapefile.key
-
-    @property
-    def shapefile_path(self) -> Path:
-        return config.SETTINGS.folders.boundaries / self.geography.metadata.shapefile.path
-
-    def __init__(self, geography_name: str, scout_data_object: ScoutData, ons_pd: ONSPostcodeDirectory = None):
-        self.ons_pd: ONSPostcodeDirectory = scout_data_object.ons_pd if ons_pd is None else ons_pd  # Only needed for BOUNDARIES dict
+    def __init__(self, geography_name: str, scout_data_object: ScoutData):
+        self.ons_pd: ONSPostcodeDirectory = scout_data_object.ons_pd  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data_object  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name, self.ons_pd)
 
@@ -55,8 +45,9 @@ class Reports:
         # self.scout_data = copy.copy(self.scout_data)
         # self.scout_data.data = self.scout_data.data.copy()
 
-        self.scout_data.add_shape_data(self.shapefile_key, path=self.shapefile_path)
-        self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography.metadata.name})
+        shapefile_key = self.geography.metadata.shapefile.key
+        self.scout_data.add_shape_data(shapefile_key, path=self.geography.metadata.shapefile.path)
+        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography.metadata.name})
 
     @time_function
     def filter_boundaries(self, field: str, value_list: set, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
