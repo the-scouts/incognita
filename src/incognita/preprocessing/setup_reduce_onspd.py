@@ -39,7 +39,7 @@ if __name__ == "__main__":
     reduced_data_with_geo = gpd.GeoDataFrame(
         reduced_data_with_coords,
         geometry=gpd.points_from_xy(reduced_data_with_coords.long, reduced_data_with_coords.lat),
-        crs=utility.WGS_84
+        crs=utility.WGS_84,
     ).drop(columns=["lat", "long"])
     del reduced_data_with_coords
     reduced_data_with_geo.to_feather(config.SETTINGS.ons_pd.minified)

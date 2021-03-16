@@ -42,7 +42,7 @@ class ONSPostcodeDirectory(pydantic.BaseModel):
 
     fields: list[str]  # columns to read from the full csv file
     index_column: str  # column to use as the index when merging. Must contain unique values
-    data_types:  dict[str, str]  # pandas data types for the columns to load
+    data_types: dict[str, str]  # pandas data types for the columns to load
 
     PUBLICATION_DATE: str  # ONS Postcode Directory Publication date
     # IMD_MAX: DeprivationMaximums  # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017

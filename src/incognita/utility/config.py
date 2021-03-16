@@ -59,10 +59,10 @@ class ONSPostcodeDirectoryPaths(pydantic.BaseModel):
 
 
 class FolderPaths(pydantic.BaseModel):
-    ons_pd_names_codes: ProjectDirectoryPath
-    national_statistical: ProjectDirectoryPath
-    boundaries: ProjectDirectoryPath
-    output: ProjectDirectoryPath
+    ons_pd_names_codes: ProjectDirectoryPath  # Folder within the ONS Postcode Directory archive holding names and codes files
+    national_statistical: ProjectDirectoryPath  # Folder for national statistical data (age profiles etc)
+    boundaries: ProjectDirectoryPath  # Folder with all shapefiles
+    output: ProjectDirectoryPath  # Folder for generated files
 
 
 class CustomBoundaryCodes(BoundaryCodes):
