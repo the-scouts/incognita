@@ -37,7 +37,7 @@ class ScoutData:
         logger.info("Loading Scout Census data")
         # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
         # We assume no custom path has been passed, but allow for one to be used
-        census_path = config.SETTINGS.census_extract.merged if not census_path else census_path
+        census_path = config.SETTINGS.census_extract.merged if census_path is None else census_path
         self.scout_census: ScoutCensus = ScoutCensus(census_path, load_data=load_census_data)
         self.data: pd.DataFrame = self.scout_census.data
         self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
@@ -47,9 +47,8 @@ class ScoutData:
             logger.info("Loading ONS data")
             start_time = time.time()
 
-            has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
-
-            if has_ons_pd_data:
+            # Check if the data has been merged with the ONS postcode directory
+            if ScoutCensus.column_labels["VALID_POSTCODE"] in self.data.columns:
                 self.ons_pd = ons_postcode_directory_may_19
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
