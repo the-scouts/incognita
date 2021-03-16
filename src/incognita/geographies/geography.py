@@ -34,44 +34,6 @@ class Geography:
         self.metadata: Boundary = boundary
         self.region_ids_mapping: pd.DataFrame = codes_map
 
-    @property
-    def name(self) -> str:
-        return self.metadata.name
-
-    @property
-    def codes_map_key(self) -> str:
-        return self.metadata.codes.key
-
-    @property
-    def codes_map_name(self) -> str:
-        return self.metadata.codes.name
-
-    @property
-    def shapefile_key(self) -> str:
-        return self.metadata.shapefile.key
-
-    @property
-    def shapefile_name(self) -> str:
-        return self.metadata.shapefile.name
-
-    @property
-    def shapefile_path(self) -> Path:
-        shapefiles_root = config.SETTINGS.folders.boundaries
-        return shapefiles_root / self.metadata.shapefile.path
-
-    @property
-    def age_profile_path(self) -> Path:
-        age_profiles_root = config.SETTINGS.folders.national_statistical
-        return age_profiles_root / self.metadata.age_profile.path
-
-    @property
-    def age_profile_key(self) -> str:
-        return self.metadata.age_profile.key
-
-    @property
-    def age_profile_pivot(self) -> str:
-        return self.metadata.age_profile.pivot_key
-
     @staticmethod
     def _load_boundary(geography_name: str, ons_pd: ONSPostcodeDirectory) -> tuple[Boundary, pd.DataFrame]:
         """Loads metadata for a given geography type.
@@ -164,7 +126,7 @@ class Geography:
         logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
-        geog_region_ids_in_boundary_subset = self.region_ids_mapping[self.codes_map_key].isin(boundary_subset)
+        geog_region_ids_in_boundary_subset = self.region_ids_mapping[self.metadata.codes.key].isin(boundary_subset)
         self.region_ids_mapping = self.region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
         logger.info(f"Resulting in {len(self.region_ids_mapping)} {self.name} boundaries")
 
