@@ -9,9 +9,9 @@ if __name__ == "__main__":
     year = 2020
 
     scout_data = ScoutData()
-    scout_data.filter_records("Year", [year])
-    scout_data.filter_records("oslaua", [la_code])
-    scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
+    scout_data.filter_records("Year", {year})
+    scout_data.filter_records("oslaua", {la_code})
+    scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
     # Generate boundary report
     reports = Reports("lsoa", scout_data)

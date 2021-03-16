@@ -40,19 +40,19 @@ if __name__ == "__main__":
     # TODO show uptake across UK
     # TODO include G/J/IoM
 
-    country_names = [
+    country_names = {
         "Wales",
-    ]
+    }
     location_name = "Wales"
-    years = [2019, 2020]
+    years = {2019, 2020}
 
     # setup data
     scout_data = ScoutData()
     scout_data.filter_records("Year", years)
     scout_data.filter_records("X_name", country_names)
-    # scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
-    scout_data.filter_records("type", ["Colony", "Pack", "Troop", "Unit"])
-    scout_data.filter_records("postcode_is_valid", [1], exclusion_analysis=True)
+    # scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
+    scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})
+    scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
     offset = 5
     opts = [
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     ]
 
     # lad_reports = Reports("lad", scout_data)
-    # lad_reports.filter_boundaries("X_name", set(country_names), "oslaua")
+    # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
     # lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):
     #     j = i * 2

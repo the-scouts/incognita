@@ -15,10 +15,10 @@ if __name__ == "__main__":
     year = 2020
 
     scout_data = ScoutData()
-    # scout_data.filter_records("postcode_is_valid", [1])
-    scout_data.filter_records("Year", [year])
+    # scout_data.filter_records("postcode_is_valid", {1})
+    scout_data.filter_records("Year", {year})
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
-    scout_data.filter_records("C_name", ["Bailiwick of Guernsey", "Isle of Man", "Jersey"], mask=True)
+    scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
 
     # Generate boundary report
     reports = Reports("lad", scout_data)

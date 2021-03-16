@@ -58,7 +58,7 @@ def time_function(method: Callable) -> Callable:
     return wrapper
 
 
-def filter_records(data: pd.DataFrame, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
+def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
     """Filters the Census records by any field in ONS PD.
 
     Args:

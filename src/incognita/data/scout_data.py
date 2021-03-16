@@ -55,7 +55,7 @@ class ScoutData:
 
             logger.info(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data finished, {time.time() - start_time:.2f} seconds elapsed.")
 
-    def filter_records(self, field: str, value_list: list, mask: bool = False, exclusion_analysis: bool = False) -> None:
+    def filter_records(self, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
 
         Args:

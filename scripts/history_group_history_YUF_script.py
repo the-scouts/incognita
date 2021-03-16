@@ -9,7 +9,7 @@ if __name__ == "__main__":
     group_ids = groups["G_ID"].drop_duplicates().dropna().to_list()
 
     scout_data = ScoutData()
-    scout_data.filter_records("G_ID", [group_ids])
+    scout_data.filter_records("G_ID", {group_ids})
 
     years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
     history_summary = HistorySummary(scout_data)

@@ -404,7 +404,7 @@ class Map:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    def set_region_of_colour(self, column: str, value_list: list) -> None:
+    def set_region_of_colour(self, column: str, value_list: set) -> None:
         self._region_of_colour = {"column": column, "value_list": value_list}
 
     def generic_colour_mapping(self, grouping_column: str) -> dict:
