@@ -1,5 +1,6 @@
 import geopandas as gpd
 import pandas as pd
+import pygeos.constructive
 import shapely.geometry
 import shapely.ops
 
@@ -91,6 +92,7 @@ class DistrictBoundaries:
                 # Unifies the polygons created from each point in the District
                 # into one polygon for the District.
                 district_polygon = shapely.ops.unary_union(buffered_points)
+                district_polygon2 = buffered_points.unary_union()
 
                 data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon])
                 output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
@@ -190,6 +192,7 @@ class DistrictBoundaries:
 
         other_data = all_points.loc[all_points["D_ID"] != row["D_ID"]]
         other_points = shapely.geometry.MultiPoint(other_data["geometry"].tolist())
+        other_points2 = pygeos.constructive.extract_unique_points(other_data.geometry)
 
         nearest_points = shapely.ops.nearest_points(point, other_points)
         nearest_other_point = nearest_points[1]  # [0] refers to self
