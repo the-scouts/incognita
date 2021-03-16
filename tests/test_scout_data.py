@@ -11,7 +11,7 @@ import pytest
 
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
-from incognita.utility.utility import WGS_84
+from incognita.utility import utility
 
 COLUMN_NAME = "ctry"
 
@@ -30,7 +30,7 @@ def scout_data_factory():
 
 @pytest.fixture(scope="module")
 def blank_geo_data_frame() -> gpd.GeoDataFrame:
-    return gpd.GeoDataFrame(columns=("id",), geometry=gpd.points_from_xy(x=(0,), y=(0,)), crs=WGS_84)
+    return gpd.GeoDataFrame(columns=("id",), geometry=gpd.points_from_xy(x=(0,), y=(0,)), crs=utility.WGS_84)
 
 
 CountryDataFrame = data_frames(
@@ -94,7 +94,7 @@ def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame: gp
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
 
-    points_data = gpd.points_from_xy(data.long, data.lat, crs=WGS_84)
+    points_data = gpd.points_from_xy(data.long, data.lat, crs=utility.WGS_84)
     assert points_data.equals(sd.points_data.geometry.array)
 
 
@@ -104,7 +104,7 @@ def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame: gpd.GeoD
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
 
-    points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat))
+    points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat), crs=utility.WGS_84)
     joined = gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")
     merged = data.merge(joined[["id"]], how="left", left_index=True, right_index=True)
     assert sd.data.equals(merged)
