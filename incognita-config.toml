@@ -9,9 +9,13 @@ minified = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK-minified-old.feather"
 reduced_nystest = "data/ons_pd_with_nys2.csv"
 
 [folders]
+# Folder within the ONS Postcode Directory archive holding names and codes files
 ons_pd_names_codes = "data/ONSPD_MAY_2019_UK/Documents/"
+# Folder for national statistical data (age profiles etc)
 national_statistical = "data/National Statistical data/"
+# Folder with all shapefiles
 boundaries = "data/Boundary shape files/"
+# Folder for generated files
 output = "Output/"
 
 [custom_boundaries."District"]
