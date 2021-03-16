@@ -60,7 +60,7 @@ class Reports:
         # self.scout_data.data = self.scout_data.data.copy()
 
         self.scout_data.add_shape_data(self.shapefile_key, path=self.shapefile_path)
-        self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography.type})
+        self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography.name})
 
     @time_function
     def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
@@ -91,7 +91,7 @@ class Reports:
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
 
-        region_ids = self.geography.geography_region_ids_mapping[self.geography.codes_map_key].dropna().drop_duplicates()
+        region_ids = self.geography.region_ids_mapping[self.geography.codes_map_key].dropna().drop_duplicates()
 
         district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
@@ -144,7 +144,7 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
         # fmt: on
 
-        geog_name = self.geography.type  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography.name  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
@@ -281,7 +281,7 @@ class Reports:
 
         # areas_data holds area names and codes for each area
         # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = self.geography.geography_region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
+        areas_data: pd.DataFrame = self.geography.region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
 
         # TODO find a way to keep DUMMY geography coding
         merged_dataframes = pd.concat(dataframes, axis=1)
@@ -316,7 +316,7 @@ class Reports:
             Uptake data of Scouts in the boundary
 
         """
-        geog_name = self.geography.type
+        geog_name = self.geography.name
         try:
             age_profile_path = self.geography.age_profile_path
             age_profile_key = self.geography.age_profile_key

@@ -24,54 +24,53 @@ class Geography:
     used and methods for selecting and excluding regions.
 
     Attributes:
-        geography_metadata_dict: information about the boundary type
-        geography_region_ids_mapping: table of region codes and human-readable names for those codes
+        metadata: information about the boundary type
+        region_ids_mapping: table of region codes and human-readable names for those codes
     """
 
     def __init__(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
         boundary, codes_map = self._load_boundary(geography_name, ons_pd)
 
-        self.geography_metadata_dict: Boundary = boundary
-        self.geography_region_ids_mapping: pd.DataFrame = codes_map
-
+        self.metadata: Boundary = boundary
+        self.region_ids_mapping: pd.DataFrame = codes_map
 
     @property
-    def type(self) -> str:
-        return self.geography_metadata_dict.name
+    def name(self) -> str:
+        return self.metadata.name
 
     @property
     def codes_map_key(self) -> str:
-        return self.geography_metadata_dict.codes.key
+        return self.metadata.codes.key
 
     @property
     def codes_map_name(self) -> str:
-        return self.geography_metadata_dict.codes.name
+        return self.metadata.codes.name
 
     @property
     def shapefile_key(self) -> str:
-        return self.geography_metadata_dict.shapefile.key
+        return self.metadata.shapefile.key
 
     @property
     def shapefile_name(self) -> str:
-        return self.geography_metadata_dict.shapefile.name
+        return self.metadata.shapefile.name
 
     @property
     def shapefile_path(self) -> Path:
         shapefiles_root = config.SETTINGS.folders.boundaries
-        return shapefiles_root / self.geography_metadata_dict.shapefile.path
+        return shapefiles_root / self.metadata.shapefile.path
 
     @property
     def age_profile_path(self) -> Path:
         age_profiles_root = config.SETTINGS.folders.national_statistical
-        return age_profiles_root / self.geography_metadata_dict.age_profile.path
+        return age_profiles_root / self.metadata.age_profile.path
 
     @property
     def age_profile_key(self) -> str:
-        return self.geography_metadata_dict.age_profile.key
+        return self.metadata.age_profile.key
 
     @property
     def age_profile_pivot(self) -> str:
-        return self.geography_metadata_dict.age_profile.pivot_key
+        return self.metadata.age_profile.pivot_key
 
     @staticmethod
     def _load_boundary(geography_name: str, ons_pd: ONSPostcodeDirectory) -> tuple[Boundary, pd.DataFrame]:
@@ -134,7 +133,7 @@ class Geography:
         return ons_codes
 
     def filter_boundaries_regions_data(self, field: str, value_list: list) -> None:
-        """Filters the geography_region_ids_mapping table by if the area code is within both value_list and the census_data table.
+        """Filters the region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
         Requires _set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
@@ -149,28 +148,25 @@ class Geography:
 
         """
 
-        boundary_subset = None
-        name = self.type
-
         # Transforms codes from values_list in column 'field' to codes for the current geography
         # 'field' is the start geography and 'name' is the target geography
         # Returns a list
-        logger.info(f"Filtering {len(self.geography_region_ids_mapping)} {name} boundaries by {field} being in {value_list}")
+        logger.info(f"Filtering {len(self.region_ids_mapping)} {self.name} boundaries by {field} being in {value_list}")
         logger.debug(f"Loading ONS postcode data.")
         ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
             ons_records_in_value_list = ons_pd_data[field].isin(value_list)
-            boundary_subset = ons_pd_data.loc[ons_records_in_value_list, name].drop_duplicates().to_list()
+            boundary_subset = ons_pd_data.loc[ons_records_in_value_list, self.name].drop_duplicates().to_list()
         except KeyError:
-            msg = f"{name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
+            msg = f"{self.name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
             logger.error(msg)
             raise KeyError(msg) from None
-        logger.debug(f"This corresponds to {len(boundary_subset)} {name} boundaries")
+        logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
-        geog_region_ids_in_boundary_subset = self.geography_region_ids_mapping[self.codes_map_key].isin(boundary_subset)
-        self.geography_region_ids_mapping = self.geography_region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
-        logger.info(f"Resulting in {len(self.geography_region_ids_mapping)} {name} boundaries")
+        geog_region_ids_in_boundary_subset = self.region_ids_mapping[self.codes_map_key].isin(boundary_subset)
+        self.region_ids_mapping = self.region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
+        logger.info(f"Resulting in {len(self.region_ids_mapping)} {self.name} boundaries")
 
     def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_pd: ONSPostcodeDirectory, boundary: str, column: str, value_list: list) -> None:
         """Filters the boundaries, to include only those boundaries which have
