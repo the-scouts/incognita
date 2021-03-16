@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from incognita.preprocessing.census_merge_data import CensusMergeData
-from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
@@ -28,7 +28,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
 
     Args:
         data: Census data
-        ons_pd: Refers to the ONS Postcode Directory
+        ons_pd: A reference to an ONS Postcode Directory model instance
 
     """
     ons_fields_data_types = {
@@ -128,11 +128,8 @@ if __name__ == "__main__":
     # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
     scout_data.data[column_labels["name"]["ITEM"]] = scout_data.data[column_labels["name"]["ITEM"]].str.replace("`", "")
 
-    # load ONS postcode directory
-    ons_pd = ONSPostcodeDirectoryMay19()
-
     # merge the census extract and ONS postcode directory, and save the data to file
-    data = merge_ons_postcode_directory(scout_data.data, ons_pd)
-    save_merged_data(data, ons_pd.PUBLICATION_DATE)
+    data = merge_ons_postcode_directory(scout_data.data, ons_postcode_directory_may_19)
+    save_merged_data(data, ons_postcode_directory_may_19.PUBLICATION_DATE)
 
     scout_data.close()

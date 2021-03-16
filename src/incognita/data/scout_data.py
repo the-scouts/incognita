@@ -6,7 +6,7 @@ import time
 import geopandas as gpd
 import pandas as pd
 
-from incognita.data.ons_pd_may_19 import ONSPostcodeDirectoryMay19
+from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.data.scout_census import ScoutCensus
 from incognita.logger import logger
 from incognita.utility import config
@@ -50,7 +50,7 @@ class ScoutData:
             has_ons_pd_data = ScoutCensus.column_labels["VALID_POSTCODE"] in list(self.data.columns.values)
 
             if has_ons_pd_data:
-                self.ons_pd = ONSPostcodeDirectoryMay19()
+                self.ons_pd = ons_postcode_directory_may_19
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {ScoutCensus.column_labels['VALID_POSTCODE']} column")
 
