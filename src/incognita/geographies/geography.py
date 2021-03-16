@@ -67,7 +67,7 @@ class Geography:
 
         return boundary, codes_map
 
-    def _get_ons_codes_from_scout_area(self, scout_data: ScoutData, ons_code: str, column: str, value_list: list) -> list:
+    def _get_ons_codes_from_scout_area(self, scout_data: ScoutData, ons_code: str, column: str, value_list: set) -> set:
         """Produces list of ONS Geographical codes that exist within a subset
         of the Scout Census data.
 
@@ -92,12 +92,11 @@ class Geography:
         ons_codes = records[records != scout_data.DEFAULT_VALUE].to_list()
         logger.debug(f"Found {len(ons_codes)} clean {ons_code}s that match {column} in {value_list}")
 
-        return ons_codes
+        return set(ons_codes)
 
-    def filter_boundaries_regions_data(self, field: str, value_list: list) -> None:
+    def filter_ons_boundaries(self, field: str, value_list: set) -> None:
         """Filters the region_ids_mapping table by if the area code is within both value_list and the census_data table.
 
-        Requires _set_boundary to have been called.
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.
 
@@ -113,24 +112,23 @@ class Geography:
         # Transforms codes from values_list in column 'field' to codes for the current geography
         # 'field' is the start geography and 'name' is the target geography
         # Returns a list
-        logger.info(f"Filtering {len(self.region_ids_mapping)} {self.name} boundaries by {field} being in {value_list}")
+        logger.info(f"Filtering {len(self.region_ids_mapping)} {self.metadata.name} boundaries by {field} being in {value_list}")
         logger.debug(f"Loading ONS postcode data.")
         ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
-            ons_records_in_value_list = ons_pd_data[field].isin(value_list)
-            boundary_subset = ons_pd_data.loc[ons_records_in_value_list, self.name].drop_duplicates().to_list()
+            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.metadata.name].drop_duplicates().to_list()
         except KeyError:
-            msg = f"{self.name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
+            msg = f"{self.metadata.name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
             logger.error(msg)
             raise KeyError(msg) from None
-        logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
+        logger.debug(f"This corresponds to {len(boundary_subset)} {self.metadata.name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
         geog_region_ids_in_boundary_subset = self.region_ids_mapping[self.metadata.codes.key].isin(boundary_subset)
         self.region_ids_mapping = self.region_ids_mapping.loc[geog_region_ids_in_boundary_subset]
-        logger.info(f"Resulting in {len(self.region_ids_mapping)} {self.name} boundaries")
+        logger.info(f"Resulting in {len(self.region_ids_mapping)} {self.metadata.name} boundaries")
 
-    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_pd: ONSPostcodeDirectory, boundary: str, column: str, value_list: list) -> None:
+    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, boundary: str, column: str, value_list: set) -> None:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -139,13 +137,13 @@ class Geography:
             ons_pd:
             boundary: ONS boundary to filter on
             column: Scout boundary (e.g. C_ID)
-            value_list: List of values in the Scout boundary
+            value_list: Values in the Scout boundary
 
         """
-        ons_value_list = self._get_ons_codes_from_scout_area(scout_data, boundary, column, value_list)
-        self.filter_boundaries_regions_data(boundary, ons_value_list)
+        ons_values = self._get_ons_codes_from_scout_area(scout_data, boundary, column, value_list)
+        self.filter_ons_boundaries(boundary, ons_values)
 
-    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: list, distance: int = 3000) -> None:
+    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3000) -> None:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 
@@ -155,7 +153,7 @@ class Geography:
             scout_data: ScoutData object with data to operate on
             boundary: ONS boundary to filter on
             field: Scout boundary (e.g. C_ID)
-            value_list: List of values in the Scout boundary
+            value_list: Values in the Scout boundary
             distance: How far to extend the buffer by
 
         """
@@ -190,4 +188,4 @@ class Geography:
         nearby_values = nearby_values.drop_duplicates().to_list()
         logger.info(f"Found {nearby_values}")
 
-        self.filter_boundaries_regions_data(boundary, nearby_values)
+        self.filter_ons_boundaries(boundary, nearby_values)

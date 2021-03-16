@@ -64,7 +64,7 @@ if __name__ == "__main__":
     ]
 
     # lad_reports = Reports("lad", scout_data)
-    # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
+    # lad_reports.filter_boundaries("X_name", set(country_names), "oslaua")
     # lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):
     #     j = i * 2
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
     cty_reports = Reports("County", scout_data)
     cty_reports.ons_pd.fields.append(cty_reports.geography.metadata.name)
-    cty_reports.filter_boundaries("ctry", ["W92000004"])
+    cty_reports.filter_boundaries("ctry", {"W92000004"})
     cty_reports.geography.region_ids_mapping = cty_reports.geography.region_ids_mapping[
         cty_reports.geography.region_ids_mapping["ctyua19cd"].str.startswith("W")
     ]

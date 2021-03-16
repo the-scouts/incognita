@@ -59,17 +59,17 @@ class Reports:
         self.scout_data.data = self.scout_data.data.rename(columns={self.shapefile_key: self.geography.metadata.name})
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: list, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
+    def filter_boundaries(self, field: str, value_list: set, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
 
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
-            self.geography.filter_boundaries_regions_data(field, value_list)
+            self.geography.filter_ons_boundaries(field, value_list)
         elif field in self.scout_data.columns:
             # Chose which filter to use for scout areas
             if near:
                 self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
             else:
-                self.geography.filter_boundaries_by_scout_area(self.scout_data, self.ons_pd, boundary, field, value_list)
+                self.geography.filter_boundaries_by_scout_area(self.scout_data, boundary, field, value_list)
         else:
             raise ValueError(f"Field value {field} not valid. Valid values are {[*self.ons_pd.fields, *self.scout_data.columns]}")
 
@@ -78,7 +78,6 @@ class Reports:
 
         Args:
             ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
-            ons_code:
 
         """
 
@@ -255,7 +254,7 @@ class Reports:
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
-            geog_names = [self.ons_pd.BOUNDARIES[boundary]["name"] for boundary in self.ons_pd.BOUNDARIES]
+            geog_names = {self.ons_pd.BOUNDARIES[boundary].name for boundary in self.ons_pd.BOUNDARIES}
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
