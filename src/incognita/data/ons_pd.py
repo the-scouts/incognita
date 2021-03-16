@@ -1,8 +1,10 @@
+import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import pydantic
 
+PathLike = Union[Path, os.PathLike[str], str]
 
 # class DeprivationMaximums(pydantic.BaseModel):
 #     england: int
@@ -12,20 +14,20 @@ import pydantic
 
 
 class BoundaryCodes(pydantic.BaseModel):
-    path: Optional[Path]
-    key: Optional[str]
-    key_type: Optional[str]
-    name: Optional[str]
-
-
-class BoundaryShapeFile(pydantic.BaseModel):
-    path: Path
+    path: PathLike
     key: str
+    key_type: str
     name: str
 
 
+class BoundaryShapeFile(pydantic.BaseModel):
+    path: PathLike
+    key: str
+    name: Optional[str]
+
+
 class BoundaryAgeProfile(pydantic.BaseModel):
-    path: Path
+    path: PathLike
     key: str
     pivot_key: Optional[str] = None
 

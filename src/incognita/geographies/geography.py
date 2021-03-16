@@ -55,16 +55,16 @@ class Geography:
 
     @property
     def shapefile_key(self) -> str:
-        return self.geography_metadata_dict["boundary"]["key"]
+        return self.geography_metadata_dict["shapefile"]["key"]
 
     @property
     def shapefile_name(self) -> str:
-        return self.geography_metadata_dict["boundary"]["name"]
+        return self.geography_metadata_dict["shapefile"]["name"]
 
     @property
     def shapefile_path(self) -> Path:
         shapefiles_root = config.SETTINGS.folders.boundaries
-        return shapefiles_root / self.geography_metadata_dict["boundary"]["shapefile"]
+        return shapefiles_root / self.geography_metadata_dict["shapefile"]["path"]
 
     @property
     def age_profile_path(self) -> Path:
