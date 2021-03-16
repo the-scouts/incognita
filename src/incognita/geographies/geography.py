@@ -6,8 +6,8 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
-from incognita.logger import logger
 from incognita.data.ons_pd import Boundary
+from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import root
 from incognita.utility import utility

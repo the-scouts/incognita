@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from incognita.preprocessing.census_merge_data import CensusMergeData
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
+from incognita.preprocessing.census_merge_data import CensusMergeData
 from incognita.utility import config
 from incognita.utility import utility
 
