@@ -1,8 +1,8 @@
 import logging
 from numbers import Real
-from pathlib import Path
 
 import pandas as pd
+from pandas.testing import assert_series_equal
 import pytest
 import toml
 
@@ -13,12 +13,15 @@ from incognita.utility import root
 from incognita.utility import utility
 from incognita.utility.utility import time_function
 
-
-class ONSPostcodeDirectoryStub(ons_pd.ONSPostcodeDirectory):
-    def __init__(self):
-        super().__init__(load_data=False, ons_pd_csv_path=Path(""))
-        self.IMD_MAX = {"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890}
-        self.COUNTRY_CODES = {"E92000001": "England", "W92000004": "Wales", "S92000003": "Scotland", "N92000002": "Northern Ireland"}
+ons_postcode_directory_stub = ons_pd.ONSPostcodeDirectory(
+    fields=[],
+    index_column="",
+    data_types={},
+    PUBLICATION_DATE="",
+    IMD_MAX={"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890},
+    COUNTRY_CODES={"E92000001": "England", "W92000004": "Wales", "S92000003": "Scotland", "N92000002": "Northern Ireland"},
+    BOUNDARIES={},
+)
 
 
 def add(number1: Real, number2: Real) -> Real:
@@ -29,11 +32,11 @@ def test_calc_imd_decile():
     data = {"row_1": [1, "E92000001", 32844], "row_2": [2, "W92000004", 1]}
     frame = pd.DataFrame.from_dict(data, orient="index", columns=["id", "ctry", "imd"])
 
-    imd_decile_data: pd.Series = utility.calc_imd_decile(frame["imd"], frame["ctry"], ONSPostcodeDirectoryStub())
-    predicted_result = pd.Series(data=[10, 1], index=["row_1", "row_2"], name="imd_decile")
+    imd_decile_data: pd.Series = utility.calc_imd_decile(frame["imd"], frame["ctry"], ons_postcode_directory_stub)
+    predicted_result = pd.Series(data=[10, 1], index=["row_1", "row_2"])
 
     assert isinstance(imd_decile_data, pd.Series)
-    assert imd_decile_data.equals(predicted_result)
+    assert_series_equal(imd_decile_data, predicted_result, check_dtype=False)
 
 
 def test_settings_are_accurate():
@@ -47,7 +50,7 @@ def test_settings_model_is_accurate():
     with open(root.PROJECT_ROOT.joinpath("incognita-config.toml"), "r") as read_file:
         settings = toml.load(read_file)
 
-    assert config.SETTINGS == config.ConfigModel(**settings)
+    assert config.SETTINGS == config._create_settings(settings)
 
 
 class ExampleClassLogger:
