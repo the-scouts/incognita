@@ -37,20 +37,20 @@ class Map:
 
     """
 
-    def __init__(self, scout_data_object: ScoutData, map_name: str):
+    def __init__(self, scout_data: ScoutData, map_name: str):
         """Initialise Map class.
 
         Args:
-            scout_data_object: ScoutData object with data
+            scout_data: ScoutData object with data
             map_name: Filename for the saved map
 
         """
         # Can be set by set_region_of_colour
         self._region_of_colour = None
 
-        self.scout_data = scout_data_object
+        self.scout_data = scout_data
 
-        self.out_file = config.SETTINGS.folders.output.joinpath(map_name).with_suffix(".html")
+        self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
         # Create folium map
         self.map: folium.Map = folium.Map(
@@ -305,7 +305,7 @@ class Map:
             self.add_marker(lat, long, popup, marker_colour, layer["name"])
 
     def add_sections_to_map(
-        self, scout_data_object: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
+        self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
     ) -> None:
         """Filter sections and add to map.
 
@@ -317,7 +317,7 @@ class Map:
         that have returned in the latest year of the dataset.
 
         Args:
-            scout_data_object:
+            scout_data:
             colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
             marker_data: List of strings which determines content for popup, including:
                 - youth membership
@@ -327,7 +327,7 @@ class Map:
             cluster_markers: Should we cluster the markers?
 
         """
-        data: pd.DataFrame = scout_data_object.data
+        data: pd.DataFrame = scout_data.data
         unit_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
 
         if single_section:
@@ -447,7 +447,7 @@ class Map:
         # map_data, CODE_COL and code_name all must be set before loading shape file
 
         # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
-        all_shapes = gpd.GeoDataFrame.from_file(reports.geography.metadata.shapefile.path)
+        all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
 
         if self.code_name not in all_shapes.columns:
             raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")

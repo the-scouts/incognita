@@ -22,9 +22,9 @@ class Reports:
     def data(self) -> pd.DataFrame:
         return self.boundary_report
 
-    def __init__(self, geography_name: str, scout_data_object: ScoutData):
-        self.ons_pd: ONSPostcodeDirectory = scout_data_object.ons_pd  # Only needed for BOUNDARIES dict
-        self.scout_data = scout_data_object  # only uses are for self.scout_data.data
+    def __init__(self, geography_name: str, scout_data: ScoutData):
+        self.ons_pd: ONSPostcodeDirectory = scout_data.ons_pd  # Only needed for BOUNDARIES dict
+        self.scout_data = scout_data  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name, self.ons_pd)
 
         self.boundary_report = None

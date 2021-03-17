@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class HistorySummary:
-    def __init__(self, scout_data_object: ScoutData):
-        self.scout_data = scout_data_object
+    def __init__(self, scout_data: ScoutData):
+        self.scout_data = scout_data
 
     def group_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
         logger.info("Beginning group_history_summary")

@@ -11,9 +11,9 @@ from incognita.utility import utility
 
 
 class DistrictBoundaries:
-    def __init__(self, scout_data_object: ScoutData):
-        self.scout_data: ScoutData = scout_data_object
-        self.ons_pd = scout_data_object.ons_pd
+    def __init__(self, scout_data: ScoutData):
+        self.scout_data: ScoutData = scout_data
+        self.ons_pd = scout_data.ons_pd
 
     def create_district_boundaries(self) -> None:
         """Creates a GeoJSON file for the District Boundaries of the Scout Census.
