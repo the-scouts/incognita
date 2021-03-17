@@ -77,7 +77,7 @@ class Reports:
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
 
-        region_ids = self.geography.region_ids_mapping[self.geography.metadata.codes.key].dropna().drop_duplicates()
+        region_ids = self.geography.boundary_codes[self.geography.metadata.codes.key].dropna().drop_duplicates()
 
         district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
@@ -267,7 +267,7 @@ class Reports:
 
         # areas_data holds area names and codes for each area
         # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = self.geography.region_ids_mapping.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
+        areas_data: pd.DataFrame = self.geography.boundary_codes.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
 
         # TODO find a way to keep DUMMY geography coding
         merged_dataframes = pd.concat(dataframes, axis=1)

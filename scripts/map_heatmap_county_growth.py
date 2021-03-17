@@ -74,7 +74,7 @@ if __name__ == "__main__":
     cty_reports = Reports("County", scout_data)
     cty_reports.ons_pd.fields.append(cty_reports.geography.metadata.name)
     cty_reports.filter_boundaries("ctry", {"W92000004"})
-    cty_reports.geography.region_ids_mapping = cty_reports.geography.region_ids_mapping[cty_reports.geography.region_ids_mapping["ctyua19cd"].str.startswith("W")]
+    cty_reports.geography.boundary_codes = cty_reports.geography.boundary_codes[cty_reports.geography.boundary_codes["ctyua19cd"].str.startswith("W")]
     cty_reports.add_shapefile_data()
     cty_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - Counties")
     cty_reports.create_uptake_report(report_name=f"{location_name} - Counties (uptake)")

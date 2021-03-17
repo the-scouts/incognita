@@ -25,7 +25,7 @@ class Geography:
 
     Attributes:
         metadata: Information about the boundary type
-        region_ids_mapping: Table of region codes and human-readable names for those codes
+        boundary_codes: Table of region codes and human-readable names for those codes
         name: Human readable ('nice') name for the geography
     """
 
@@ -33,7 +33,7 @@ class Geography:
         boundary, codes_map = self._load_boundary(geography_name, ons_pd)
 
         self.metadata: Boundary = boundary
-        self.region_ids_mapping: pd.DataFrame = codes_map
+        self.boundary_codes: pd.DataFrame = codes_map
         self.name: str = boundary.name  # human readable name
 
     @staticmethod
@@ -70,7 +70,7 @@ class Geography:
         return boundary, codes_map
 
     def filter_ons_boundaries(self, field: str, value_list: set) -> pd.DataFrame:
-        """Filters the region_ids_mapping table by if the area code is within both value_list and the census_data table.
+        """Filters the boundary_codes table by if the area code is within both value_list and the census_data table.
 
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.
@@ -80,14 +80,14 @@ class Geography:
             value_list: The values on which to filter
 
         Returns:
-             Filtered self.region_ids_mapping
+             Filtered self.boundary_codes
 
         """
 
         # Transforms codes from values_list in column 'field' to codes for the current geography
         # 'field' is the start geography and 'metadata.name' is the target geography
         # Returns a list
-        logger.info(f"Filtering {len(self.region_ids_mapping)} {self.name} boundaries by {field} being in {value_list}")
+        logger.info(f"Filtering {len(self.boundary_codes)} {self.name} boundaries by {field} being in {value_list}")
         logger.debug(f"Loading ONS postcode data.")
         ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
@@ -99,10 +99,10 @@ class Geography:
         logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
-        self.region_ids_mapping = self.region_ids_mapping.loc[self.region_ids_mapping[self.metadata.codes.key].isin(set(boundary_subset))]
-        logger.info(f"Resulting in {len(self.region_ids_mapping)} {self.name} boundaries")
+        self.boundary_codes = self.boundary_codes.loc[self.boundary_codes[self.metadata.codes.key].isin(set(boundary_subset))]
+        logger.info(f"Resulting in {len(self.boundary_codes)} {self.name} boundaries")
 
-        return self.region_ids_mapping
+        return self.boundary_codes
 
     def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_boundary: str, column: str, value_list: set) -> None:
         """Filters the boundaries, to include only those boundaries which have
