@@ -14,7 +14,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
     # Generate boundary report
-    reports = Reports("lsoa", scout_data)
+    reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("oslaua", {la_code})  # Leeds LA code
     reports.create_boundary_report(["Section numbers"], report_name="leeds_sections")
 

@@ -21,11 +21,11 @@ if __name__ == "__main__":
     scout_data.filter_records("ctry", country_codes)
     scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
-    lsoa = Reports("lsoa", scout_data)
+    lsoa = Reports("LSOA", scout_data)
     lsoa.filter_boundaries("ctry", country_codes)
     lsoa.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="lsoa_ew")
 
-    # iz = Reports("iz", scout_data)
+    # iz = Reports("Intermediate Zone", scout_data)
     # iz.filter_boundaries(field="ctry", value_list={"S92000003"})
     # iz.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="iz_all")
 

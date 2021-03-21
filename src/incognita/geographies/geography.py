@@ -55,16 +55,14 @@ class Geography:
 
         # Combine the ONS and Scout boundaries directories
         boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries
-        if geography_name in boundaries_dict:
-            boundary = boundaries_dict[geography_name]
-
-            # Names & Codes file path
-            boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
-            codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
-            codes_map.columns = codes_map.columns.map({boundary.codes.key: "codes", boundary.codes.name: "names"})
-        else:
+        if geography_name not in boundaries_dict:
             raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
+        boundary = boundaries_dict[geography_name]
 
+        # Names & Codes file path
+        boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
+        codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
+        codes_map.columns = codes_map.columns.map({boundary.codes.key: "codes", boundary.codes.name: "names"})
         return boundary, codes_map
 
     def filter_ons_boundaries(self, field: str, value_list: set) -> pd.DataFrame:

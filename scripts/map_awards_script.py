@@ -21,7 +21,7 @@ if __name__ == "__main__":
     scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
 
     # Generate boundary report
-    reports = Reports("lad", scout_data)
+    reports = Reports("Local Authority", scout_data)
     reports.create_boundary_report(["awards"], report_name="laua_awards_report")
 
     # Create map object

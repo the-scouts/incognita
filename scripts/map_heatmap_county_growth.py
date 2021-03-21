@@ -62,7 +62,7 @@ if __name__ == "__main__":
         "Number of Sections",
     ]
 
-    # lad_reports = Reports("lad", scout_data)
+    # lad_reports = Reports("Local Authority", scout_data)
     # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
     # lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):

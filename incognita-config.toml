@@ -18,7 +18,7 @@ boundaries = "data/Boundary shape files/"
 # Folder for generated files
 output = "Output/"
 
-[ons2019."lad"]
+[ons2019."Local Authority"]
 name = "oslaua"  # Local Authority Districts
 
 codes.path = "LA_UA names and codes UK as at 12_19.csv"
@@ -33,7 +33,7 @@ shapefile.name = "lad19nm"
 age_profile.path = "lad_by_age.csv"
 age_profile.key = "Code"
 
-[ons2019."cty"]
+[ons2019."County (LA)"]
 name = "oslaua"  # Counties
 
 codes.path = "LA_UA names and codes UK as at 12_19.csv"
@@ -45,7 +45,7 @@ shapefile.path = "Counties_and_Unitary_Authorities_December_2017_Generalised_Cli
 shapefile.key = "ctyua17cd"
 shapefile.name = "ctyua17nm"
 
-[ons2019."osward"]
+[ons2019."Ward"]
 name = "osward"  # Council Wards
 
 codes.path = "Ward names and codes UK as at 05_19_NSPD.csv"
@@ -60,7 +60,7 @@ shapefile.name = "WD19NM"
 age_profile.path = "osward_by_age_mid_2018_population_may_2019_wards.csv"
 age_profile.key = "Ward Code"
 
-[ons2019."pcon"]
+[ons2019."Constituency"]
 name = "pcon"  # Parliamentary Constituencies
 
 codes.path = "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv"
@@ -75,7 +75,7 @@ shapefile.name = "pcon17nm"
 age_profile.path = "pcon_by_age.csv"
 age_profile.key = "PCON11CD"
 
-[ons2019."lsoa"]
+[ons2019."LSOA"]
 name = "lsoa11"  # Lower Level Super Output Areas
 
 codes.path = "LSOA (2011) names and codes UK as at 12_12.csv"
@@ -87,7 +87,7 @@ shapefile.path = "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC
 shapefile.key = "LSOA11CD"
 shapefile.name = "LSOA11NM"
 
-[ons2019."msoa"]
+[ons2019."MSOA"]
 name = "msoa11"  # Middle Layer Super Output Areas
 
 codes.path = "MSOA (2011) names and codes UK as at 12_12.csv"
@@ -99,7 +99,7 @@ shapefile.path = "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Bou
 shapefile.key = "msoa11cd"
 shapefile.name = None
 
-[ons2019."iz"]
+[ons2019."Intermediate Zone"]
 name = "msoa11"  # Intermediate Zones (codepages identical to MSOA but different shapefiles)
 
 codes.path = "MSOA (2011) names and codes UK as at 12_12.csv"
@@ -111,7 +111,7 @@ shapefile.path = "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp
 shapefile.key = "InterZone"
 shapefile.name = None
 
-[custom_boundaries."District"]
+[custom_boundaries."Scout District"]
 name = "D_ID"
 
 codes.path = "data/Scout Census Data/district_id_mapping.csv"
@@ -123,7 +123,7 @@ shapefile.path = "../../scripts/districts_buffered.geojson"
 shapefile.key = "id"
 shapefile.name = "name"
 
-[custom_boundaries."imd_decile"]
+[custom_boundaries."IMD Decile"]
 name = "imd_decile"
 
 codes.path = "data/Scout Census Data/imd_names_and_codes.csv"
@@ -131,7 +131,7 @@ codes.key = "IMD Decile"
 codes.key_type = "Int32"
 codes.name = "Name"
 
-[custom_boundaries."NYS"]
+[custom_boundaries."District (NYS)"]
 name = "nys_districts"
 
 codes.path = "data/Scout Census Data/North_Yorkshire_Districts.csv"

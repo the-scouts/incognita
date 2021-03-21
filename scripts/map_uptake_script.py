@@ -23,30 +23,30 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
     # # % 6-17 pcon uptake from Jan-2020 Scout Census with May 2019 ONS
-    # pcon_reports = Reports("pcon", scout_data)
+    # pcon_reports = Reports("Constituency", scout_data)
     # pcon_reports.filter_boundaries("C_name", {county_name}, "pcon")
     # pcon_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - westminster constituencies")
     # pcon_reports.create_uptake_report(report_name=f"{county_name} - westminster constituencies (uptake)")
     #
     # # 6-17 IMD from Jan-2020 Scout Census with May 2019 ONS
-    # imd_reports = Reports("lsoa", scout_data)
+    # imd_reports = Reports("LSOA", scout_data)
     # imd_reports.filter_boundaries("C_name", {county_name}, "pcon")
     # imd_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - IMD")
     #
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
-    # # lad_reports = Reports("lad", scout_data)
+    # # lad_reports = Reports("Local Authority", scout_data)
     # # lad_reports.filter_boundaries("C_name", {county_name}, "pcon")
     # # lad_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - local authorities")
     # # lad_reports.create_uptake_report(report_name=f"{county_name} - local authorities (uptake)")
     #
     # # % 6-17 Wards uptake from Jan-2020 Scout Census with May 2019 ONS
-    # wards_reports = Reports("osward", scout_data)
+    # wards_reports = Reports("Ward", scout_data)
     # wards_reports.filter_boundaries("C_name", {county_name}, "oslaua")
     # wards_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - wards")
     # wards_reports.create_uptake_report(report_name=f"{county_name} - wards (uptake)")
 
     # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
-    nys_reports = Reports("NYS", scout_data)
+    nys_reports = Reports("District (NYS)", scout_data)
     nys_reports.filter_boundaries("C_name", {county_name}, "oslaua")
     nys_reports.add_shapefile_data()
     nys_reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name=f"{county_name} - nys")
