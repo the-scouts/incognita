@@ -13,8 +13,6 @@ from incognita.utility import root
 from incognita.utility import utility
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from incognita.data.ons_pd import ONSPostcodeDirectory
     from incognita.data.scout_data import ScoutData
 
@@ -63,7 +61,8 @@ class Geography:
             # Names & Codes file path
             boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
             codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
-            # TODO normalise codes_map to always have two columns - `codes` and `names`
+            normalised_cols = {boundary.codes.key: "codes", boundary.codes.name: "names"}
+            codes_map.columns = [normalised_cols[col] for col in codes_map.columns]
         else:
             raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 
