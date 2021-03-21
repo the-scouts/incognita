@@ -15,7 +15,7 @@ PathLike = Union[Path, str]
 class BoundaryCodes(pydantic.BaseModel):
     path: PathLike
     key: str
-    key_type: str
+    key_type: str  # TODO literal dtypes
     name: str
 
 
