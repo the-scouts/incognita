@@ -77,7 +77,7 @@ class Reports:
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
 
-        region_ids = self.geography.boundary_codes[self.geography.metadata.codes.key].dropna().drop_duplicates()
+        region_ids = self.geography.boundary_codes["codes"].dropna().drop_duplicates()
 
         district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
@@ -263,15 +263,9 @@ class Reports:
             awards_table[f"%-{sections_dict['Beavers']['top_award']}"] = top_award.clip(upper=max_value)
             dataframes.append(awards_table)
 
-        renamed_cols_dict = {self.geography.metadata.codes.name: "Name", self.geography.metadata.codes.key: geog_name}
-
-        # areas_data holds area names and codes for each area
-        # Area names column is Name and area codes column is the geography type
-        areas_data: pd.DataFrame = self.geography.boundary_codes.copy().rename(columns=renamed_cols_dict).reset_index(drop=True)
-
         # TODO find a way to keep DUMMY geography coding
-        merged_dataframes = pd.concat(dataframes, axis=1)
-        output_data = areas_data.merge(merged_dataframes, how="left", left_on=geog_name, right_index=True, sort=False)
+        output_data: pd.DataFrame = self.geography.boundary_codes.reset_index(drop=True).copy()
+        output_data = output_data.merge(pd.concat(dataframes, axis=1), how="left", left_on="codes", right_index=True, sort=False)
 
         if geog_name == "lsoa11":
             logger.debug(f"Loading ONS postcode data.")
@@ -279,12 +273,12 @@ class Reports:
                 self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
 
             logger.debug(f"Adding IMD deciles")
-            output_data = output_data.merge(self.ons_pd_data[["lsoa11", "imd_decile"]], how="left", on="lsoa11")
+            output_data = output_data.merge(self.ons_pd_data[["lsoa11", "imd_decile"]], how="left", left_on="codes", right_on="lsoa11")
 
         self.boundary_report = output_data
 
         if report_name:
-            self._save_report(output_data, report_name)
+            utility.save_report(output_data, report_name)
 
         return output_data
 
@@ -347,9 +341,9 @@ class Reports:
             # Check we did not accidentally expand the population!
             # assert merged_age_profile["Pop_All"].sum() == reduced_age_profile_pd["Pop_All"].sum()  # this will fail
             assert pivoted_age_profile["Pop_All"].sum() == merged_age_profile_no_na["Pop_All"].sum()
-            uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on=geog_name, right_index=True, sort=False)
+            uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on="codes", right_index=True, sort=False)
         else:
-            uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on=geog_name, right_on=age_profile_key, sort=False)
+            uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
@@ -369,10 +363,7 @@ class Reports:
         # TODO check edge cases - 0 population and 0 or more scouts
 
         if report_name:
-            self._save_report(uptake_report, report_name)
+            utility.save_report(uptake_report, report_name)
 
         self.boundary_report = uptake_report
         return uptake_report
-
-    def _save_report(self, report_data: pd.DataFrame, report_name: str) -> None:
-        utility.save_report(report_data, report_name)

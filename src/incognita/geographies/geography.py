@@ -61,8 +61,7 @@ class Geography:
             # Names & Codes file path
             boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
             codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
-            normalised_cols = {boundary.codes.key: "codes", boundary.codes.name: "names"}
-            codes_map.columns = [normalised_cols[col] for col in codes_map.columns]
+            codes_map.columns = codes_map.columns.map({boundary.codes.key: "codes", boundary.codes.name: "names"})
         else:
             raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
 
@@ -98,7 +97,7 @@ class Geography:
         logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
-        self.boundary_codes = self.boundary_codes.loc[self.boundary_codes[self.metadata.codes.key].isin(set(boundary_subset))]
+        self.boundary_codes = self.boundary_codes.loc[self.boundary_codes["codes"].isin(set(boundary_subset))]
         logger.info(f"Resulting in {len(self.boundary_codes)} {self.name} boundaries")
 
         return self.boundary_codes
