@@ -22,48 +22,36 @@ class Geography:
     used and methods for selecting and excluding regions.
 
     Attributes:
-        metadata: Information about the boundary type
-        boundary_codes: Table of region codes and human-readable names for those codes
+        metadata: incognita.data.ons_pd.Boundary object with geography metadata
+        boundary_codes: Table mapping region codes to human-readable names
         name: Human readable ('nice') name for the geography
     """
 
     def __init__(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
-        boundary, codes_map = self._load_boundary(geography_name, ons_pd)
-
-        self.metadata: Boundary = boundary
-        self.boundary_codes: pd.DataFrame = codes_map
-        self.name: str = boundary.key  # human readable name
-
-    @staticmethod
-    def _load_boundary(geography_name: str, ons_pd: ONSPostcodeDirectory) -> tuple[Boundary, pd.DataFrame]:
-        """Loads metadata for a given geography type.
+        """Instantiates Geography, loads metadata for a given geography type.
 
         Args:
             geography_name:
-                The type of boundary, e.g. lsoa11, pcon etc. Must be a key in
-                ONSPostcodeDirectory.BOUNDARIES or in the custom-boundaries
-                table in incognita-config.toml
+                The type of boundary, e.g. "LSOA", "Constituency" etc. Must be
+                an ONS or specified custom boundary.
             ons_pd:
-                A reference to an ONS Postcode Directory model instance
-
-        Returns:
-            boundary: incognita.data.ons_pd.Boundary object with geography metadata
-            codes_map: dataframe mapping boundary codes -> names
+                An ONSPostcodeDirectory model with boundaries for a given release
 
         """
-        logger.info(f"Setting the boundary to {geography_name}")
+        logger.info(f"Setting the boundary by {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
         boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries
         if geography_name not in boundaries_dict:
             raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
-        boundary = boundaries_dict[geography_name]
+        self.metadata: Boundary = boundaries_dict[geography_name]
+        self.name: str = self.metadata.key  # human readable name
 
         # Names & Codes file path
-        boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
-        codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
-        codes_map.columns = codes_map.columns.map({boundary.codes.key: "codes", boundary.codes.name: "names"})
-        return boundary, codes_map
+        boundary_codes_dtypes = {self.metadata.codes.key: self.metadata.codes.key_type, self.metadata.codes.name: "string"}
+        codes_map = pd.read_csv(root.DATA_ROOT / self.metadata.codes.path, dtype=boundary_codes_dtypes)
+        codes_map.columns = codes_map.columns.map({self.metadata.codes.key: "codes", self.metadata.codes.name: "names"})
+        self.boundary_codes: pd.DataFrame = codes_map
 
     def filter_ons_boundaries(self, field: str, value_list: set) -> pd.DataFrame:
         """Filters the boundary_codes table by if the area code is within both value_list and the census_data table.
