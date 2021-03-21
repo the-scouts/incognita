@@ -32,7 +32,7 @@ class Geography:
 
         self.metadata: Boundary = boundary
         self.boundary_codes: pd.DataFrame = codes_map
-        self.name: str = boundary.name  # human readable name
+        self.name: str = boundary.key  # human readable name
 
     @staticmethod
     def _load_boundary(geography_name: str, ons_pd: ONSPostcodeDirectory) -> tuple[Boundary, pd.DataFrame]:
@@ -81,15 +81,15 @@ class Geography:
         """
 
         # Transforms codes from values_list in column 'field' to codes for the current geography
-        # 'field' is the start geography and 'metadata.name' is the target geography
+        # 'field' is the start geography and 'metadata.key' is the target geography
         # Returns a list
         logger.info(f"Filtering {len(self.boundary_codes)} {self.name} boundaries by {field} being in {value_list}")
         logger.debug(f"Loading ONS postcode data.")
         ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
-            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.metadata.name].drop_duplicates().to_list()
+            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.metadata.key].drop_duplicates().to_list()
         except KeyError:
-            msg = f"{self.metadata.name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
+            msg = f"{self.metadata.key} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
             logger.error(msg)
             raise KeyError(msg) from None
         logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")

@@ -443,7 +443,7 @@ class Map:
         self.map_data = reports.data
         self.boundary_name = reports.geography.metadata.shapefile.name
         self.code_name = reports.geography.metadata.shapefile.key
-        self.CODE_COL = reports.geography.metadata.name
+        self.CODE_COL = reports.geography.metadata.key
         # map_data, CODE_COL and code_name all must be set before loading shape file
 
         # Read a shape file. shapefile_path is the path to ESRI shapefile with region information

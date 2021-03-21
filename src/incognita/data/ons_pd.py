@@ -32,7 +32,7 @@ class BoundaryAgeProfile(pydantic.BaseModel):
 
 
 class Boundary(pydantic.BaseModel):
-    name: str  # Column name in the ONS postcode directory file
+    key: str  # Column name in the ONS postcode directory file
     codes: BoundaryCodes
     shapefile: Optional[BoundaryShapeFile] = None
     age_profile: Optional[BoundaryAgeProfile] = None

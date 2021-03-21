@@ -19,7 +19,7 @@ boundaries = "data/Boundary shape files/"
 output = "Output/"
 
 [ons2019."Local Authority"]
-name = "oslaua"  # Local Authority Districts
+key = "oslaua"  # Local Authority Districts
 
 codes.path = "LA_UA names and codes UK as at 12_19.csv"
 codes.key = "LAD19CD"
@@ -34,7 +34,7 @@ age_profile.path = "lad_by_age.csv"
 age_profile.key = "Code"
 
 [ons2019."County (LA)"]
-name = "oslaua"  # Counties
+key = "oslaua"  # Counties
 
 codes.path = "LA_UA names and codes UK as at 12_19.csv"
 codes.key = "LAD19CD"
@@ -46,7 +46,7 @@ shapefile.key = "ctyua17cd"
 shapefile.name = "ctyua17nm"
 
 [ons2019."Ward"]
-name = "osward"  # Council Wards
+key = "osward"  # Council Wards
 
 codes.path = "Ward names and codes UK as at 05_19_NSPD.csv"
 codes.key = "WD19CD"
@@ -61,7 +61,7 @@ age_profile.path = "osward_by_age_mid_2018_population_may_2019_wards.csv"
 age_profile.key = "Ward Code"
 
 [ons2019."Constituency"]
-name = "pcon"  # Parliamentary Constituencies
+key = "pcon"  # Parliamentary Constituencies
 
 codes.path = "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv"
 codes.key = "PCON14CD"
@@ -76,7 +76,7 @@ age_profile.path = "pcon_by_age.csv"
 age_profile.key = "PCON11CD"
 
 [ons2019."LSOA"]
-name = "lsoa11"  # Lower Level Super Output Areas
+key = "lsoa11"  # Lower Level Super Output Areas
 
 codes.path = "LSOA (2011) names and codes UK as at 12_12.csv"
 codes.key = "LSOA11CD"
@@ -88,7 +88,7 @@ shapefile.key = "LSOA11CD"
 shapefile.name = "LSOA11NM"
 
 [ons2019."MSOA"]
-name = "msoa11"  # Middle Layer Super Output Areas
+key = "msoa11"  # Middle Layer Super Output Areas
 
 codes.path = "MSOA (2011) names and codes UK as at 12_12.csv"
 codes.key = "MSOA11CD"
@@ -97,10 +97,9 @@ codes.name = "MSOA11NM"
 
 shapefile.path = "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp"
 shapefile.key = "msoa11cd"
-shapefile.name = None
 
 [ons2019."Intermediate Zone"]
-name = "msoa11"  # Intermediate Zones (codepages identical to MSOA but different shapefiles)
+key = "msoa11"  # Intermediate Zones (codepages identical to MSOA but different shapefiles)
 
 codes.path = "MSOA (2011) names and codes UK as at 12_12.csv"
 codes.key = "MSOA11CD"
@@ -109,10 +108,9 @@ codes.name = "MSOA11NM"
 
 shapefile.path = "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp"
 shapefile.key = "InterZone"
-shapefile.name = None
 
 [custom_boundaries."Scout District"]
-name = "D_ID"
+key = "D_ID"
 
 codes.path = "data/Scout Census Data/district_id_mapping.csv"
 codes.key = "D_ID"
@@ -124,7 +122,7 @@ shapefile.key = "id"
 shapefile.name = "name"
 
 [custom_boundaries."IMD Decile"]
-name = "imd_decile"
+key = "imd_decile"
 
 codes.path = "data/Scout Census Data/imd_names_and_codes.csv"
 codes.key = "IMD Decile"
@@ -132,7 +130,7 @@ codes.key_type = "Int32"
 codes.name = "Name"
 
 [custom_boundaries."District (NYS)"]
-name = "nys_districts"
+key = "nys_districts"
 
 codes.path = "data/Scout Census Data/North_Yorkshire_Districts.csv"
 codes.key = "ID"
@@ -148,7 +146,7 @@ age_profile.key = "Area Codes"
 age_profile.pivot_key = "lsoa11"
 
 [custom_boundaries."County"]
-name = "ctyua19cd"
+key = "ctyua19cd"
 
 codes.path = "Scout Census Data/Counties_and_Unitary_Authorities__December_2019__Boundaries_UK.csv"
 codes.key = "ctyua19cd"

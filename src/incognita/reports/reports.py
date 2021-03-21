@@ -47,7 +47,7 @@ class Reports:
 
         shapefile_key = self.geography.metadata.shapefile.key
         self.scout_data.add_shape_data(shapefile_key, path=self.geography.metadata.shapefile.path)
-        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography.metadata.name})
+        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography.metadata.key})
 
     @time_function
     def filter_boundaries(self, field: str, value_list: set, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
@@ -130,7 +130,7 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
         # fmt: on
 
-        geog_name = self.geography.metadata.name  # e.g oslaua osward pcon lsoa11
+        geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
 
         if not geog_name:
             raise Exception("Geography type has not been set. Try calling _set_boundary")
@@ -296,7 +296,7 @@ class Reports:
             Uptake data of Scouts in the boundary
 
         """
-        geog_name = self.geography.metadata.name
+        geog_name = self.geography.metadata.key
         try:
             age_profile_path = config.SETTINGS.folders.national_statistical / self.geography.metadata.age_profile.path
             age_profile_key = self.geography.metadata.age_profile.key
