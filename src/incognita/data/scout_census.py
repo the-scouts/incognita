@@ -1,7 +1,146 @@
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 from pyarrow import feather
+import pydantic
+
+
+class ColumnLabelsID(pydantic.BaseModel):
+    OBJECT: str = "Object_ID"
+    COMPASS: str = "compass"
+    GROUP: str = "G_ID"
+    DISTRICT: str = "D_ID"
+    COUNTY: str = "C_ID"
+    REGION: str = "R_ID"
+    COUNTRY: str = "X_ID"
+
+
+class ColumnLabelsName(pydantic.BaseModel):
+    ITEM: str = "name"
+    GROUP: str = "G_name"
+    DISTRICT: str = "D_name"
+    COUNTY: str = "C_name"
+    REGION: str = "R_name"
+    COUNTRY: str = "X_name"
+
+
+class ColumnLabelsSection(pydantic.BaseModel):
+    type: str
+    unit_label: str
+    level: str
+    male: str
+    female: str
+    total: str
+    youth_cols: list[str]
+    waiting_list: Optional[str]
+    is_yl_unit: Optional[str] = None
+    top_award: list[str]
+    top_award_eligible: list[str]
+
+
+class ColumnLabelsSections(pydantic.BaseModel):
+    Beavers: ColumnLabelsSection = ColumnLabelsSection(
+        type="Colony",
+        unit_label="Beavers_Units",
+        level="Group",
+        male="Beavers_m",
+        female="Beavers_f",
+        total="Beavers_total",
+        youth_cols=["Beavers_m", "Beavers_f", "Beavers_SelfIdentify", "Beavers_PreferNoToSay"],
+        waiting_list="WaitList_b",
+        top_award=["Chief_Scout_Bronze_Awards"],
+        top_award_eligible=["Eligible4Bronze"],
+    )
+    Cubs: ColumnLabelsSection = ColumnLabelsSection(
+        type="Pack",
+        unit_label="Cubs_Units",
+        level="Group",
+        male="Cubs_m",
+        female="Cubs_f",
+        total="Cubs_total",
+        youth_cols=["Cubs_m", "Cubs_f", "Cubs_SelfIdentify", "Cubs_PreferNoToSay"],
+        waiting_list="WaitList_c",
+        top_award=["Chief_Scout_Silver_Awards"],
+        top_award_eligible=["Eligible4Silver"],
+    )
+    Scouts: ColumnLabelsSection = ColumnLabelsSection(
+        type="Troop",
+        unit_label="Scouts_Units",
+        level="Group",
+        male="Scouts_m",
+        female="Scouts_f",
+        total="Scouts_total",
+        youth_cols=["Scouts_m", "Scouts_f", "Scouts_SelfIdentify", "Scouts_PreferNoToSay"],
+        waiting_list="WaitList_s",
+        top_award=["Chief_Scout_Gold_Awards"],
+        top_award_eligible=["Eligible4Gold"],
+    )
+    Explorers: ColumnLabelsSection = ColumnLabelsSection(
+        type="Unit",
+        unit_label="Explorers_Units",
+        level="District",
+        male="Explorers_m",
+        female="Explorers_f",
+        total="Explorers_total",
+        youth_cols=["Explorers_m", "Explorers_f", "Explorers_SelfIdentify", "Explorers_PreferNoToSay"],
+        waiting_list="WaitList_e",
+        is_yl_unit="Young_Leader_Unit",
+        top_award=[
+            "Chief_Scout_Platinum_Awards",
+            "Chief_Scout_Diamond_Awards",
+            "Queens_Scout_Awards",
+            "Duke_Of_Edinburghs_Bronze",
+            "Duke_Of_Edinburghs_Silver",
+            "Duke_Of_Edinburghs_Gold",
+            "Explorer_Belts",
+            "Young_Leader_Belts",
+        ],
+        top_award_eligible=["Eligible4Diamond", "Eligible4QSA"],
+    )
+    Network: ColumnLabelsSection = ColumnLabelsSection(
+        type="Network",
+        unit_label="Network_Units",
+        level="District",
+        male="Network_m",
+        female="Network_f",
+        total="Network_total",
+        youth_cols=["Network_m", "Network_f", "Network_SelfIdentify", "Network_PreferNoToSay"],
+        waiting_list=None,
+        top_award=[
+            "Chief_Scout_Platinum_Awards",
+            "Chief_Scout_Diamond_Awards",
+            "Queens_Scout_Awards",
+            "Duke_Of_Edinburghs_Bronze",
+            "Duke_Of_Edinburghs_Silver",
+            "Duke_Of_Edinburghs_Gold",
+            "Explorer_Belts",
+        ],
+        top_award_eligible=["Eligible4QSA"],
+    )
+
+
+class ColumnLabels(pydantic.BaseModel):
+    UNIT_TYPE: str = "type"  # Colony, Group, ASU, Region etc.
+    POSTCODE: str = "postcode"  # Postcode field
+    VALID_POSTCODE: str = "postcode_is_valid"
+    YEAR: str = "Year"
+    id: ColumnLabelsID = ColumnLabelsID()
+    name: ColumnLabelsName = ColumnLabelsName()
+    sections: ColumnLabelsSections = ColumnLabelsSections()
+
+
+column_labels = ColumnLabels()  # holds strings of all census csv column headings, structured to help access
+DEFAULT_VALUE = "error"  # holds value for NaN values
+UNIT_LEVEL_GROUP = "Group"  # The value in column_labels.sections.<level> that denote a group
+UNIT_LEVEL_DISTRICT = "District"  # The value in column_labels.sections.<level> that denote a district
+
+SECTIONS_GROUP: set[str] = {name for name, model in column_labels.sections if model.level == "Group"}
+SECTIONS_DISTRICT: set[str] = {name for name, model in column_labels.sections if model.level == "District"}
+
+# TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
+TYPES_GROUP: set[str] = {model.type for name, model in column_labels.sections if model.level == "Group"}
+TYPES_DISTRICT: set[str] = {model.type for name, model in column_labels.sections if model.level == "District"}
 
 
 class ScoutCensus:
@@ -15,91 +154,7 @@ class ScoutCensus:
     Args:
         census_file_path: path to input file with Census data.
 
-    Attributes:
-        column_labels: holds strings of all census csv column headings, structured to help access
-        DEFAULT_VALUE: holds value for NaN values
-        UNIT_LEVEL_GROUP: The value in column_labels["sections"]["level"] that denote a group
-        UNIT_LEVEL_DISTRICT: The value in column_labels["sections"]["level"] that denote a district
-
     """
-
-    # fmt: off
-    column_labels = {
-        "UNIT_TYPE": "type",  # Colony, Group, ASU, Region etc.
-        "POSTCODE": "postcode",  # Postcode field
-        "VALID_POSTCODE": "postcode_is_valid",
-        "YEAR": "Year",
-        "id": {
-            "OBJECT": "Object_ID",
-            "COMPASS": "compass",
-            "GROUP": "G_ID",
-            "DISTRICT": "D_ID",
-            "COUNTY": "C_ID",
-            "REGION": "R_ID",
-            "COUNTRY": "X_ID",
-        },
-        "name": {
-            "ITEM": "name",
-            "GROUP": "G_name",
-            "DISTRICT": "D_name",
-            "COUNTY": "C_name",
-            "REGION": "R_name",
-            "COUNTRY": "X_name",
-        },
-        "sections": {
-            "Beavers": {
-                "type": "Colony", "unit_label": "Beavers_Units", "level": "Group",
-                "male": "Beavers_m", "female": "Beavers_f", "total": "Beavers_total",
-                "youth_cols": ["Beavers_m", "Beavers_f", "Beavers_SelfIdentify", "Beavers_PreferNoToSay"],
-                "waiting_list": "WaitList_b",
-                "top_award": "Chief_Scout_Bronze_Awards", "top_award_eligible": "Eligible4Bronze",
-            },
-            "Cubs": {
-                "type": "Pack", "unit_label": "Cubs_Units", "level": "Group",
-                "male": "Cubs_m", "female": "Cubs_f", "total": "Cubs_total",
-                "youth_cols": ["Cubs_m", "Cubs_f", "Cubs_SelfIdentify", "Cubs_PreferNoToSay"],
-                "waiting_list": "WaitList_c",
-                "top_award": "Chief_Scout_Silver_Awards", "top_award_eligible": "Eligible4Silver",
-            },
-            "Scouts": {
-                "type": "Troop", "unit_label": "Scouts_Units", "level": "Group",
-                "male": "Scouts_m", "female": "Scouts_f", "total": "Scouts_total",
-                "youth_cols": ["Scouts_m", "Scouts_f", "Scouts_SelfIdentify", "Scouts_PreferNoToSay"],
-                "waiting_list": "WaitList_s",
-                "top_award": "Chief_Scout_Gold_Awards", "top_award_eligible": "Eligible4Gold",
-            },
-            "Explorers": {
-                "type": "Unit", "unit_label": "Explorers_Units", "level": "District",
-                "male": "Explorers_m", "female": "Explorers_f", "total": "Explorers_total",
-                "youth_cols": ["Explorers_m", "Explorers_f", "Explorers_SelfIdentify", "Explorers_PreferNoToSay"],
-                "waiting_list": "WaitList_e",
-                "is_yl_unit": "Young_Leader_Unit",
-                "top_award": [
-                    "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Queens_Scout_Awards",
-                    "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold",
-                    "Explorer_Belts", "Young_Leader_Belts",
-                ],
-                "top_award_eligible": ["Eligible4Diamond", "Eligible4QSA"],
-            },
-            "Network": {
-                "type": "Network", "unit_label": "Network_Units", "level": "District",
-                "male": "Network_m", "female": "Network_f", "total": "Network_total",
-                "youth_cols": ["Network_m", "Network_f", "Network_SelfIdentify", "Network_PreferNoToSay"],
-                "top_award": [
-                    "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Queens_Scout_Awards",
-                    "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold",
-                    "Explorer_Belts",
-                ],
-                "top_award_eligible": "Eligible4QSA",
-            },
-        },
-    }
-    # fmt: on
-
-    DEFAULT_VALUE = "error"  # DEPR ScoutCensus.DEFAULT_VALUE is deprecated in favour of ScoutData.DEFAULT_VALUE
-    UNIT_LEVEL_GROUP = "Group"
-    UNIT_LEVEL_DISTRICT = "District"
-
     def __init__(self, census_file_path: Path, load_data: bool = True):
         if not load_data:
             self.data = pd.DataFrame()
@@ -120,12 +175,9 @@ class ScoutCensus:
         # fmt: on
 
         # TODO add yp total columns, clean postcode/valid postcode, Asst leaders, SOWA/SOWA eligible, ONS PD fields
-
-        data_values_bool = {key: "bool" for key in cols_bool}
-        data_values_16 = {key: "Int16" for key in cols_int_16}
-        data_values_32 = {key: "Int32" for key in cols_int_32}
-        data_values_cat = {key: "category" for key in cols_categorical}
-        data_values_sections = data_values_bool | data_values_16 | data_values_32 | data_values_cat
+        data_values_sections = (
+            {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
+        )
         if census_file_path.suffix == ".csv":
             self.data = pd.read_csv(census_file_path, dtype=data_values_sections, encoding="utf-8")
         elif census_file_path.suffix == ".feather":
@@ -137,34 +189,3 @@ class ScoutCensus:
             # ['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'lat', 'long'] not dtyped
         else:
             raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
-
-    @staticmethod
-    def get_section_names(level: list[str]) -> list[str]:
-        """Return list of section names that exist within a particular organisational level.
-
-        Args:
-            level: Organisational level. Usually Group or District.
-
-        Returns:
-            List of section names.
-
-        """
-        section_dict: dict
-        sections_labels = ScoutCensus.column_labels["sections"]
-        return [section_name for section_name, section_dict in sections_labels.items() if section_dict["level"] in level]
-
-    @staticmethod
-    def get_section_type(level: list[str]) -> list[str]:
-        """Return list of section types that exist within a particular organisational level.
-
-        Args:
-            level: Organisational level. Usually Group or District.
-
-        Returns:
-            List of section types
-
-        """
-        section_names_list = ScoutCensus.get_section_names(level)
-        section_dict: dict = ScoutCensus.column_labels["sections"]
-        return [section_dict[section]["type"] for section in section_names_list]
-        # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
