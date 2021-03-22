@@ -6,6 +6,7 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
+from incognita.data import scout_census
 from incognita.data.ons_pd import Boundary
 from incognita.logger import logger
 from incognita.utility import config
@@ -112,7 +113,7 @@ class Geography:
         logger.debug(f"Found {len(records)} records that match {column} in {value_list}")
 
         # Removes original ons-census merge errors
-        ons_codes = records[records != scout_data.DEFAULT_VALUE].to_list()
+        ons_codes = records[records != scout_census.DEFAULT_VALUE].to_list()
         logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {value_list}")
 
         self.filter_ons_boundaries(ons_boundary, set(ons_codes))

@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.logger import logger
 
 
@@ -28,7 +28,7 @@ class CensusMergeData:
 
         """
         # Column heading denoting a valid postcode in the row
-        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
+        valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
 
         logger.info("Merging data")
         census_data = pd.merge(census_data, data_to_merge, how="left", left_on=census_index_column, right_index=True, sort=False)
@@ -89,7 +89,7 @@ class CensusMergeData:
         """Fills rows that have not merged with default values
 
         Fills all passed fields in rows where there has been no data merged
-        Fills categorical fields with ScoutCensus.DEFAULT_VALUE and numerical fields with 0
+        Fills categorical fields with scout_census.DEFAULT_VALUE and numerical fields with 0
 
         Args:
             census_data: DataFrame with census data
@@ -101,7 +101,7 @@ class CensusMergeData:
 
         """
         for field in fields_data_types["categorical"]:
-            census_data.loc[census_data[row_has_merged] == 0, field] = ScoutCensus.DEFAULT_VALUE
+            census_data.loc[census_data[row_has_merged] == 0, field] = scout_census.DEFAULT_VALUE
         for field in fields_data_types["int"]:
             census_data.loc[census_data[row_has_merged] == 0, field] = 0
 
@@ -120,13 +120,13 @@ class CensusMergeData:
         """
         # Gets the index of the postcode column, and increments as insertion is from the left.
         # Columns must be inserted in number order otherwise it wont't make sense
-        postcode_column_index = census_data.columns.get_loc(postcode_column)  # ScoutCensus.column_labels["POSTCODE"]
+        postcode_column_index = census_data.columns.get_loc(postcode_column)  # scout_census.column_labels.POSTCODE
         cleaned_postcode_index = postcode_column_index + 1
         valid_postcode_index = postcode_column_index + 2
 
         # Sets the labels for the columns to be inserted
         cleaned_postcode_label = "clean_postcode"
-        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
+        valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
 
         logger.info("Cleaning postcodes")
         cleaned_postcode_column = CensusMergeData._postcode_cleaner(census_data[postcode_column])
@@ -158,19 +158,19 @@ class CensusMergeData:
         logger.info("filling postcodes in sections with invalid postcodes")
 
         # Helper variables to store field headings for often used fields
-        entity_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
-        section_id_label = ScoutCensus.column_labels["id"]["COMPASS"]
-        group_id_label = ScoutCensus.column_labels["id"]["GROUP"]
-        district_id_label = ScoutCensus.column_labels["id"]["DISTRICT"]
+        entity_type_label = scout_census.column_labels.UNIT_TYPE
+        section_id_label = scout_census.column_labels.id.COMPASS
+        group_id_label = scout_census.column_labels.id.GROUP
+        district_id_label = scout_census.column_labels.id.DISTRICT
         clean_postcode_label = "clean_postcode"
-        valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
-        year_label = ScoutCensus.column_labels["YEAR"]
+        valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
+        year_label = scout_census.column_labels.YEAR
         merge_test_column_label = "ctry"
 
         # Lists of entity types to match against in constructing section records tables
-        section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
-        group_section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP])
-        district_section_types_list = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_DISTRICT])
+        group_section_types_list = scout_census.TYPES_GROUP
+        district_section_types_list = scout_census.TYPES_DISTRICT
+        section_types_list = group_section_types_list | district_section_types_list
         pre_2017_types_list = ["Group", "District"]
 
         # Columns to use in constructing the MultiIndex. Larger groups go first towards smaller

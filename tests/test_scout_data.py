@@ -9,7 +9,7 @@ import hypothesis.strategies as st
 import pandas as pd
 import pytest
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.utility import utility
 
@@ -52,8 +52,8 @@ LocationDataFrame = data_frames(
 def test_scout_data_columns(scout_data_factory):
     scout_data_stub = scout_data_factory(pd.DataFrame())
 
-    column_labels = ScoutCensus.column_labels
-    columns = [*column_labels["id"].values(), *column_labels["name"].values()]
+    column_labels = scout_census.column_labels
+    columns = [*column_labels.id.values(), *column_labels.name.values()]
 
     assert scout_data_stub.columns == columns
 

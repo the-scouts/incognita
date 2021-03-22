@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.logger import logger
 from incognita.utility import utility
 
@@ -18,7 +18,7 @@ class HistorySummary:
 
     def group_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
         logger.info("Beginning group_history_summary")
-        report = self._history_summary(years, "Group ID", ScoutCensus.column_labels["id"]["GROUP"], unit_type="Group")
+        report = self._history_summary(years, "Group ID", scout_census.column_labels.id.GROUP, unit_type="Group")
         if report_name:
             utility.save_report(report, report_name)
         return report
@@ -32,7 +32,7 @@ class HistorySummary:
         return report
 
     def _history_summary(self, years: list, id_name: str, census_col: str, unit_type: str = None) -> pd.DataFrame:
-        sections_dict = ScoutCensus.column_labels["sections"]
+        sections_dict = scout_census.column_labels.sections
 
         # Must have imd scores and deciles already in census_postcode_data.
         logger.info(f"Grouping data by {census_col}")
@@ -43,19 +43,19 @@ class HistorySummary:
         logger.info(f"Creating table of Scout organisational data")
         scout_org_cols = [
             census_col,
-            ScoutCensus.column_labels["UNIT_TYPE"],
-            ScoutCensus.column_labels["name"]["GROUP"],
-            ScoutCensus.column_labels["name"]["DISTRICT"],
-            ScoutCensus.column_labels["name"]["COUNTY"],
-            ScoutCensus.column_labels["name"]["REGION"],
-            ScoutCensus.column_labels["name"]["COUNTRY"],
+            scout_census.column_labels.UNIT_TYPE,
+            scout_census.column_labels.name.GROUP,
+            scout_census.column_labels.name.DISTRICT,
+            scout_census.column_labels.name.COUNTY,
+            scout_census.column_labels.name.REGION,
+            scout_census.column_labels.name.COUNTRY,
         ]
         scout_org_data = grouped_data[scout_org_cols].first()
 
         # if unit_types is set the series should be overwritten with that value
         # this is for manually overwriting the unit type
         if unit_type:
-            scout_org_data[ScoutCensus.column_labels["UNIT_TYPE"]] = unit_type
+            scout_org_data[scout_census.column_labels.UNIT_TYPE] = unit_type
 
         logger.info(f"Finding opening and closing years")
         # Takes the year column from the grouped_data object resulting in a SeriesGroupBy
@@ -134,16 +134,16 @@ class HistorySummary:
         return pd.DataFrame(history_summary_data, columns=output_columns)
 
     def new_section_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
-        sections_dict = ScoutCensus.column_labels["sections"]
+        sections_dict = scout_census.column_labels.sections
 
         # Given data on all sections, provides summary of all new sections, and
         # copes with the pre-2017 section reporting structure
         logger.info(f"Beginning new_section_history_summary for {years}")
         new_section_ids: list[dict] = []
 
-        logger.info(f"Getting group ID list in column {ScoutCensus.column_labels['id']['GROUP']}")
+        logger.info(f"Getting group ID list in column {scout_census.column_labels.id.GROUP}")
         # Iterate through Groups looking for new Sections
-        group_ids = self.scout_data.data[ScoutCensus.column_labels["id"]["GROUP"]].dropna().drop_duplicates().to_list()
+        group_ids = self.scout_data.data[scout_census.column_labels.id.GROUP].dropna().drop_duplicates().to_list()
 
         logger.info(f"Found {len(group_ids)} Groups")
 
@@ -159,13 +159,13 @@ class HistorySummary:
         #
         # .
 
-        scout_data = self.scout_data.data.fillna({ScoutCensus.column_labels["id"]["GROUP"]: 0, ScoutCensus.column_labels["id"]["DISTRICT"]: 0})
+        scout_data = self.scout_data.data.fillna({scout_census.column_labels.id.GROUP: 0, scout_census.column_labels.id.DISTRICT: 0})
 
         for group_id in group_ids:
             logger.info(f"Investigating {group_id}")
-            group_records = scout_data.loc[scout_data[ScoutCensus.column_labels["id"]["GROUP"]] == group_id]
+            group_records = scout_data.loc[scout_data[scout_census.column_labels.id.GROUP] == group_id]
 
-            for section in ScoutCensus.get_section_names("Group"):
+            for section in scout_census.SECTIONS_GROUP:
                 logger.info(f"Finding {section} sections")
                 units_by_year = {}
                 for year in years:
@@ -210,11 +210,11 @@ class HistorySummary:
         logger.info("Finding new Explorer Sections")
         # Iterate through District looking for new Sections
 
-        district_ids = self.scout_data.data[ScoutCensus.column_labels["id"]["DISTRICT"]].drop_duplicates().dropna().to_list()
+        district_ids = self.scout_data.data[scout_census.column_labels.id.DISTRICT].drop_duplicates().dropna().to_list()
 
         for district_id in district_ids:
             logger.info(f"Investigating {district_id}")
-            district_records = scout_data.loc[scout_data[ScoutCensus.column_labels["id"]["DISTRICT"]] == district_id]
+            district_records = scout_data.loc[scout_data[scout_census.column_labels.id.DISTRICT] == district_id]
             units_by_year = {}
             for year in years:
                 district_records_year = district_records.loc[district_records["Year"] == year]
@@ -279,12 +279,12 @@ class HistorySummary:
             open_years = new_sections_id["years"]
             section = new_sections_id["section"]
 
-            if section in ScoutCensus.get_section_names("Group"):
-                records = scout_data.loc[scout_data[ScoutCensus.column_labels["id"]["GROUP"]] == section_id]
-                section_data["Group_ID"] = records[ScoutCensus.column_labels["id"]["GROUP"]].unique()[0]
-                section_data["Group"] = records[ScoutCensus.column_labels["name"]["GROUP"]].unique()[0]
-            elif section in ScoutCensus.get_section_names("District"):
-                records = scout_data.loc[scout_data[ScoutCensus.column_labels["id"]["DISTRICT"]] == section_id]
+            if section in scout_census.SECTIONS_GROUP:
+                records = scout_data.loc[scout_data[scout_census.column_labels.id.GROUP] == section_id]
+                section_data["Group_ID"] = records[scout_census.column_labels.id.GROUP].unique()[0]
+                section_data["Group"] = records[scout_census.column_labels.name.GROUP].unique()[0]
+            elif section in scout_census.SECTIONS_DISTRICT:
+                records = scout_data.loc[scout_data[scout_census.column_labels.id.DISTRICT] == section_id]
                 section_data["Group_ID"] = ""
                 section_data["Group"] = ""
             else:
@@ -295,7 +295,7 @@ class HistorySummary:
                 year_records = records.loc[records["Year"] == year]
                 if year >= 2017:
                     compass_id = section_data.get("Object_ID")
-                    section_year_records = year_records.loc[records[ScoutCensus.column_labels["UNIT_TYPE"]] == sections_dict[section]["type"]]
+                    section_year_records = year_records.loc[records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"]]
 
                     if compass_id:
                         section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
@@ -369,18 +369,18 @@ class HistorySummary:
                 section_data["Section Name"] = section_records["name"].unique()[0]
             else:
                 if open_years[-1] < 2017:
-                    if section in ScoutCensus.get_section_names("Group"):
-                        section_records = records.loc[records[ScoutCensus.column_labels["UNIT_TYPE"]] == ScoutCensus.UNIT_LEVEL_GROUP]
-                    elif section in ScoutCensus.get_section_names("District"):
-                        section_records = records.loc[records[ScoutCensus.column_labels["UNIT_TYPE"]] == ScoutCensus.UNIT_LEVEL_DISTRICT]
+                    if section in scout_census.SECTIONS_GROUP:
+                        section_records = records.loc[records[scout_census.column_labels.UNIT_TYPE] == scout_census.UNIT_LEVEL_GROUP]
+                    elif section in scout_census.SECTIONS_DISTRICT:
+                        section_records = records.loc[records[scout_census.column_labels.UNIT_TYPE] == scout_census.UNIT_LEVEL_DISTRICT]
                 elif open_years[-1] == 2017:
-                    section_records = records.loc[records[ScoutCensus.column_labels["UNIT_TYPE"]] == sections_dict[section]["type"]]
+                    section_records = records.loc[records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"]]
                 else:
                     raise Exception(f"Unable to find section records for {new_section_ids}")
 
             section_data["Section"] = section
-            section_data["District_ID"] = section_records[ScoutCensus.column_labels["id"]["DISTRICT"]].unique()[0]
-            section_data["District"] = section_records[ScoutCensus.column_labels["name"]["DISTRICT"]].unique()[0]
+            section_data["District_ID"] = section_records[scout_census.column_labels.id.DISTRICT].unique()[0]
+            section_data["District"] = section_records[scout_census.column_labels.name.DISTRICT].unique()[0]
             section_data["County"] = section_records["C_name"].unique()[0]
             section_data["Region"] = section_records["R_name"].unique()[0]
             section_data["Scout Country"] = section_records["X_name"].unique()[0]
@@ -404,18 +404,18 @@ class HistorySummary:
                 most_recent = most_recent.iloc[0]
             elif most_recent.shape[0] == 0:
                 logger.warning("Inconsistent ids")
-                if section in ScoutCensus.get_section_names("Group"):
+                if section in scout_census.SECTIONS_GROUP:
                     # In the event that the Object_IDs aren't consistent, pick a section in the group that's most recent
                     # is only applicable after 2017, so sections are assumed to exist.
                     most_recent = records.loc[
-                        (records[ScoutCensus.column_labels["id"]["GROUP"]] == section_data["Group_ID"])
-                        & (records[ScoutCensus.column_labels["UNIT_TYPE"]] == sections_dict[section]["type"])
+                        (records[scout_census.column_labels.id.GROUP] == section_data["Group_ID"])
+                        & (records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"])
                         & (records["Year"] == most_recent_year)
                     ].iloc[0]
-                elif section in ScoutCensus.get_section_names("District"):
+                elif section in scout_census.SECTIONS_DISTRICT:
                     most_recent_record = records.loc[
-                        (records[ScoutCensus.column_labels["id"]["DISTRICT"]] == section_data["District_ID"])
-                        & (records[ScoutCensus.column_labels["UNIT_TYPE"]] == sections_dict[section]["type"])
+                        (records[scout_census.column_labels.id.DISTRICT] == section_data["District_ID"])
+                        & (records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"])
                         & (records["Year"] == most_recent_year)
                     ]
 
@@ -431,17 +431,17 @@ class HistorySummary:
             # logger.debug(f"Identified:\n{most_recent} determined postcode valid:\n{postcode_valid}\n{postcode_valid == 1}\n{postcode_valid == 1}")
             # add postcode
             if postcode_valid == 1:
-                logger.debug(f"Adding postcode {most_recent.at[ScoutCensus.column_labels['POSTCODE']]}")
-                section_data["Postcode"] = most_recent.at[ScoutCensus.column_labels["POSTCODE"]]
+                logger.debug(f"Adding postcode {most_recent.at[scout_census.column_labels.POSTCODE]}")
+                section_data["Postcode"] = most_recent.at[scout_census.column_labels.POSTCODE]
                 country = self.scout_data.ons_pd.COUNTRY_CODES.get(most_recent.at["ctry"])
-                section_data["IMD Country"] = country if country else ScoutCensus.DEFAULT_VALUE
+                section_data["IMD Country"] = country if country else scout_census.DEFAULT_VALUE
                 section_data["IMD Decile"] = most_recent.at["imd_decile"]
                 section_data["IMD Rank"] = most_recent.at["imd"]
             else:
-                section_data["Postcode"] = ScoutCensus.DEFAULT_VALUE
-                section_data["IMD Country"] = ScoutCensus.DEFAULT_VALUE
-                section_data["IMD Decile"] = ScoutCensus.DEFAULT_VALUE
-                section_data["IMD Rank"] = ScoutCensus.DEFAULT_VALUE
+                section_data["Postcode"] = scout_census.DEFAULT_VALUE
+                section_data["IMD Country"] = scout_census.DEFAULT_VALUE
+                section_data["IMD Decile"] = scout_census.DEFAULT_VALUE
+                section_data["IMD Rank"] = scout_census.DEFAULT_VALUE
 
             section_data_df = pd.DataFrame([section_data], columns=output_columns)
             output_data = pd.concat([output_data, section_data_df], axis=0)

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from incognita.data import scout_census
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
-from incognita.data.scout_census import ScoutCensus
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.preprocessing.census_merge_data import CensusMergeData
@@ -40,7 +40,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     merge = CensusMergeData()
 
     logger.info("Cleaning the postcodes")
-    merge.clean_and_verify_postcode(data, ScoutCensus.column_labels["POSTCODE"])
+    merge.clean_and_verify_postcode(data, scout_census.column_labels.POSTCODE)
 
     logger.info(f"Loading ONS postcode data.")
     ons_pd_data = pd.read_csv(
@@ -64,7 +64,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
 
     # fill unmerged rows with default values
     logger.info("filling unmerged rows")
-    data = merge.fill_unmerged_rows(data, ScoutCensus.column_labels["VALID_POSTCODE"], ons_fields_data_types)
+    data = merge.fill_unmerged_rows(data, scout_census.column_labels.VALID_POSTCODE, ons_fields_data_types)
 
     # Filter to useful columns
     # fmt: off
@@ -100,10 +100,10 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
     output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
     error_output_path = config.SETTINGS.folders.output / "error_file.csv"
 
-    valid_postcode_label = ScoutCensus.column_labels["VALID_POSTCODE"]
+    valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
     postcode_merge_column = "clean_postcode"
-    original_postcode_label = ScoutCensus.column_labels["POSTCODE"]
-    compass_id_label = ScoutCensus.column_labels["id"]["COMPASS"]
+    original_postcode_label = scout_census.column_labels.POSTCODE
+    compass_id_label = scout_census.column_labels.id.COMPASS
 
     # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
     error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "Year"]
@@ -116,17 +116,15 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
 
 if __name__ == "__main__":
-    column_labels = ScoutCensus.column_labels
-
     # load raw census extract
     scout_data = ScoutData(merged_csv=False, census_path=config.SETTINGS.census_extract.original)
 
     # combine all youth membership columns into a single total
-    for section, section_dict in column_labels["sections"].items():
+    for section, section_dict in scout_census.column_labels.sections:
         scout_data.data[f"{section}_total"] = scout_data.data[section_dict["youth_cols"]].sum(axis=1).astype("Int16")
 
     # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
-    scout_data.data[column_labels["name"]["ITEM"]] = scout_data.data[column_labels["name"]["ITEM"]].str.replace("`", "")
+    scout_data.data[scout_census.column_labels.name.ITEM] = scout_data.data[scout_census.column_labels.name.ITEM].str.replace("`", "")
 
     # merge the census extract and ONS postcode directory, and save the data to file
     data = merge_ons_postcode_directory(scout_data.data, ons_postcode_directory_may_19)

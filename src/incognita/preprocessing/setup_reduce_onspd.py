@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # # TODO Needed?:
     # for field, dtype in data.dtypes.items():
     #     if dtype == "category":
-    #         data[field] = data[field].cat.add_categories([scout_census.ScoutCensus.DEFAULT_VALUE])
+    #         data[field] = data[field].cat.add_categories([scout_census.DEFAULT_VALUE])
 
     # Save minified full ONS Postcode Directory
     reduced_data_with_coords = data[fields + ["lat", "long"]].copy()

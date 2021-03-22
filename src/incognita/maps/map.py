@@ -12,7 +12,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.reports.reports import Reports
@@ -180,17 +180,17 @@ class Map:
             self.add_layer(layer["name"], layer["markers_clustered"])
 
         # Sets the map so that it opens in the right area
-        valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
+        valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1]
 
         # Sets the map so it opens in the right area
         self.map.fit_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
 
         # IDs for finding sections
         district_sections_group_code = -1
-        postcodes_ids = sections[ScoutCensus.column_labels["POSTCODE"]]
-        district_ids = sections[ScoutCensus.column_labels["id"]["DISTRICT"]]
+        postcodes_ids = sections[scout_census.column_labels.POSTCODE]
+        district_ids = sections[scout_census.column_labels.id.DISTRICT]
         # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
-        group_ids = sections[ScoutCensus.column_labels["id"]["GROUP"]].fillna(district_sections_group_code)
+        group_ids = sections[scout_census.column_labels.id.GROUP].fillna(district_sections_group_code)
 
         # IDs for iteration
         postcodes = postcodes_ids.drop_duplicates().dropna().astype(str).to_list()
@@ -200,19 +200,19 @@ class Map:
 
         # Test for if there are any sections
         if not group_ids.dropna().empty or district_ids.dropna().empty:
-            unit_type = sections[ScoutCensus.column_labels["UNIT_TYPE"]]
+            unit_type = sections[scout_census.column_labels.UNIT_TYPE]
             sections["section"] = utility.section_from_type_vector(unit_type)
             section_names = sections["name"].astype("string")
-            sections["yp"] = sections.lookup(sections.index, sections["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["total"]))
+            sections["yp"] = sections.lookup(sections.index, sections["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).total))
             section_member_info = section_names + " : " + sections["yp"].astype(str) + " " + sections["section"] + "<br>"
 
             # Awful, awful workaround as Units & Network top awards are lists not strings. Effectivley we only tabluate for groups.
-            grp_sects = sections[sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(["Colony", "Pack", "Troop"])]
+            grp_sects = sections[sections[scout_census.column_labels.UNIT_TYPE].isin(["Colony", "Pack", "Troop"])]
             sections["awards"] = pd.Series(
-                grp_sects[grp_sects["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award"])].values.diagonal(), grp_sects.index
+                grp_sects[grp_sects["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).top_award)].values.diagonal(), grp_sects.index
             ).astype("Int32")
             sections["eligible"] = pd.Series(
-                grp_sects[grp_sects["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award_eligible"])].values.diagonal(), grp_sects.index
+                grp_sects[grp_sects["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).top_award_eligible)].values.diagonal(), grp_sects.index
             ).astype("Int32")
             section_awards_info = section_names + " : " + sections["awards"].astype(str) + " Top Awards out of " + sections["eligible"].astype(str) + " eligible<br>"
 
@@ -235,9 +235,9 @@ class Map:
                 "marker_colour": sections["marker_colour"],
                 "district_ID": district_ids,
                 "group_ID": group_ids,
-                "county_name": sections[ScoutCensus.column_labels["name"]["COUNTY"]],
-                "district_name": sections[ScoutCensus.column_labels["name"]["DISTRICT"]],
-                "group_name": sections[ScoutCensus.column_labels["name"]["GROUP"]],
+                "county_name": sections[scout_census.column_labels.name.COUNTY],
+                "district_name": sections[scout_census.column_labels.name.DISTRICT],
+                "group_name": sections[scout_census.column_labels.name.GROUP],
                 "section_name": section_names,
                 "member_info": section_member_info,
                 "awards_info": section_awards_info,
@@ -328,18 +328,17 @@ class Map:
 
         """
         data: pd.DataFrame = scout_data.data
-        unit_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
+        unit_type_label = scout_census.column_labels.UNIT_TYPE
 
         if single_section:
             filtered_data = data
-            section_type = ScoutCensus.column_labels["sections"][single_section]["type"]
-            section_types = [section_type]
+            section_types = {getattr(scout_census.column_labels.sections, single_section).type}
         else:
             max_year = data["Year"].max()
             latest_year_records = data.loc[data["Year"] == max_year]
 
             filtered_data = latest_year_records
-            section_types = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
+            section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
 
         self.add_layer(layer, cluster_markers)
         layer_data = dict(name=layer, markers_clustered=cluster_markers)
@@ -420,10 +419,10 @@ class Map:
         return colour_mapping
 
     def district_colour_mapping(self) -> dict:
-        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["DISTRICT"])
+        return self.generic_colour_mapping(scout_census.column_labels.id.DISTRICT)
 
     def county_colour_mapping(self) -> dict:
-        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])
+        return self.generic_colour_mapping(scout_census.column_labels.id.COUNTY)
 
     def validate_columns(self) -> None:
         if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:

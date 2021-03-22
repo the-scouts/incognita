@@ -5,7 +5,7 @@ from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
@@ -75,7 +75,7 @@ class Reports:
         logger.debug("Creating mapping from ons boundary to scout district")
 
         region_type = ons_code  # Census column heading for the region geography type
-        district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
+        district_id_column = scout_census.column_labels.id.DISTRICT
 
         region_ids = self.geography.boundary_codes["codes"].dropna().drop_duplicates()
 
@@ -83,7 +83,7 @@ class Reports:
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
         region_ids_by_district = self.scout_data.data.loc[self.scout_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
-        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == ScoutCensus.DEFAULT_VALUE)].dropna().drop_duplicates()
+        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == scout_census.DEFAULT_VALUE)].dropna().drop_duplicates()
 
         # count of how many regions the district occupies:
         count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})
@@ -119,7 +119,6 @@ class Reports:
         else:
             options = set(options)
 
-        # fmt: off
         opt_number_of_sections = "Number of Sections" in options
         opt_number_of_groups = "Number of Groups" in options
         opt_groups = "Groups" in options
@@ -128,14 +127,9 @@ class Reports:
         opt_awards = "awards" in options
         opt_waiting_list_totals = "waiting list total" in options
         opt_adult_numbers = "Adult numbers" in options
-        # fmt: on
 
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
-
-        if not geog_name:
-            raise Exception("Geography type has not been set. Try calling _set_boundary")
-        else:
-            logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
+        logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
 
         years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values().to_list()
         if len(years) > 1:
@@ -144,8 +138,8 @@ class Reports:
             else:
                 logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
-        sections_dict = ScoutCensus.column_labels["sections"]
-        district_id_column = ScoutCensus.column_labels["id"]["DISTRICT"]
+        sections_dict = scout_census.column_labels.sections
+        district_id_column = scout_census.column_labels.id.DISTRICT
         award_name = sections_dict["Beavers"]["top_award"]
         award_eligible = sections_dict["Beavers"]["top_award_eligible"]
         section_cols = [sect for sect in sections_dict.keys() if sect != "Network"]
@@ -235,7 +229,7 @@ class Reports:
 
         if opt_groups or opt_number_of_groups:
             logger.debug(f"Adding group data")
-            group_table: pd.Series = grouped_data[ScoutCensus.column_labels["name"]["GROUP"]].apply(_groups_groupby)
+            group_table: pd.Series = grouped_data[scout_census.column_labels.name.GROUP].apply(_groups_groupby)
             dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=["Groups", "Number of Groups"]))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
@@ -245,7 +239,7 @@ class Reports:
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
-            geog_names = {self.ons_pd.BOUNDARIES[boundary].name for boundary in self.ons_pd.BOUNDARIES}
+            geog_names = {getattr(self.ons_pd.BOUNDARIES, boundary).key for boundary in self.ons_pd.BOUNDARIES}
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
