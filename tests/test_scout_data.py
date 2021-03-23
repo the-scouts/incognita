@@ -55,7 +55,7 @@ def test_scout_data_columns(scout_data_factory):
     column_labels = scout_census.column_labels
     columns = [*column_labels.id.values(), *column_labels.name.values()]
 
-    assert scout_data_stub.columns == columns
+    assert scout_data_stub.filterable_columns == columns
 
 
 @hypothesis.given(CountryDataFrame)

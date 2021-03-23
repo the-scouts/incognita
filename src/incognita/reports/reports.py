@@ -55,7 +55,7 @@ class Reports:
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
             self.geography.filter_ons_boundaries(field, value_list)
-        elif field in self.scout_data.columns:
+        elif field in self.scout_data.filterable_columns:
             # Chose which filter to use for scout areas
             if near:
                 self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
