@@ -50,19 +50,29 @@ class Reports:
         self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography.metadata.key})
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: set, boundary: str = "", distance: int = 3000, near: bool = False) -> None:
+    def filter_boundaries(self, field: str, value_list: set[str], boundary: str = "", distance: int = 0) -> None:
+        """Keep all geographic boundaries where the value of `field` is in the given value list.
 
+        The geographic boundary is specified by `boundary`, or if not given,
+        `field` is assumed to be a geographic boundary.
+
+        Effectively, this remaps the values in value_list to a given
+        geography and keeps them, with field as the origin and boundary as the
+        destination keys.
+
+        """
         # Check if field (i.e. scout_data column) is a census column or ONS column
         if field in self.ons_pd.fields:
             self.geography.filter_ons_boundaries(field, value_list)
         elif field in self.scout_data.filterable_columns:
             # Chose which filter to use for scout areas
-            if near:
+            if distance:
                 self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
             else:
                 self.geography.filter_boundaries_by_scout_area(self.scout_data, boundary, field, value_list)
         else:
-            raise ValueError(f"Field value {field} not valid. Valid values are {[*self.ons_pd.fields, *self.scout_data.columns]}")
+            valid_filter_columns = [*self.ons_pd.fields, *self.scout_data.filterable_columns]
+            raise ValueError(f"Field value {field} not valid. Valid values are {valid_filter_columns}")
 
     def _ons_to_district_mapping(self, ons_code: str) -> dict:
         """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
