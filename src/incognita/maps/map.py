@@ -90,8 +90,7 @@ class Map:
             logger.error(f"{score_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
             raise KeyError(f"{score_col} is not a valid column in the data.")
 
-        non_zero_score_col = map_data[score_col].loc[map_data[score_col] != 0]
-        non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
+        non_zero_score_col = map_data[score_col][map_data[score_col] != 0].dropna().sort_values()
 
         if not scale:
             colourmap_index = non_zero_score_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
@@ -106,8 +105,10 @@ class Map:
             colourmap_max = scale["max"]
             colourmap_step_index = scale["boundaries"]
 
-        colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
-        colourmap = colourmap.to_step(index=colourmap_step_index)
+        lcm = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
+        branca.colormap.StepColormap([lcm.rgba_floats_tuple(colourmap_step_index[i] * (1.-i/(len(colourmap_step_index)-1-1.)) + colourmap_step_index[i+1] * i/(len(colourmap_step_index)-1-1.)) for i in range(len(colourmap_step_index)-1)], index=colourmap_step_index, vmin=colourmap_step_index[0], vmax=colourmap_step_index[-1])
+
+        colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max).to_step(index=colourmap_step_index)
         colourmap.caption = dimension["legend"]
 
         logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
@@ -121,6 +122,8 @@ class Map:
             raise Exception("Data unsuccesfully merged resulting in zero records")
 
         # score_col is column of dataframe used. Used for unique key.
+
+        print()
 
         # fmt: off
         self.map.add_child(
@@ -166,7 +169,7 @@ class Map:
 
         if layer_name not in self.layers:
             layer_type = MarkerCluster if cluster_markers else FeatureGroup
-            self.layers[layer_name] = self.map.add_child(layer_type(name=layer_name, show=show_layer))
+            self.layers[layer_name] = layer_type(name=layer_name, show=show_layer).add_to(self.map)
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1]
@@ -270,6 +273,7 @@ class Map:
                         "awards_info": "<br>" + "".join(sub_table["awards_info"]),
                     }
 
+        icon = folium.Icon(color=colour)
         for postcode_name, postcode_dict in postcode_info.items():
             lat = postcode_dict.pop("$lat")
             long = postcode_dict.pop("$long")
@@ -291,7 +295,7 @@ class Map:
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-            self.add_marker(lat, long, popup, marker_colour, layer_name)
+            self.layers[layer_name].add_child(folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=icon))
 
     def add_sections_to_map(
         self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
@@ -356,22 +360,22 @@ class Map:
         if location_cols["crs"] != utility.WGS_84:
             custom_data = custom_data.to_crs(epsg=utility.WGS_84)
 
-        self.layers[layer_name] = self.map.add_child(FeatureGroup(name=layer_name, show=True))
+        self.layers[layer_name] = FeatureGroup(name=layer_name, show=True).add_to(self.map)
 
         # Plot marker and include marker_data in the popup for every item in custom_data
-        def add_popup_data(row):
-            if marker_data:
-                html = ""
-                for marker_col in marker_data:
-                    html += f'<p align="center">{row[marker_col]}</p>'
-                iframe = folium.IFrame(html=html, width=350, height=100)
-                popup = folium.Popup(iframe, max_width=2650)
-            else:
-                popup = None
-            if not np.isnan(row.geometry.x):
-                self.add_marker(row.geometry.y, row.geometry.x, popup, colour="green", layer_name=layer_name)
-
-        custom_data.apply(add_popup_data, axis=1)
+        icon = folium.Icon(color="green")
+        if marker_data:
+            def add_popup_data(row):
+                if not np.isnan(row.geometry.x):
+                    self.layers[layer_name].add_child(folium.Marker(
+                            location=[round(row.geometry.y, 4), round(row.geometry.x, 4)],
+                            popup=folium.Popup(html="".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data), max_width=2650),
+                            icon=icon
+                    ))
+            custom_data.apply(add_popup_data, axis=1)
+        else:
+            for points in custom_data.geometry[custom_data.geometry.x.notna()].to_list():
+                self.layers[layer_name].add_child(folium.Marker(location=[round(points.y, 4), round(points.x, 4)], popup=None, icon=icon))
 
     def save_map(self) -> None:
         """Saves the folium map to a HTML file"""
@@ -401,7 +405,7 @@ class Map:
             layer_name: name of the layer that markers are added to
 
         """
-        folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
+        self.layers[layer_name].add_child(folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)))
 
 
 def _load_boundary(reports: Reports) -> tuple[pd.DataFrame, str, str, str, gpd.GeoDataFrame]:

@@ -145,11 +145,11 @@ class Reports:
             else:
                 logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
-        sections_dict = scout_census.column_labels.sections
+        sections_model = scout_census.column_labels.sections
         district_id_column = scout_census.column_labels.id.DISTRICT
-        award_name = sections_dict["Beavers"]["top_award"]
-        award_eligible = sections_dict["Beavers"]["top_award_eligible"]
-        section_cols = [sect for sect in sections_dict.keys() if sect != "Network"]
+        award_name = sections_model.Beavers.top_award
+        award_eligible = sections_model.Beavers.top_award_eligible
+        section_cols = [section_name for section_name, section_model in sections_model if section_name != "Network"]
 
         def _groups_groupby(group_series: pd.Series) -> (str, int):
             # Used to list the groups that operate within the boundary
@@ -176,15 +176,15 @@ class Reports:
             waiting_list = 0
 
             for section in section_cols:
-                total_young_people = group_df[sections_dict[section]["total"]].sum()
+                total_young_people = group_df[getattr(scout_census.column_labels.sections, section).total].sum()
                 all_young_people += total_young_people
                 if opt_section_numbers:
                     output[f"{section}-{census_year}"] = total_young_people
                 if opt_number_of_sections:
                     # TODO correct for pluralisation (e.g. Colony -> Colonys not Colonies)
-                    output[f"{sections_dict[section]['type']}s-{census_year}"] = group_df[sections_dict[section]["unit_label"]].sum()
-                if sections_dict[section].get("waiting_list"):
-                    waiting_list += group_df[sections_dict[section]["waiting_list"]].sum()
+                    output[f"{getattr(scout_census.column_labels.sections, section).type}s-{census_year}"] = group_df[getattr(scout_census.column_labels.sections, section).unit_label].sum()
+                if "waiting_list" in getattr(scout_census.column_labels.sections, section):
+                    waiting_list += group_df[getattr(scout_census.column_labels.sections, section).waiting_list].sum()
 
             if opt_6_to_17_numbers:
                 output[f"All-{census_year}"] = all_young_people
@@ -259,9 +259,9 @@ class Reports:
             logger.debug(f"Adding awards data")
             awards_table: pd.DataFrame = grouped_data.apply(_awards_groupby, awards_per_district_per_regions)
             awards_table: pd.DataFrame = pd.DataFrame(awards_table.values.tolist(), index=awards_table.index)
-            top_award = awards_table[f"%-{sections_dict['Beavers']['top_award']}"]
+            top_award = awards_table[f"%-{sections_model.Beavers.top_award}"]
             max_value = top_award.quantile(0.95)
-            awards_table[f"%-{sections_dict['Beavers']['top_award']}"] = top_award.clip(upper=max_value)
+            awards_table[f"%-{sections_model.Beavers.top_award}"] = top_award.clip(upper=max_value)
             dataframes.append(awards_table)
 
         # TODO find a way to keep DUMMY geography coding

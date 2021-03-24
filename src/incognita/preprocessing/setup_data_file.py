@@ -120,8 +120,8 @@ if __name__ == "__main__":
     scout_data = ScoutData(merged_csv=False, census_path=config.SETTINGS.census_extract.original)
 
     # combine all youth membership columns into a single total
-    for section, section_dict in scout_census.column_labels.sections:
-        scout_data.census_data[f"{section}_total"] = scout_data.census_data[section_dict["youth_cols"]].sum(axis=1).astype("Int16")
+    for section_name, section_model in scout_census.column_labels.sections:
+        scout_data.census_data[f"{section_name}_total"] = scout_data.census_data[section_model.youth_cols].sum(axis=1).astype("Int16")
 
     # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
     scout_data.census_data[scout_census.column_labels.name.ITEM] = scout_data.census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")

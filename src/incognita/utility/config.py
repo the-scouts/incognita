@@ -77,11 +77,11 @@ def _create_settings(toml_string: dict) -> ConfigModel:
     settings = ConfigModel(**toml_string)
 
     for boundary in settings.custom_boundaries.values():
-        if boundary.shapefile.path is not None:
+        if boundary.shapefile is not None and boundary.shapefile.path is not None:
             boundary.shapefile.path = settings.folders.boundaries / boundary.shapefile.path
     for boundary in settings.ons2019.values():
         boundary.codes.path = settings.folders.ons_pd_names_codes / boundary.codes.path
-        if boundary.shapefile.path is not None:
+        if boundary.shapefile is not None and boundary.shapefile.path is not None:
             boundary.shapefile.path = settings.folders.boundaries / boundary.shapefile.path
     return ConfigModel(**settings.__dict__)
 

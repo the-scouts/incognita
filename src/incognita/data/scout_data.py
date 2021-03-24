@@ -19,8 +19,8 @@ class ScoutData:
     @property
     def filterable_columns(self) -> set[str]:
         """Returns ID and name columns of the dataset"""
-        id_cols = scout_census.column_labels.id.values()
-        name_cols = scout_census.column_labels.name.values()
+        id_cols = scout_census.column_labels.id.__dict__.values()
+        name_cols = scout_census.column_labels.name.__dict__.values()
         return {*id_cols, *name_cols}
 
     # TODO: Add column name properties (e.g. scout_census.column_labels.VALID_POSTCODE

@@ -32,7 +32,7 @@ class HistorySummary:
         return report
 
     def _history_summary(self, years: list, id_name: str, census_col: str, unit_type: str = None) -> pd.DataFrame:
-        sections_dict = scout_census.column_labels.sections
+        sections_model = scout_census.column_labels.sections
 
         # Must have imd scores and deciles already in census_postcode_data.
         logger.info(f"Grouping data by {census_col}")
@@ -84,7 +84,7 @@ class HistorySummary:
 
         # per year open, record the total young people per section and the number of adults
         # uses a nested groupby for efficiency
-        sections_list = [sect for sect in sections_dict.keys() if sect != "Explorers" or sect != "Network"]
+        sections_list = [section_name for section_name, section_model in sections_model if section_name not in {"Explorers", "Network"}]
         adult_cols = ["Leaders", "SectAssistants", "OtherAdults"]  # TODO re add
 
         def _year_groupby(df):
@@ -98,7 +98,7 @@ class HistorySummary:
             census_year = df.name
             output = {}
             for section in sections_list:
-                output[f"{section}-{census_year}"] = df[sections_dict[section]["total"]].sum()
+                output[f"{section}-{census_year}"] = df[getattr(ScoutCensus.column_labels.sections, section)["total"]].sum()
             output[f"Adults-{census_year}"] = df[adult_cols].to_numpy().sum()
             return output
 
@@ -128,13 +128,13 @@ class HistorySummary:
         # create output columns list and add generated section names
         output_columns = [id_name, "Type", "Group", "District", "County", "Region", "Scout Country", "Postcode", "IMD Country", "IMD Rank", "IMD Decile", "First Year", "Last Year"]
         for year in years:
-            output_columns.extend([f"{section}-{year}" for section in sections_dict.keys() if section != "Explorers"])
+            output_columns.extend([f"{section_name}-{year}" for section_name, section_model in sections_model if section_name != "Explorers"])
             output_columns.append(f"Adults-{year}")
 
         return pd.DataFrame(history_summary_data, columns=output_columns)
 
     def new_section_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
-        sections_dict = scout_census.column_labels.sections
+        sections_model = scout_census.column_labels.sections
 
         # Given data on all sections, provides summary of all new sections, and
         # copes with the pre-2017 section reporting structure
@@ -169,7 +169,7 @@ class HistorySummary:
                 logger.info(f"Finding {section} sections")
                 units_by_year = {}
                 for year in years:
-                    section_numbers_year = group_records.loc[group_records["Year"] == year, sections_dict[section]["unit_label"]].sum()
+                    section_numbers_year = group_records.loc[group_records["Year"] == year, getattr(ScoutCensus.column_labels.sections, section)["unit_label"]].sum()
                     units_by_year[year] = section_numbers_year
 
                 increments = [units_by_year[year + 1] - units_by_year[year] for year in units_by_year.keys() if (year + 1) in units_by_year]
@@ -218,7 +218,7 @@ class HistorySummary:
             units_by_year = {}
             for year in years:
                 district_records_year = district_records.loc[district_records["Year"] == year]
-                units_by_year[year] = district_records_year[sections_dict["Explorers"]["unit_label"]].sum()
+                units_by_year[year] = district_records_year[sections_model.Explorers.unit_label].sum()
 
             increments = [units_by_year[year + 1] - units_by_year[year] for year in units_by_year.keys() if (year + 1) in units_by_year]
             if max(increments) > 0:
@@ -291,15 +291,15 @@ class HistorySummary:
                 raise Exception(f"{section} neither belongs to a Group or District. id = {new_sections_id}")
 
             for year in open_years:
-                members_cols = sections_dict[section]["total"]
+                members_cols = getattr(ScoutCensus.column_labels.sections, section)["total"]
                 year_records = records.loc[records["Year"] == year]
                 if year >= 2017:
                     compass_id = section_data.get("Object_ID")
-                    section_year_records = year_records.loc[records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"]]
+                    section_year_records = year_records.loc[records[scout_census.column_labels.UNIT_TYPE] == getattr(ScoutCensus.column_labels.sections, section)["type"]]
 
                     if compass_id:
                         section_record = section_year_records.loc[section_year_records["Object_ID"] == compass_id]
-                        section_data[f"{year}_Members"] = section_record[sections_dict[section]["total"]].sum()
+                        section_data[f"{year}_Members"] = section_record[getattr(ScoutCensus.column_labels.sections, section)["total"]].sum()
                     else:
                         section_year_ids: pd.Series = section_year_records["Object_ID"].drop_duplicates()
                         if open_years[0] >= 2017:
@@ -374,7 +374,7 @@ class HistorySummary:
                     elif section in scout_census.SECTIONS_DISTRICT:
                         section_records = records.loc[records[scout_census.column_labels.UNIT_TYPE] == scout_census.UNIT_LEVEL_DISTRICT]
                 elif open_years[-1] == 2017:
-                    section_records = records.loc[records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"]]
+                    section_records = records.loc[records[scout_census.column_labels.UNIT_TYPE] == getattr(ScoutCensus.column_labels.sections, section)["type"]]
                 else:
                     raise Exception(f"Unable to find section records for {new_section_ids}")
 
@@ -409,13 +409,13 @@ class HistorySummary:
                     # is only applicable after 2017, so sections are assumed to exist.
                     most_recent = records.loc[
                         (records[scout_census.column_labels.id.GROUP] == section_data["Group_ID"])
-                        & (records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"])
+                        & (records[scout_census.column_labels.UNIT_TYPE] == getattr(ScoutCensus.column_labels.sections, section)["type"])
                         & (records["Year"] == most_recent_year)
                     ].iloc[0]
                 elif section in scout_census.SECTIONS_DISTRICT:
                     most_recent_record = records.loc[
                         (records[scout_census.column_labels.id.DISTRICT] == section_data["District_ID"])
-                        & (records[scout_census.column_labels.UNIT_TYPE] == sections_dict[section]["type"])
+                        & (records[scout_census.column_labels.UNIT_TYPE] == getattr(ScoutCensus.column_labels.sections, section)["type"])
                         & (records["Year"] == most_recent_year)
                     ]
 

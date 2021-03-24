@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
-sections_dict = scout_census.column_labels.sections
-section_types = {getattr(sections_dict, section).type: section for section in sections_dict.keys()}
+sections_model = scout_census.column_labels.sections
+section_types = {getattr(sections_model, section_name).type: section_name for section_name, section_model in sections_model}
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
@@ -96,7 +96,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     logger.info(f"Resulting in {remaining_records} records remaining.")
 
     if exclusion_analysis:
-        cols = [scout_census.column_labels.UNIT_TYPE] + [getattr(sections_dict, section).total for section in sections_dict]
+        cols = [scout_census.column_labels.UNIT_TYPE] + [getattr(sections_model, section).total for section in sections_model]
         if not all([col in data.columns for col in cols]):
             raise ValueError("Required columns are not in dataset!\n" f"Required columns are: {cols}.\n" f"Your columns are: {data.columns.to_list()}")
 
@@ -105,25 +105,25 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
         logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
         # Prints number of members and % of members filtered out for each section
-        for section in sections_dict.keys():
-            logger.debug(f"Analysis of {section} member exclusions")
-            section_type = getattr(sections_dict, section).type
-            members_col = getattr(sections_dict, section).total
+        for section_name, section_model in sections_model:
+            logger.debug(f"Analysis of {section_name} member exclusions")
+            section_type = getattr(sections_model, section_name).type
+            members_col = getattr(sections_model, section_name).total
 
             excluded_sections = excluded_data.loc[excluded_data[scout_census.column_labels.UNIT_TYPE] == section_type]
             excluded_members = 0
             if not excluded_sections.empty:
                 logger.debug(f"Excluded sections\n{excluded_sections}")
-                logger.debug(f"Finding number of excluded {section} by summing {members_col}")
+                logger.debug(f"Finding number of excluded {section_name} by summing {members_col}")
                 excluded_members = excluded_sections[members_col].sum()
-                logger.debug(f"{excluded_members} {section} excluded")
+                logger.debug(f"{excluded_members} {section_name} excluded")
 
             original_members = original_data.loc[original_data[scout_census.column_labels.UNIT_TYPE] == section_type, members_col].sum()
 
             if original_members > 0:
-                logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
+                logger.info(f"{excluded_members} {section_name} members were removed ({excluded_members / original_members * 100}%) of total")
             else:
-                logger.info(f"There are no {section} members present in data")
+                logger.info(f"There are no {section_name} members present in data")
 
     return data
 
