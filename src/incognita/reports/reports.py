@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
@@ -100,9 +99,9 @@ class Reports:
         count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
 
         count_col: pd.Series = count_by_district_by_region["count"]
-        nested_dict = collections.defaultdict(dict)
-        for keys, value in count_col.iteritems():
-            nested_dict[keys[0]][keys[1]] = value
+        nested_dict = {}
+        for (region_id, district_id), value in count_col.iteritems():
+            nested_dict.setdefault(region_id, {})[district_id] = value
 
         logger.debug("Finished mapping from ons boundary to district")
         return dict(nested_dict)  # Return the mapping
@@ -246,7 +245,7 @@ class Reports:
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
-            geog_names = {getattr(self.ons_pd.BOUNDARIES, boundary).key for boundary in self.ons_pd.BOUNDARIES}
+            geog_names = {boundary_model.key for boundary_model in self.ons_pd.BOUNDARIES.values()}
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
