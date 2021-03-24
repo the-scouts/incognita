@@ -77,7 +77,7 @@ class Map:
 
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
-        map_data, boundary_name, code_name, code_col, geo_data = self.set_boundary(reports)
+        map_data, boundary_name, code_name, code_col, geo_data = _load_boundary(reports)
         # map_data contains shapefile paths, and labels for region codes and names
         # code_col holds the name of the region class, e.g. oslaua, pcon
 
@@ -393,44 +393,6 @@ class Map:
 
     def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
-
-    def set_boundary(self, reports: Reports) -> tuple[pd.DataFrame, str, str, str, gpd.GeoDataFrame]:
-        """Changes the boundary to a new boundary.
-
-        Loads, filters and converts shapefiles for later use
-
-        Loads shapefile from path into GeoPandas dataframe
-        Filters out unneeded shapes within all shapes loaded
-        Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
-
-        """
-        # map_data, code_col and code_name all need to be set before loading shape file
-        map_data = reports.data  # contains shapefile paths, and labels for region codes and names
-        boundary_name = reports.geography.metadata.shapefile.name
-        code_name = reports.geography.metadata.shapefile.key
-        code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
-
-        # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
-        all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
-
-        if code_name not in all_shapes.columns:
-            raise KeyError(f"{code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
-
-        original_number_of_shapes = len(all_shapes.index)
-        logger.info(f"Filtering {original_number_of_shapes} shapes by {code_name} being in the {code_col} of the map_data")
-        logger.debug(f"Filtering {original_number_of_shapes} shapes by {code_name} being in \n{map_data[code_col]}")
-
-        list_codes = map_data[code_col].drop_duplicates().astype(str).to_list()
-        filtered_shapes = all_shapes.loc[all_shapes[code_name].isin(list_codes)]
-        logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
-
-        # Covert shape file to world co-ordinates
-        geo_data = filtered_shapes[["geometry", code_name, boundary_name]].to_crs(epsg=utility.WGS_84)
-        # logger.debug(f"geo_data\n{geo_data}")
-
-        logger.info(f"Geography changed to: {code_col} ({code_name}). Data has columns {map_data.columns}.")
-        
-        return map_data, boundary_name, code_name, code_col, geo_data
 
     def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True) -> None:
         """Adds a maker layer to the map
