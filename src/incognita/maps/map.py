@@ -52,7 +52,7 @@ class Map:
             attr="Map data &copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>",
             # tiles='OpenStreetMap',
             tiles="CartoDB positron nolabels",
-            **leaflet_kwargs
+            **leaflet_kwargs,
         )
         # self.map_labels = folium.TileLayer("CartoDB positron onlylabels", overlay=True)
         self.map.add_child(folium.LayerControl(collapsed=False))  # Add layer control to map
@@ -61,7 +61,17 @@ class Map:
         self._region_of_colour = None
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
-    def add_areas(self, value_col: str, tooltip: str, layer_name: str, reports: Reports, show: bool = False, scale_index: list[int] = None, scale_step_boundaries: list[int] = None, significance_threshold: float = 2.5) -> None:
+    def add_areas(
+        self,
+        value_col: str,
+        tooltip: str,
+        layer_name: str,
+        reports: Reports,
+        show: bool = False,
+        scale_index: list[int] = None,
+        scale_step_boundaries: list[int] = None,
+        significance_threshold: float = 2.5,
+    ) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
 
         Args:
@@ -75,7 +85,7 @@ class Map:
             significance_threshold: If an area's value is significant enough to be displayed
 
         """
-        colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
+        colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
         map_data = reports.data  # contains shapefile paths, and labels for region codes and names
         code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
         geo_data = _load_boundary(reports)
@@ -93,7 +103,7 @@ class Map:
         if scale_step_boundaries is None:
             quantiles = (0, 20, 40, 60, 80, 100)
             scale_step_boundaries = [np.percentile(non_zero_value_col, q) for q in quantiles]
-        colour_map = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
+        colour_map = branca.colormap.LinearColormap(colors=colours, index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
         colour_map.caption = layer_name
 
         logger.info(f"Colour scale boundary values\n{scale_step_boundaries}")
@@ -308,11 +318,9 @@ class Map:
             filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
-        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer_name=layer,  cluster_markers=cluster_markers)
+        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer_name=layer, cluster_markers=cluster_markers)
 
-    def add_custom_data(
-        self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None
-    ) -> None:
+    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None) -> None:
         """Function to add custom data as markers on map
 
         Args:
