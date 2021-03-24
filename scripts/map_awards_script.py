@@ -28,8 +28,7 @@ if __name__ == "__main__":
     mapper = Map(map_name="UK_QSA_awards")
 
     # Plot
-    dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
-    mapper.add_areas(dimension, reports, show=True)
+    mapper.add_areas("%-QSA", "QSA %", "QSA %", reports, show=True)
     mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), ["youth membership", "awards"], single_section="Explorers", cluster_markers=True)
 
     # Save the map and display

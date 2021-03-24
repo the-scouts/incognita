@@ -33,10 +33,9 @@ if __name__ == "__main__":
     mapper = Map(map_name="lsoa_ew_map 6")
 
     # Create 6 to 17 map - IMD deciles
-    dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "Index of Multiple Deprivation Decile"}
     scale = {"min": 1, "max": 10, "index": [1, 3, 7, 10], "boundaries": [1, 3, 7, 10]}
-    mapper.add_areas(dimension, lsoa, show=True, scale=scale)
-    # map.add_areas(dimension, iz, show=True)
+    mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", lsoa, show=True, scale=scale)
+    # mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", iz, show=True)
 
     # Plot sections
     mapper.set_region_of_colour("X_name", countries)

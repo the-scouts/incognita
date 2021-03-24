@@ -63,11 +63,13 @@ class Map:
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
         self.layers: dict[str, Layer] = {}
 
-    def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
+    def add_areas(self, column: str, tooltip: str, legend: str, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
 
         Args:
-            dimension: specifies the column of the data to score against
+            column: Data column to use for choropleth colour values
+            tooltip: Mouseover tooltip for each boundary (e.g. "% Change 6-18")
+            legend: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
             reports:
             show: If True, show the layer by default
             scale:
@@ -82,8 +84,8 @@ class Map:
         # code_col holds the name of the region class, e.g. oslaua, pcon
 
         # Set score col properties to use for a particular boundary
-        score_col = dimension["column"]  # holds the column name of the choropleth dimension
-        score_col_label = dimension["tooltip"]  # tooltip label for the score_col value
+        score_col = column  # holds the column name of the choropleth dimension
+        score_col_label = tooltip  # tooltip label for the score_col value
         logger.info(f"Setting score column to {score_col} (displayed: {score_col_label})")
 
         if score_col not in map_data.columns:
@@ -109,7 +111,7 @@ class Map:
         branca.colormap.StepColormap([lcm.rgba_floats_tuple(colourmap_step_index[i] * (1.-i/(len(colourmap_step_index)-1-1.)) + colourmap_step_index[i+1] * i/(len(colourmap_step_index)-1-1.)) for i in range(len(colourmap_step_index)-1)], index=colourmap_step_index, vmin=colourmap_step_index[0], vmax=colourmap_step_index[-1])
 
         colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max).to_step(index=colourmap_step_index)
-        colourmap.caption = dimension["legend"]
+        colourmap.caption = legend
 
         logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
         logger.info(f"Colour scale index values\n{colourmap_index}")
@@ -129,7 +131,7 @@ class Map:
         self.map.add_child(
             folium.GeoJson(
                 data=merged_data.to_json(),
-                name=dimension["legend"],  # the name of the Layer, as it will appear in the layer controls,
+                name=legend,  # the name of the Layer, as it will appear in the layer controls,
                 style_function=lambda x: {
                     "fillColor": _map_colourmap(x["properties"], score_col, significance_threshold, colourmap),
                     "color": "black",

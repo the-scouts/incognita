@@ -22,8 +22,7 @@ if __name__ == "__main__":
     mapper = Map(map_name="Leeds")
 
     # Plot
-    dimension = {"column": f"Beavers-{year}", "tooltip": f"Beavers {year}", "legend": "# Beavers"}
-    mapper.add_areas(dimension, reports, show=True)
+    mapper.add_areas(f"Beavers-{year}", f"Beavers {year}", "# Beavers", reports, show=True)
     mapper.add_custom_data(
         config.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
         "Primary Schools",

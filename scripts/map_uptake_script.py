@@ -56,24 +56,19 @@ if __name__ == "__main__":
     mapper = Map(map_name=f"{county_name} uptake map")
 
     # # Create 6 to 17 map - Westminster Constituencies
-    # dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (PCon)"}
-    # mapper.add_areas(dimension, pcon_reports, show=True)
+    # mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (PCon)", pcon_reports, show=True)
     #
     # # Create 6 to 17 map - IMD deciles
-    # dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    # mapper.add_areas(dimension, imd_reports)
+    # mapper.add_areas("imd_decile", "IMD", "IMD Decile", imd_reports)
     #
     # # Create 6 to 17 map - Local Authorities
-    # # dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (LAs)"}
-    # # mapper.add_areas(dimension, lad_reports)
+    # mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (LAs)", lad_reports)
     #
     # # Create 6 to 17 map - Wards
-    # dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (Wards)"}
-    # mapper.add_areas(dimension, wards_reports)
+    # mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (Wards)", wards_reports)
 
     # Create 6 to 17 map - Wards
-    dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (Districts)"}
-    mapper.add_areas(dimension, nys_reports, show=True)
+    mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (Districts)", nys_reports, show=True)
 
     # Plot sections
     mapper.set_region_of_colour("C_name", {county_name})
@@ -87,9 +82,8 @@ if __name__ == "__main__":
     # create_section_maps
     # static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
     # for section_label in Reports.SECTION_AGES.keys():
-    #     dimension = {"column": f"%-{section_label}-{year}", "tooltip": section_label, "legend": f"{year} {section_label} uptake (%)"}
     #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
-    #     section_map.add_areas(dimension, pcon_reports, scale=static_scale)
+    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, scale=static_scale)
     #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), ["youth membership"], single_section=section_label)
     #     section_map.save_map()
 
