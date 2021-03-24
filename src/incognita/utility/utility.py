@@ -138,10 +138,6 @@ def section_from_type(section_type: str) -> str:
     return section_types[section_type]
 
 
-def section_from_type_vector(section_type: pd.Series) -> pd.Series:
-    return section_type.map(section_types)
-
-
 def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: ONSPostcodeDirectory) -> pd.Series:
     """Calculate IMD decile from ranks, country codes and ONS metadata.
 

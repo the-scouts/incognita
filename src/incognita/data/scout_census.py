@@ -87,8 +87,8 @@ class ColumnLabelsSections(pydantic.BaseModel):
         waiting_list="WaitList_e",
         is_yl_unit="Young_Leader_Unit",
         top_award=[
+            "Chief_Scout_Diamond_Awards",  # reorder for Diamond first
             "Chief_Scout_Platinum_Awards",
-            "Chief_Scout_Diamond_Awards",
             "Queens_Scout_Awards",
             "Duke_Of_Edinburghs_Bronze",
             "Duke_Of_Edinburghs_Silver",
@@ -108,9 +108,9 @@ class ColumnLabelsSections(pydantic.BaseModel):
         youth_cols=["Network_m", "Network_f", "Network_SelfIdentify", "Network_PreferNoToSay"],
         waiting_list=None,
         top_award=[
+            "Queens_Scout_Awards",  # reorder for QSA first
             "Chief_Scout_Platinum_Awards",
             "Chief_Scout_Diamond_Awards",
-            "Queens_Scout_Awards",
             "Duke_Of_Edinburghs_Bronze",
             "Duke_Of_Edinburghs_Silver",
             "Duke_Of_Edinburghs_Gold",

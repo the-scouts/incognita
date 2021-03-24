@@ -156,7 +156,7 @@ class Map:
             return
 
         # Sort sections dataframe
-        sections = sections.sort_values("Object_ID").reset_index(drop=True)
+        sections = sections.sort_values(scout_census.column_labels.id.OBJECT).reset_index(drop=True)
 
         if layer_name in self.map._children:  # NoQA
             raise ValueError("Layer already used!")
@@ -164,10 +164,8 @@ class Map:
         layer = layer_type(name=layer_name, show=show_layer).add_to(self.map)
 
         # Sets the map so that it opens in the right area
-        valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1]
-
-        # Sets the map so it opens in the right area
-        self.map.fit_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
+        valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1, ["lat", "long"]]
+        self.map.fit_bounds(((valid_points.lat.min(), valid_points.long.min()), (valid_points.lat.max(), valid_points.long.max())))
 
         # IDs for finding sections
         district_sections_group_code = -1
@@ -176,29 +174,20 @@ class Map:
         # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
         group_ids = sections[scout_census.column_labels.id.GROUP].fillna(district_sections_group_code)
 
-        # IDs for iteration
-        postcodes = postcodes_ids.drop_duplicates().dropna().astype(str).to_list()
-
-        # Initialise variables
-        sections_info_table = pd.DataFrame()
-
         # Test for if there are any sections
-        if not group_ids.dropna().empty or district_ids.dropna().empty:
-            unit_type = sections[scout_census.column_labels.UNIT_TYPE]
-            sections["section"] = utility.section_from_type_vector(unit_type)
-            section_names = sections["name"].astype("string")
-            sections["yp"] = sections.lookup(sections.index, sections["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).total))
-            section_member_info = section_names + " : " + sections["yp"].astype(str) + " " + sections["section"] + "<br>"
+        if (not group_ids.dropna().empty) or (not district_ids.dropna().empty):
+            sections["section"] = sections[scout_census.column_labels.UNIT_TYPE].map(utility.section_types)
+            section_names = sections["name"].astype(str)
+            yp_total_cols = [section_model.total for section_name, section_model in scout_census.column_labels.sections]
+            yp_totals = sections[yp_total_cols].sum(axis=1).astype(int).astype(str)  # Each row only has values for one section type
+            section_member_info = section_names + " : " + yp_totals + " " + sections["section"]
 
-            # Awful, awful workaround as Units & Network top awards are lists not strings. Effectively we only tabulate for groups.
-            grp_sects = sections[sections[scout_census.column_labels.UNIT_TYPE].isin(["Colony", "Pack", "Troop"])]
-            sections["awards"] = pd.Series(
-                grp_sects[grp_sects["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).top_award)].values.diagonal(), grp_sects.index
-            ).astype("Int32")
-            sections["eligible"] = pd.Series(
-                grp_sects[grp_sects["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).top_award_eligible)].values.diagonal(), grp_sects.index
-            ).astype("Int32")
-            section_awards_info = section_names + " : " + sections["awards"].astype(str) + " Top Awards out of " + sections["eligible"].astype(str) + " eligible<br>"
+            # This uses just the first top award - so only Diamond/QSA for Explorers/Network
+            top_award_cols = [section_model.top_award[0] for section_name, section_model in scout_census.column_labels.sections]
+            awards = sections[top_award_cols].sum(axis=1).astype(int).astype(str)
+            award_eligible_cols = [section_model.top_award_eligible[0] for section_name, section_model in scout_census.column_labels.sections]
+            eligible = sections[award_eligible_cols].sum(axis=1).astype(int).astype(str)
+            section_awards_info = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
 
             if isinstance(colour, dict):
                 census_column = colour["census_column"]
@@ -227,61 +216,54 @@ class Map:
                 "awards_info": section_awards_info,
             })
             # fmt: on
-            sections_info_table = sections_info_table.reset_index().set_index(["postcode", "district_ID", "group_ID", "index"], drop=False).drop("index", axis=1)
-            sections_info_table = sections_info_table.dropna(subset=["district_ID"]).sort_index(level=[0, 1, 2, 3])
+            sections_info_table = sections_info_table.reset_index(drop=True).set_index(["postcode", "district_ID", "group_ID"], drop=False)
+            sections_info_table = sections_info_table.dropna(subset=["district_ID"]).sort_index(level=[0, 1, 2])
+        else:
+            sections_info_table = pd.DataFrame()
+
+        include_youth_data = "youth membership" in marker_data
+        include_awards_data = "awards" in marker_data
 
         _sect_info_type = dict[str, str]
         _group_info_type = dict[str, Union[str, _sect_info_type]]
         _district_info_type = dict[str, Union[str, float, _group_info_type]]
         _postcode_info_type = dict[str, _district_info_type]
         postcode_info: _postcode_info_type = {}
-        for postcode in postcodes:
+        for postcode in set(postcodes_ids.dropna()):
             # Find all the sections with the same postcode
             colocated_sections = sections_info_table.loc[(postcode,)]
-            location_row = colocated_sections.iloc[0].to_dict()
-            postcode_info[postcode] = {
-                "$lat": round(location_row["lat"], 4),
-                "$long": round(location_row["long"], 4),
-                "$marker_colour": str(location_row["marker_colour"]),
-            }
+            lat = round(colocated_sections["lat"].array[0], 4)
+            long = round(colocated_sections["long"].array[0], 4)
+            marker_colour = str(colocated_sections["marker_colour"].array[0])
+            postcode_info[postcode] = current_postcode_info = {"$lat": lat, "$long": long, "$marker_colour": marker_colour}
 
-            district_ids = colocated_sections["district_ID"].drop_duplicates()
-            for district_id in district_ids:
-                district_metadata = sections_info_table.loc[(postcode, district_id)]
-                county_name = district_metadata["county_name"].to_list()[0]
-                district_name = district_metadata["district_name"].to_list()[0]
-
-                # Initialise info dict. Note usage of '$' in the County key, this is as districts must only have letters in their names.
-                postcode_info[postcode][district_name] = {"$County": county_name}
-
-                # Loop through sections in group-likes
-                group_ids = district_metadata["group_ID"].drop_duplicates()
-                for group_id in group_ids:
-                    sub_table = sections_info_table.loc[(postcode, district_id, group_id)]
-                    group_name = sub_table["group_name"].to_list()[0] if group_id != district_sections_group_code else "District"
-                    postcode_info[postcode][district_name][group_name] = {
-                        "sect_names": "".join(sub_table["section_name"] + "<br>"),
-                        "member_info": "".join(sub_table["member_info"]),
-                        "awards_info": "<br>" + "".join(sub_table["awards_info"]),
-                    }
-
-        for postcode_name, postcode_dict in postcode_info.items():
-            lat = postcode_dict.pop("$lat")
-            long = postcode_dict.pop("$long")
-            marker_colour = postcode_dict.pop("$marker_colour")
             html = ""
 
-            for district_name, district_dict in postcode_dict.items():
+            for district_id in set(colocated_sections["district_ID"]):
+                district_metadata = sections_info_table.loc[(postcode, district_id)]
+                county_name: str = district_metadata["county_name"].array[0]
+                district_name: str = district_metadata["district_name"].array[0]
+
+                # Initialise info dict. Note usage of '$' in the County key, this is as districts must only have letters in their names.
+                current_postcode_info[district_name] = district_info = {"$County": county_name}
+
                 # Construct the html to form the marker popup
                 # District sections first followed by Group sections
-                county_name = district_dict.pop("$County")
                 html += f"<h3>{district_name} ({county_name})</h3>"
 
-                for child, child_dict in district_dict.items():
-                    html += f"<h4>{child}</h4><p align='center'>"
-                    html += child_dict["member_info"] if "youth membership" in marker_data else child_dict["sect_names"]
-                    if "awards" in marker_data and child != "District":
-                        html += child_dict["awards_info"]
+                # Loop through sections in group-likes
+                for group_id in set(district_metadata["group_ID"]):
+                    sub_table = sections_info_table.loc[(postcode, district_id, group_id)]
+                    group_name = sub_table["group_name"].array[0] if group_id != district_sections_group_code else "District"
+                    section_names = "<br>".join(sub_table["section_name"])
+                    member_info = "<br>".join(sub_table["member_info"])
+                    awards_info = "<br>".join(sub_table["awards_info"])
+                    district_info[group_name] = {"sect_names": section_names, "member_info": member_info, "awards_info": awards_info}
+
+                    html += f"<h4>{group_name}</h4><p align='center'>"
+                    html += member_info if include_youth_data else section_names
+                    if include_awards_data and group_name != "District":
+                        html += "<br>" + awards_info
                     html += "</p>"
 
             # Fixes physical size of popup
