@@ -161,27 +161,6 @@ class Reports:
             group_list: pd.Series = group_series.dropna().drop_duplicates().str.strip()
             return group_list.str.cat(sep="\n"), group_list.size
 
-        def _young_people_numbers_groupby(group_df: pd.DataFrame) -> dict:
-            metric_cols = {}
-            if opt_section_numbers:
-                metric_cols |= {section_model.total: "" for section_name, section_model in sections_model if section_name != "Network"}
-            if opt_number_of_sections:
-                # TODO correct for pluralisation (e.g. Colony -> Colonys not Colonies)
-                metric_cols |= {section_model.unit_label: f"{section_model.type}s" for section_name, section_model in sections_model if section_name != "Network"}
-            if opt_6_to_17_numbers:
-                metric_cols["All"] = ""
-            if opt_waiting_list_totals:
-                metric_cols["Waiting List"] = ""
-            if opt_adult_numbers:
-                metric_cols["Adults"] = ""
-
-            output = {}
-            for census_year, year_data in group_df.groupby(["Year"], sort=True)[[*metric_cols]].sum().to_dict("index").items():
-                for section, num in year_data.items():
-                    key = section.removesuffix('_total')
-                    output[f"{metric_cols[key] if metric_cols[section] else key}-{census_year}"] = num
-            return output
-
         def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
             summed = group_df[[award_name, award_eligible]].sum()
             output = summed.to_dict()
@@ -235,8 +214,24 @@ class Reports:
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
             logger.debug(f"Adding young people numbers")
-            sections_table = grouped_data.apply(_young_people_numbers_groupby)
-            dataframes.append(pd.DataFrame(sections_table.values.tolist(), index=sections_table.index))
+            metric_cols = []
+            rename = {}
+            if opt_section_numbers:
+                metric_cols += [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
+            if opt_number_of_sections:
+                # TODO correct for pluralisation (e.g. Colony -> Colonys not Colonies)
+                metric_cols += [section_model.unit_label for section_name, section_model in sections_model if section_name != "Network"]
+                rename |= {section_model.unit_label: f"{section_model.type}s" for section_name, section_model in sections_model if section_name != "Network"}
+            if opt_6_to_17_numbers:
+                metric_cols += ["All"]
+            if opt_waiting_list_totals:
+                metric_cols += ["Waiting List"]
+            if opt_adult_numbers:
+                metric_cols += ["Adults"]
+            agg = self.scout_data.census_data.groupby([geog_name, "Year"], sort=True)[metric_cols].sum()
+            agg = agg.unstack().sort_index()
+            agg.columns = [f"{rename.get(key, key)}-{census_year}".replace('_total', "") for key, census_year in agg.columns]
+            dataframes.append(agg)
 
         if opt_awards:
             # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
