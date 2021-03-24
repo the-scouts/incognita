@@ -112,7 +112,7 @@ class Map:
                 data=merged_data.to_json(),
                 name=layer_name,  # the name of the Layer, as it will appear in the layer controls,
                 style_function=lambda x: {
-                    "fillColor": _map_colourmap(x["properties"], value_col, significance_threshold, colour_map),
+                    "fillColor": _map_colour_map(x["properties"], value_col, significance_threshold, colour_map),
                     "color": "black",
                     "fillOpacity": _map_opacity(x["properties"], value_col, significance_threshold),
                     "weight": 0.10,
@@ -180,7 +180,7 @@ class Map:
             sections["yp"] = sections.lookup(sections.index, sections["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).total))
             section_member_info = section_names + " : " + sections["yp"].astype(str) + " " + sections["section"] + "<br>"
 
-            # Awful, awful workaround as Units & Network top awards are lists not strings. Effectivley we only tabluate for groups.
+            # Awful, awful workaround as Units & Network top awards are lists not strings. Effectively we only tabulate for groups.
             grp_sects = sections[sections[scout_census.column_labels.UNIT_TYPE].isin(["Colony", "Pack", "Troop"])]
             sections["awards"] = pd.Series(
                 grp_sects[grp_sects["section"].map(lambda x: getattr(scout_census.column_labels.sections, x).top_award)].values.diagonal(), grp_sects.index
@@ -230,8 +230,8 @@ class Map:
             colocated_sections = sections_info_table.loc[(postcode,)]
             location_row = colocated_sections.iloc[0].to_dict()
             postcode_info[postcode] = {
-                "$lat": float(location_row["lat"]),
-                "$long": float(location_row["long"]),
+                "$lat": round(location_row["lat"], 4),
+                "$long": round(location_row["long"], 4),
                 "$marker_colour": str(location_row["marker_colour"]),
             }
 
@@ -255,7 +255,6 @@ class Map:
                         "awards_info": "<br>" + "".join(sub_table["awards_info"]),
                     }
 
-        icon = folium.Icon(color=colour)
         for postcode_name, postcode_dict in postcode_info.items():
             lat = postcode_dict.pop("$lat")
             long = postcode_dict.pop("$long")
@@ -277,7 +276,7 @@ class Map:
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-            layer.add_child(folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=icon))
+            layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
 
     def add_sections_to_map(
         self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
@@ -298,7 +297,7 @@ class Map:
                 - youth membership
                 - awards
             single_section: One of Beavers, Cubs, Scouts, Explorers, Network
-            layer: The layer of the map that the setions are added to
+            layer: The layer of the map that the sections are added to
             cluster_markers: Should we cluster the markers?
 
         """
@@ -426,14 +425,14 @@ def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict
     return colour_mapping
 
 
-def _map_colourmap(properties: dict, column: str, threshold: float, colourmap: colormap.ColorMap) -> str:
+def _map_colour_map(properties: dict, column: str, threshold: float, colour_map: colormap.ColorMap) -> str:
     """Returns colour from colour map function and value
 
     Args:
         properties: dictionary of properties
         column:
         threshold:
-        colourmap: a Branca Colormap object to calculate the region's colour
+        colour_map: a Branca Colormap object to calculate the region's colour
 
     Returns:
         hexadecimal colour value "#RRGGBB"
@@ -449,7 +448,7 @@ def _map_colourmap(properties: dict, column: str, threshold: float, colourmap: c
     elif float(area_score) == 0:
         return "#555555"
     else:
-        return colourmap(area_score)
+        return colour_map(area_score)
 
 
 def _map_opacity(properties: dict, column: str, threshold: float) -> float:
