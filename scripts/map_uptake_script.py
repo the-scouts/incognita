@@ -53,7 +53,7 @@ if __name__ == "__main__":
     nys_reports.create_uptake_report(report_name=f"{county_name} - nys (uptake)")
 
     # Create map object
-    mapper = Map(scout_data, map_name=f"{county_name} uptake map")
+    mapper = Map(map_name=f"{county_name} uptake map")
 
     # # Create 6 to 17 map - Westminster Constituencies
     # dimension = {"column": f"%-All-{year}", "tooltip": "% 6-17 Uptake", "legend": "% 6-17 Uptake (PCon)"}
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     your_sections = dict(name="Your Sections", markers_clustered=False, show=True)
     # other_sections = dict(name="Other Sections", markers_clustered=False, show=False)
     # mapper.add_meeting_places_to_map(scout_data.census_data.loc[~(scout_data.census_data["C_name"] == county_name)], "lightgray", ["youth membership"], other_sections)
-    mapper.add_meeting_places_to_map(scout_data.census_data.loc[scout_data.census_data["C_name"] == county_name], mapper.district_colour_mapping(), ["youth membership"], your_sections)
+    mapper.add_meeting_places_to_map(scout_data.census_data.loc[scout_data.census_data["C_name"] == county_name], mapper.district_colour_mapping(scout_data), ["youth membership"], your_sections)
 
     # Save the map and display
     mapper.save_map()
@@ -90,9 +90,9 @@ if __name__ == "__main__":
     # static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
     # for section_label in Reports.SECTION_AGES.keys():
     #     dimension = {"column": f"%-{section_label}-{year}", "tooltip": section_label, "legend": f"{year} {section_label} uptake (%)"}
-    #     section_map = Map(scout_data, map_name=f"pcon_uptake_report_{section_label}")
+    #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
     #     section_map.add_areas(dimension, pcon_reports, scale=static_scale)
-    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
+    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), ["youth membership"], single_section=section_label)
     #     section_map.save_map()
 
     # get script execution time etc.

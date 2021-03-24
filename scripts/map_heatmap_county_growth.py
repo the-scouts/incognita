@@ -93,7 +93,7 @@ if __name__ == "__main__":
     utility.save_report(cty_reports.data, f"{location_name} - Counties with change")
 
     # Create map object
-    mapper = Map(scout_data, map_name=f"{location_name} uptake map")
+    mapper = Map(map_name=f"{location_name} uptake map")
 
     # dimension = {"column": "All_change", "tooltip": "% Change 6-18", "legend": "% Change 6-18 (LADs)"}
     # mapper.add_areas(dimension, lad_reports)
@@ -144,9 +144,9 @@ if __name__ == "__main__":
     # static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
     # for section_label in Reports.SECTION_AGES.keys():
     #     dimension = {"column": f"%-{section_label}-{year}", "tooltip": section_label, "legend": f"{year} {section_label} uptake (%)"}
-    #     section_map = Map(scout_data, map_name=f"pcon_uptake_report_{section_label}")
+    #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
     #     section_map.add_areas(dimension, pcon_reports, scale=static_scale)
-    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
+    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), ["youth membership"], single_section=section_label)
     #     section_map.save_map()
 
     # get script execution time etc.

@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # iz.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="iz_all")
 
     # Create map object
-    mapper = Map(scout_data, map_name="lsoa_ew_map 6")
+    mapper = Map(map_name="lsoa_ew_map 6")
 
     # Create 6 to 17 map - IMD deciles
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "Index of Multiple Deprivation Decile"}
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # Plot sections
     mapper.set_region_of_colour("X_name", countries)
     sections = dict(name="Sections", markers_clustered=True, show=True)
-    mapper.add_meeting_places_to_map(sections=scout_data.census_data, colour=mapper.district_colour_mapping(), marker_data=["youth membership"], layer=sections)
+    mapper.add_meeting_places_to_map(sections=scout_data.census_data, colour=mapper.district_colour_mapping(scout_data), marker_data=["youth membership"], layer=sections)
 
     # Save the map and display
     mapper.save_map()

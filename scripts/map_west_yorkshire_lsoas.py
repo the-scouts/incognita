@@ -17,13 +17,13 @@ if __name__ == "__main__":
     # reports.create_boundary_report(["Section numbers"], historical=True, report_name=f"{county_name}_by_lsoa")  # TODO: before postcode filtering
 
     # Create map object
-    mapper = Map(scout_data, map_name=f"{county_name}")
+    mapper = Map(map_name=f"{county_name}")
 
     # Plot
     dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
     mapper.add_areas(dimension, reports, show=True, significance_threshold=0)
     mapper.set_region_of_colour("C_name", {county_name})
-    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(), ["youth membership"])
+    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(scout_data), ["youth membership"])
 
     # Save the map and display
     mapper.save_map()

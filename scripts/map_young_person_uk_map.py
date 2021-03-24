@@ -22,11 +22,11 @@ if __name__ == "__main__":
     reports = Reports("District", scout_data)
     reports.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="uk_by_district")
 
-    mapper = Map(scout_data, map_name="uk_by_la_map")
+    mapper = Map(map_name="uk_by_la_map")
 
     dimension = {"column": f"All-{year}", "tooltip": "Under 18s", "legend": "Scouts aged under 18"}
     mapper.add_areas(dimension, reports, show=True)
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"], cluster_markers=True)
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), ["youth membership"], cluster_markers=True)
 
     # Save the map and display
     mapper.save_map()

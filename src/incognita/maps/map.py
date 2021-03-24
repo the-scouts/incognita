@@ -37,19 +37,15 @@ class Map:
 
     """
 
-    def __init__(self, scout_data: ScoutData, map_name: str):
+    def __init__(self, map_name: str):
         """Initialise Map class.
 
         Args:
-            scout_data: ScoutData object with data
             map_name: Filename for the saved map
 
         """
         # Can be set by set_region_of_colour
         self._region_of_colour = None
-
-        self.scout_data = scout_data
-
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
         # Create folium map
@@ -406,23 +402,11 @@ class Map:
     def set_region_of_colour(self, column: str, value_list: set) -> None:
         self._region_of_colour = {"column": column, "value_list": value_list}
 
-    def generic_colour_mapping(self, grouping_column: str) -> dict:
-        # fmt: off
-        colours = cycle([
-            "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
-            "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
-        ])
-        # fmt: on
-        grouping_ids = self.scout_data.census_data[grouping_column].drop_duplicates()
-        mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
-        colour_mapping = {"census_column": grouping_column, "mapping": mapping}
-        return colour_mapping
+    def district_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
+        return _generic_colour_mapping(scout_data, scout_census.column_labels.id.DISTRICT)
 
-    def district_colour_mapping(self) -> dict:
-        return self.generic_colour_mapping(scout_census.column_labels.id.DISTRICT)
-
-    def county_colour_mapping(self) -> dict:
-        return self.generic_colour_mapping(scout_census.column_labels.id.COUNTY)
+    def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
+        return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
 
     def validate_columns(self) -> None:
         if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:
@@ -528,3 +512,16 @@ class Map:
 
         """
         folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
+
+
+def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict[str, Union[str, dict[int, str]]]:
+    # fmt: off
+    colours = cycle([
+        "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
+        "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
+    ])
+    # fmt: on
+    grouping_ids = scout_data.census_data[grouping_column].drop_duplicates()
+    mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
+    colour_mapping = {"census_column": grouping_column, "mapping": mapping}
+    return colour_mapping

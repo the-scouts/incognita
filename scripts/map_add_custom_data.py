@@ -19,7 +19,7 @@ if __name__ == "__main__":
     reports.create_boundary_report(["Section numbers"], report_name="leeds_sections")
 
     # Create map object
-    mapper = Map(scout_data, map_name="Leeds")
+    mapper = Map(map_name="Leeds")
 
     # Plot
     dimension = {"column": f"Beavers-{year}", "tooltip": f"Beavers {year}", "legend": "# Beavers"}
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         location_cols="Postcodes",
         marker_data=["EstablishmentName"],
     )
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership"], single_section="Beavers")
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), ["youth membership"], single_section="Beavers")
 
     # Save the map and display
     mapper.save_map()
