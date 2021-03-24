@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # lad_reports.data[f"Sections_change"] = (lad_reports.data[['Colonys-2020', 'Packs-2020', 'Troops-2020', 'Units-2020']].sum(axis=1) / lad_reports.data[['Colonys-2019', 'Packs-2019', 'Troops-2019', 'Units-2019']].sum(axis=1) - 1) * 100
 
     cty_reports = Reports("County", scout_data)
-    cty_reports.ons_pd.fields.append(cty_reports.geography.metadata.key)
+    cty_reports.ons_pd.fields.add(cty_reports.geography.metadata.key)
     cty_reports.filter_boundaries("ctry", {"W92000004"})
     cty_reports.geography.boundary_codes = cty_reports.geography.boundary_codes[cty_reports.geography.boundary_codes["codes"].str.startswith("W")]
     cty_reports.add_shapefile_data()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         / cty_reports.data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1)
         - 1
     ) * 100
-    cty_reports._save_report(cty_reports.data, f"{location_name} - Counties with change")
+    utility.save_report(cty_reports.data, f"{location_name} - Counties with change")
 
     # Create map object
     mapper = Map(scout_data, map_name=f"{location_name} uptake map")

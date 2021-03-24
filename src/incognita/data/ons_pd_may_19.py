@@ -2,7 +2,7 @@ from incognita.data.ons_pd import ONSPostcodeDirectory
 from incognita.utility import config
 
 ons_postcode_directory_may_19 = ONSPostcodeDirectory(
-    fields=["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"],
+    fields={"lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile", "nys_districts"},
     index_column="pcd",
     data_types={
         "oscty": "category",

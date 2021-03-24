@@ -47,7 +47,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
         config.SETTINGS.ons_pd.full,
         index_col=ons_pd.index_column,
         dtype=ons_pd.data_types,
-        usecols=ons_pd.fields,
+        usecols=[*ons_pd.fields],
         encoding="utf-8",
     )
 

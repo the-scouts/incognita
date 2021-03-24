@@ -41,7 +41,7 @@ class Boundary(pydantic.BaseModel):
 class ONSPostcodeDirectory(pydantic.BaseModel):
     """Used for holding and accessing ONS Postcode Directory data."""
 
-    fields: list[str]  # columns to read from the full csv file
+    fields: set[str]  # columns to read from the full csv file
     index_column: str  # column to use as the index when merging. Must contain unique values
     data_types: dict[str, str]  # pandas data types for the columns to load
 

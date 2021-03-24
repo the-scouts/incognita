@@ -53,7 +53,7 @@ def test_scout_data_columns(scout_data_factory):
     scout_data_stub = scout_data_factory(pd.DataFrame())
 
     column_labels = scout_census.column_labels
-    columns = [*column_labels.id.values(), *column_labels.name.values()]
+    columns = {*column_labels.id.values(), *column_labels.name.values()}
 
     assert scout_data_stub.filterable_columns == columns
 
