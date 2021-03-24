@@ -71,9 +71,8 @@ if __name__ == "__main__":
     mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (Districts)", nys_reports, show=True)
 
     # Plot sections
-    mapper.set_region_of_colour("C_name", {county_name})
-    # mapper.add_meeting_places_to_map(scout_data.census_data.loc[~(scout_data.census_data["C_name"] == county_name)], "lightgray", ["youth membership"], "Other Sections", show_layer=False)
-    mapper.add_meeting_places_to_map(scout_data.census_data.loc[scout_data.census_data["C_name"] == county_name], mapper.district_colour_mapping(scout_data), ["youth membership"], "Your Sections")
+    # mapper.add_meeting_places_to_map(scout_data.census_data.loc[~(scout_data.census_data["C_name"] == county_name)], "lightgray", ["youth membership"], "Other Sections", show_layer=False, coloured_region={county_name}, coloured_region_key="C_name")
+    mapper.add_meeting_places_to_map(scout_data.census_data.loc[scout_data.census_data["C_name"] == county_name], mapper.district_colour_mapping(scout_data), ["youth membership"], "Your Sections", coloured_region={county_name}, coloured_region_key="C_name")
 
     # Save the map and display
     mapper.save_map()

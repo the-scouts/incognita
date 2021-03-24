@@ -57,8 +57,6 @@ class Map:
         # self.map_labels = folium.TileLayer("CartoDB positron onlylabels", overlay=True)
         self.map.add_child(folium.LayerControl(collapsed=False))  # Add layer control to map
 
-        # Can be set by set_region_of_colour
-        self._region_of_colour = None
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
     def add_areas(
@@ -134,7 +132,7 @@ class Map:
         # fmt: on
         self.map.add_child(colour_map)
 
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True) -> None:
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True, coloured_region: set[str] = None, coloured_region_key: str = "", ) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
@@ -147,6 +145,8 @@ class Map:
             layer_name: Name of map layer for meeting places. Default = "Sections"
             cluster_markers: Whether to cluster markers on the map
             show_layer: Whether to show the layer by default
+            coloured_region: If specified, markers on the map but not within coloured_region are grey
+            coloured_region_key: Column for coloured_region boundary codes
 
         """
         logger.info("Adding section markers to map")
@@ -208,8 +208,8 @@ class Map:
                 sections["marker_colour"] = colour
 
             # Areas outside the region_of_colour have markers coloured grey
-            if self._region_of_colour:
-                sections.loc[~sections[self._region_of_colour["column"]].isin(self._region_of_colour["value_list"]), "marker_colour"] = "gray"
+            if coloured_region_key and coloured_region is not None:
+                sections.loc[~sections[coloured_region_key].isin(coloured_region), "marker_colour"] = "gray"
 
             # fmt: off
             sections_info_table = pd.DataFrame({
@@ -289,7 +289,7 @@ class Map:
             layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
 
     def add_sections_to_map(
-        self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
+        self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False, coloured_region: set[str] = None, coloured_region_key: str = "",
     ) -> None:
         """Filter sections and add to map.
 
@@ -309,6 +309,8 @@ class Map:
             single_section: One of Beavers, Cubs, Scouts, Explorers, Network
             layer: The layer of the map that the sections are added to
             cluster_markers: Should we cluster the markers?
+            coloured_region: If specified, markers on the map but not within coloured_region are grey
+            coloured_region_key: Column for coloured_region boundary codes
 
         """
         if single_section:
@@ -318,7 +320,7 @@ class Map:
             filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
-        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer_name=layer, cluster_markers=cluster_markers)
+        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer_name=layer, cluster_markers=cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
 
     def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None) -> None:
         """Function to add custom data as markers on map
@@ -375,9 +377,6 @@ class Map:
     def show_map(self) -> None:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
-
-    def set_region_of_colour(self, column: str, value_list: set[str]) -> None:
-        self._region_of_colour = {"column": column, "value_list": value_list}
 
     def district_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.DISTRICT)
