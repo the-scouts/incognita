@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from branca import colormap
-    from folium.map import Layer
 
 
 class Map:
@@ -61,15 +60,14 @@ class Map:
         # Can be set by set_region_of_colour
         self._region_of_colour = None
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
-        self.layers: dict[str, Layer] = {}
 
-    def add_areas(self, column: str, tooltip: str, legend: str, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
+    def add_areas(self, value_col: str, tooltip: str, layer_name: str, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
 
         Args:
-            column: Data column to use for choropleth colour values
+            value_col: Data column to use for choropleth colour values
             tooltip: Mouseover tooltip for each boundary (e.g. "% Change 6-18")
-            legend: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
+            layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
             reports:
             show: If True, show the layer by default
             scale:
@@ -84,34 +82,29 @@ class Map:
         # code_col holds the name of the region class, e.g. oslaua, pcon
 
         # Set score col properties to use for a particular boundary
-        score_col = column  # holds the column name of the choropleth dimension
-        score_col_label = tooltip  # tooltip label for the score_col value
-        logger.info(f"Setting score column to {score_col} (displayed: {score_col_label})")
+        logger.info(f"Setting score column to {value_col} (displayed: {tooltip})")
 
-        if score_col not in map_data.columns:
-            logger.error(f"{score_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
-            raise KeyError(f"{score_col} is not a valid column in the data.")
+        if value_col not in map_data.columns:
+            logger.error(f"{value_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
+            raise KeyError(f"{value_col} is not a valid column in the data.")
 
-        non_zero_score_col = map_data[score_col][map_data[score_col] != 0].dropna().sort_values()
+        non_zero_value_col = map_data[value_col][map_data[value_col] != 0].dropna().sort_values()
 
         if not scale:
-            colourmap_index = non_zero_score_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
-            colourmap_min = map_data[score_col].min()
-            colourmap_max = map_data[score_col].max()
+            colourmap_index = non_zero_value_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
+            colourmap_min = map_data[value_col].min()
+            colourmap_max = map_data[value_col].max()
 
             quantiles = [0, 20, 40, 60, 80, 100]
-            colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
+            colourmap_step_index = [np.percentile(non_zero_value_col, q) for q in quantiles]
         else:
             colourmap_index = scale["index"]
             colourmap_min = scale["min"]
             colourmap_max = scale["max"]
             colourmap_step_index = scale["boundaries"]
 
-        lcm = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
-        branca.colormap.StepColormap([lcm.rgba_floats_tuple(colourmap_step_index[i] * (1.-i/(len(colourmap_step_index)-1-1.)) + colourmap_step_index[i+1] * i/(len(colourmap_step_index)-1-1.)) for i in range(len(colourmap_step_index)-1)], index=colourmap_step_index, vmin=colourmap_step_index[0], vmax=colourmap_step_index[-1])
-
         colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max).to_step(index=colourmap_step_index)
-        colourmap.caption = legend
+        colourmap.caption = layer_name
 
         logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
         logger.info(f"Colour scale index values\n{colourmap_index}")
@@ -120,25 +113,21 @@ class Map:
         merged_data = geo_data.merge(map_data, left_on=code_name, right_on=code_col).drop_duplicates()
         logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
-            logger.error("Data unsuccesfully merged resulting in zero records")
-            raise Exception("Data unsuccesfully merged resulting in zero records")
-
-        # score_col is column of dataframe used. Used for unique key.
-
-        print()
+            logger.error("Data unsuccessfully merged resulting in zero records")
+            raise Exception("Data unsuccessfully merged resulting in zero records")
 
         # fmt: off
         self.map.add_child(
             folium.GeoJson(
                 data=merged_data.to_json(),
-                name=legend,  # the name of the Layer, as it will appear in the layer controls,
+                name=layer_name,  # the name of the Layer, as it will appear in the layer controls,
                 style_function=lambda x: {
-                    "fillColor": _map_colourmap(x["properties"], score_col, significance_threshold, colourmap),
+                    "fillColor": _map_colourmap(x["properties"], value_col, significance_threshold, colourmap),
                     "color": "black",
-                    "fillOpacity": _map_opacity(x["properties"], score_col, significance_threshold),
+                    "fillOpacity": _map_opacity(x["properties"], value_col, significance_threshold),
                     "weight": 0.10,
                 },
-                tooltip=folium.GeoJsonTooltip(fields=[boundary_name, score_col], aliases=["Name", score_col_label], localize=True),
+                tooltip=folium.GeoJsonTooltip(fields=[boundary_name, value_col], aliases=["Name", tooltip], localize=True),
                 show=show,
             )
         )
@@ -169,9 +158,10 @@ class Map:
         # Sort sections dataframe
         sections = sections.sort_values("Object_ID").reset_index(drop=True)
 
-        if layer_name not in self.layers:
-            layer_type = MarkerCluster if cluster_markers else FeatureGroup
-            self.layers[layer_name] = layer_type(name=layer_name, show=show_layer).add_to(self.map)
+        if layer_name in self.map._children:  # NoQA
+            raise ValueError("Layer already used!")
+        layer_type = MarkerCluster if cluster_markers else FeatureGroup
+        layer = layer_type(name=layer_name, show=show_layer).add_to(self.map)
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1]
@@ -297,7 +287,7 @@ class Map:
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-            self.layers[layer_name].add_child(folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=icon))
+            layer.add_child(folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=icon))
 
     def add_sections_to_map(
         self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
@@ -362,14 +352,16 @@ class Map:
         if location_cols["crs"] != utility.WGS_84:
             custom_data = custom_data.to_crs(epsg=utility.WGS_84)
 
-        self.layers[layer_name] = FeatureGroup(name=layer_name, show=True).add_to(self.map)
+        if layer_name in self.map._children:  # NoQA
+            raise ValueError("Layer already used!")
+        layer = FeatureGroup(name=layer_name, show=True).add_to(self.map)
 
         # Plot marker and include marker_data in the popup for every item in custom_data
         icon = folium.Icon(color="green")
         if marker_data:
             def add_popup_data(row):
                 if not np.isnan(row.geometry.x):
-                    self.layers[layer_name].add_child(folium.Marker(
+                    layer.add_child(folium.Marker(
                             location=[round(row.geometry.y, 4), round(row.geometry.x, 4)],
                             popup=folium.Popup(html="".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data), max_width=2650),
                             icon=icon
@@ -377,7 +369,7 @@ class Map:
             custom_data.apply(add_popup_data, axis=1)
         else:
             for points in custom_data.geometry[custom_data.geometry.x.notna()].to_list():
-                self.layers[layer_name].add_child(folium.Marker(location=[round(points.y, 4), round(points.x, 4)], popup=None, icon=icon))
+                layer.add_child(folium.Marker(location=[round(points.y, 4), round(points.x, 4)], popup=None, icon=icon))
 
     def save_map(self) -> None:
         """Saves the folium map to a HTML file"""
@@ -395,19 +387,6 @@ class Map:
 
     def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
-
-    def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections") -> None:
-        """Adds a leaflet marker to the map using given values
-
-        Args:
-            lat: latitude of the marker
-            long: longitude of the marker
-            popup: popup text for the marker
-            colour: colour for the marker
-            layer_name: name of the layer that markers are added to
-
-        """
-        self.layers[layer_name].add_child(folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)))
 
 
 def _load_boundary(reports: Reports) -> tuple[pd.DataFrame, str, str, str, gpd.GeoDataFrame]:
