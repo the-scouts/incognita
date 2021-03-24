@@ -29,10 +29,6 @@ class Map:
     """This class enables easy plotting of maps with a shape file.
 
     Attributes:
-        map_data: contains shapefile paths, and labels for region codes and names
-        CODE_COL: holds the name of the region class, e.g. oslaua, pcon
-        SCORE_COL: holds the column name of the choropleth dimension
-        score_col_label: tooltip label for the self.SCORE_COL value
         map: holds the folium map object
 
     """
@@ -44,10 +40,11 @@ class Map:
             map_name: Filename for the saved map
 
         """
-        # Can be set by set_region_of_colour
-        self._region_of_colour = None
-        self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
-
+        # kwargs to leaflet
+        leaflet_kwargs = dict(
+            zoomSnap=0.05,
+            zoomDelta=0.1,
+        )
         # Create folium map
         self.map: folium.Map = folium.Map(
             location=[53.5, -1.49],
@@ -55,22 +52,15 @@ class Map:
             attr="Map data &copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>",
             # tiles='OpenStreetMap',
             tiles="CartoDB positron nolabels",
-            # kwargs to leaflet
-            zoomSnap=0.05,
-            zoomDelta=0.1,
+            **leaflet_kwargs
         )
         # self.map_labels = folium.TileLayer("CartoDB positron onlylabels", overlay=True)
-        self.SCORE_COL: dict = {}
+        self.map.add_child(folium.LayerControl(collapsed=False))  # Add layer control to map
+
+        # Can be set by set_region_of_colour
+        self._region_of_colour = None
+        self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
         self.layers: dict = {}
-
-        self.score_col_label: str = ""
-        self.score_col_key: str = ""
-        self.boundary_name: str = ""
-        self.code_name: str = ""
-        self.CODE_COL: str = ""
-        self.map_data: pd.DataFrame = pd.DataFrame()
-
-        self.geo_data = None
 
     def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
@@ -86,23 +76,26 @@ class Map:
 
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
-        self.set_boundary(reports)
+        map_data, boundary_name, code_name, code_col, geo_data = self.set_boundary(reports)
+        # map_data contains shapefile paths, and labels for region codes and names
+        # code_col holds the name of the region class, e.g. oslaua, pcon
 
         # Set score col properties to use for a particular boundary
-        self.score_col_key = f"{self.boundary_name}_{dimension['column']}"
-        self.SCORE_COL[self.score_col_key] = dimension["column"]
-        self.score_col_label = dimension["tooltip"]
-        logger.info(f"Setting score column to {dimension['column']} (displayed: {self.score_col_label})")
+        score_col = dimension["column"]  # holds the column name of the choropleth dimension
+        score_col_label = dimension["tooltip"]  # tooltip label for the score_col value
+        logger.info(f"Setting score column to {score_col} (displayed: {score_col_label})")
 
-        self.validate_columns()
+        if score_col not in map_data.columns:
+            logger.error(f"{score_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
+            raise KeyError(f"{score_col} is not a valid column in the data.")
 
-        non_zero_score_col = self.map_data[dimension["column"]].loc[self.map_data[dimension["column"]] != 0]
+        non_zero_score_col = map_data[score_col].loc[map_data[score_col] != 0]
         non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
 
         if not scale:
             colourmap_index = non_zero_score_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
-            colourmap_min = self.map_data[dimension["column"]].min()
-            colourmap_max = self.map_data[dimension["column"]].max()
+            colourmap_min = map_data[score_col].min()
+            colourmap_max = map_data[score_col].max()
 
             quantiles = [0, 20, 40, 60, 80, 100]
             colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
@@ -119,27 +112,26 @@ class Map:
         logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
         logger.info(f"Colour scale index values\n{colourmap_index}")
 
-        logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
-        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
+        logger.info(f"Merging geo_json on {code_name} from shapefile with {code_col} from boundary report")
+        merged_data = geo_data.merge(map_data, left_on=code_name, right_on=code_col).drop_duplicates()
         logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
             logger.error("Data unsuccesfully merged resulting in zero records")
             raise Exception("Data unsuccesfully merged resulting in zero records")
 
-        # dimension['column'] is column of dataframe used. Used for unique key.
-        boundary_name = f"{self.boundary_name}_{dimension['column']}"
+        # score_col is column of dataframe used. Used for unique key.
 
         # fmt: off
         folium.GeoJson(
             data=merged_data.to_json(),
             name=dimension["legend"],  # the name of the Layer, as it will appear in the layer controls,
             style_function=lambda x: {
-                "fillColor": self._map_colourmap(x["properties"], boundary_name, significance_threshold, colourmap),
+                "fillColor": _map_colourmap(x["properties"], score_col, significance_threshold, colourmap),
                 "color": "black",
-                "fillOpacity": self._map_opacity(x["properties"], boundary_name, significance_threshold),
+                "fillOpacity": _map_opacity(x["properties"], score_col, significance_threshold),
                 "weight": 0.10,
             },
-            tooltip=folium.GeoJsonTooltip(fields=[self.boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
+            tooltip=folium.GeoJsonTooltip(fields=[boundary_name, score_col], aliases=["Name", score_col_label], localize=True),
             show=show,
         ).add_to(self.map)
         # fmt: on
@@ -391,15 +383,13 @@ class Map:
 
     def save_map(self) -> None:
         """Saves the folium map to a HTML file"""
-        # Add layer control to map
-        folium.LayerControl(collapsed=False).add_to(self.map)
         self.map.save(f"{self.out_file}")
 
     def show_map(self) -> None:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    def set_region_of_colour(self, column: str, value_list: set) -> None:
+    def set_region_of_colour(self, column: str, value_list: set[str]) -> None:
         self._region_of_colour = {"column": column, "value_list": value_list}
 
     def district_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
@@ -408,12 +398,7 @@ class Map:
     def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
 
-    def validate_columns(self) -> None:
-        if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:
-            logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
-            raise KeyError(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data.")
-
-    def set_boundary(self, reports: Reports) -> None:
+    def set_boundary(self, reports: Reports) -> tuple[pd.DataFrame, str, str, str, gpd.GeoDataFrame]:
         """Changes the boundary to a new boundary.
 
         Loads, filters and converts shapefiles for later use
@@ -423,31 +408,33 @@ class Map:
         Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
         """
-        self.map_data = reports.data
-        self.boundary_name = reports.geography.metadata.shapefile.name
-        self.code_name = reports.geography.metadata.shapefile.key
-        self.CODE_COL = reports.geography.metadata.key
-        # map_data, CODE_COL and code_name all must be set before loading shape file
+        # map_data, code_col and code_name all need to be set before loading shape file
+        map_data = reports.data  # contains shapefile paths, and labels for region codes and names
+        boundary_name = reports.geography.metadata.shapefile.name
+        code_name = reports.geography.metadata.shapefile.key
+        code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
 
         # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
         all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
 
-        if self.code_name not in all_shapes.columns:
-            raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+        if code_name not in all_shapes.columns:
+            raise KeyError(f"{code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
         original_number_of_shapes = len(all_shapes.index)
-        logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
-        logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
+        logger.info(f"Filtering {original_number_of_shapes} shapes by {code_name} being in the {code_col} of the map_data")
+        logger.debug(f"Filtering {original_number_of_shapes} shapes by {code_name} being in \n{map_data[code_col]}")
 
-        list_codes = self.map_data[self.CODE_COL].drop_duplicates().astype(str).to_list()
-        filtered_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
+        list_codes = map_data[code_col].drop_duplicates().astype(str).to_list()
+        filtered_shapes = all_shapes.loc[all_shapes[code_name].isin(list_codes)]
         logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
 
         # Covert shape file to world co-ordinates
-        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(epsg=utility.WGS_84)
-        # logger.debug(f"geo_data\n{self.geo_data}")
+        geo_data = filtered_shapes[["geometry", code_name, boundary_name]].to_crs(epsg=utility.WGS_84)
+        # logger.debug(f"geo_data\n{geo_data}")
 
-        logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
+        logger.info(f"Geography changed to: {code_col} ({code_name}). Data has columns {map_data.columns}.")
+        
+        return map_data, boundary_name, code_name, code_col, geo_data
 
     def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True) -> None:
         """Adds a maker layer to the map
@@ -462,43 +449,6 @@ class Map:
             self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)
         else:
             self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
-
-    def _map_colourmap(self, properties: dict, boundary_name: str, threshold: float, colourmap: colormap.ColorMap) -> str:
-        """Returns colour from colour map function and value
-
-        Args:
-            properties: dictionary of properties
-            boundary_name:
-            threshold:
-            colourmap: a Branca Colormap object to calculate the region's colour
-
-        Returns:
-            hexadecimal colour value "#RRGGBB"
-
-        """
-        # logger.debug(f"Colouring {properties} by {self.SCORE_COL[boundary_name]}")
-        area_score = properties.get(self.SCORE_COL[boundary_name])
-        if area_score is None:
-            logger.debug(f"Colouring gray. key: {boundary_name}, score: {area_score}")
-            return "#cccccc"
-        elif abs(area_score) < threshold:
-            return "#ffbe33"
-        elif float(area_score) == 0:
-            return "#555555"
-        else:
-            return colourmap(area_score)
-
-    def _map_opacity(self, properties: dict, boundary_name: str, threshold: float) -> float:
-        """Decides if a feature's value is important enough to be shown"""
-        default_opacity = 0.33
-
-        if not threshold:
-            return default_opacity
-        area_score = properties.get(self.SCORE_COL[boundary_name])
-        if area_score is None:
-            return 1
-
-        return default_opacity if abs(area_score) > threshold else default_opacity / 4
 
     def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections") -> None:
         """Adds a leaflet marker to the map using given values
@@ -525,3 +475,42 @@ def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict
     mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
     colour_mapping = {"census_column": grouping_column, "mapping": mapping}
     return colour_mapping
+
+
+def _map_colourmap(properties: dict, column: str, threshold: float, colourmap: colormap.ColorMap) -> str:
+    """Returns colour from colour map function and value
+
+    Args:
+        properties: dictionary of properties
+        column:
+        threshold:
+        colourmap: a Branca Colormap object to calculate the region's colour
+
+    Returns:
+        hexadecimal colour value "#RRGGBB"
+
+    """
+    # logger.debug(f"Colouring {properties} by {column}")
+    area_score = properties.get(column)
+    if area_score is None:
+        logger.debug(f"Colouring gray. key: {column}, score: {area_score}")
+        return "#cccccc"
+    elif abs(area_score) < threshold:
+        return "#ffbe33"
+    elif float(area_score) == 0:
+        return "#555555"
+    else:
+        return colourmap(area_score)
+
+
+def _map_opacity(properties: dict, column: str, threshold: float) -> float:
+    """Decides if a feature's value is important enough to be shown"""
+    default_opacity = 0.33
+
+    if not threshold:
+        return default_opacity
+    area_score = properties.get(column)
+    if area_score is None:
+        return 1
+
+    return default_opacity if abs(area_score) > threshold else default_opacity / 4
