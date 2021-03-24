@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from branca import colormap
+    from folium.map import Layer
 
 
 class Map:
@@ -60,7 +61,7 @@ class Map:
         # Can be set by set_region_of_colour
         self._region_of_colour = None
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
-        self.layers: dict = {}
+        self.layers: dict[str, Layer] = {}
 
     def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
@@ -136,11 +137,8 @@ class Map:
         ).add_to(self.map)
         # fmt: on
         colourmap.add_to(self.map)
-        del merged_data
 
-        # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
-
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list, layer: dict = None) -> None:
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
@@ -150,8 +148,9 @@ class Map:
             marker_data: List of strings which determines content for popup, including:
                 - youth membership
                 - awards
-            layer: Name & properties of layer on map to add meeting places to.
-                - Default = {"name"="Sections", "markers_clustered"=False}
+            layer_name: Name of map layer for meeting places. Default = "Sections"
+            cluster_markers: Whether to cluster markers on the map
+            show_layer: Whether to show the layer by default
 
         """
         logger.info("Adding section markers to map")
@@ -163,9 +162,8 @@ class Map:
         # Sort sections dataframe
         sections = sections.sort_values("Object_ID").reset_index(drop=True)
 
-        if not self.layers.get(layer["name"]):
-            layer = dict(name="Sections", markers_clustered=False) if layer is None else layer
-            self.add_layer(layer["name"], layer["markers_clustered"])
+        if layer_name not in self.layers:
+            self.add_layer(layer_name, cluster_markers, show_layer)
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1]
@@ -290,7 +288,7 @@ class Map:
 
             # Fixes physical size of popup
             popup = folium.Popup(html, max_width=2650)
-            self.add_marker(lat, long, popup, marker_colour, layer["name"])
+            self.add_marker(lat, long, popup, marker_colour, layer_name)
 
     def add_sections_to_map(
         self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
@@ -328,9 +326,7 @@ class Map:
             filtered_data = latest_year_records
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
 
-        self.add_layer(layer, cluster_markers)
-        layer_data = dict(name=layer, markers_clustered=cluster_markers)
-        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_data)
+        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_name=layer,  cluster_markers=cluster_markers)
 
     def add_custom_data(
         self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None
@@ -462,6 +458,45 @@ class Map:
 
         """
         folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
+
+
+def _load_boundary(reports: Reports) -> tuple[pd.DataFrame, str, str, str, gpd.GeoDataFrame]:
+    """Loads a given boundary from a Reports object.
+
+    Loads, filters and converts shapefiles for later use
+
+    Loads shapefile from path into GeoPandas dataframe
+    Filters out unneeded shapes within all shapes loaded
+    Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
+
+    """
+    # map_data, code_col and code_name all need to be set before loading shape file
+    map_data = reports.data  # contains shapefile paths, and labels for region codes and names
+    boundary_name = reports.geography.metadata.shapefile.name
+    code_name = reports.geography.metadata.shapefile.key
+    code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
+
+    # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
+    all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
+
+    if code_name not in all_shapes.columns:
+        raise KeyError(f"{code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+
+    original_number_of_shapes = len(all_shapes.index)
+    logger.info(f"Filtering {original_number_of_shapes} shapes by {code_name} being in the {code_col} of the map_data")
+    logger.debug(f"Filtering {original_number_of_shapes} shapes by {code_name} being in \n{map_data[code_col]}")
+
+    list_codes = map_data[code_col].drop_duplicates().astype(str).to_list()
+    filtered_shapes = all_shapes.loc[all_shapes[code_name].isin(list_codes)]
+    logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
+
+    # Covert shape file to world co-ordinates
+    geo_data = filtered_shapes[["geometry", code_name, boundary_name]].to_crs(epsg=utility.WGS_84)
+    # logger.debug(f"geo_data\n{geo_data}")
+
+    logger.info(f"Geography changed to: {code_col} ({code_name}). Data has columns {map_data.columns}.")
+
+    return map_data, boundary_name, code_name, code_col, geo_data
 
 
 def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict[str, Union[str, dict[int, str]]]:
