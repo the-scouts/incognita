@@ -76,9 +76,9 @@ class Map:
 
         """
         colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
-        map_data, boundary_name, code_name, code_col, geo_data = _load_boundary(reports)
-        # map_data contains shapefile paths, and labels for region codes and names
-        # code_col holds the name of the region class, e.g. oslaua, pcon
+        map_data = reports.data  # contains shapefile paths, and labels for region codes and names
+        code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
+        geo_data = _load_boundary(reports)
 
         # Set score col properties to use for a particular boundary
         logger.info(f"Setting score column to {value_col} (displayed: {tooltip})")
@@ -99,8 +99,8 @@ class Map:
         logger.info(f"Colour scale boundary values\n{scale_step_boundaries}")
         logger.info(f"Colour scale index values\n{scale_index}")
 
-        logger.info(f"Merging geo_json on {code_name} from shapefile with {code_col} from boundary report")
-        merged_data = geo_data.merge(map_data, left_on=code_name, right_on=code_col).drop_duplicates()
+        logger.info(f"Merging geo_json on shape_codes from shapefile with {code_col} from boundary report")
+        merged_data = geo_data.merge(map_data, left_on="shape_codes", right_on=code_col).drop_duplicates()
         logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
             logger.error("Data unsuccessfully merged resulting in zero records")
@@ -117,7 +117,7 @@ class Map:
                     "fillOpacity": _map_opacity(x["properties"], value_col, significance_threshold),
                     "weight": 0.10,
                 },
-                tooltip=folium.GeoJsonTooltip(fields=[boundary_name, value_col], aliases=["Name", tooltip], localize=True),
+                tooltip=folium.GeoJsonTooltip(fields=["shape_names", value_col], aliases=["Name", tooltip], localize=True),
                 show=show,
             )
         )
@@ -379,43 +379,38 @@ class Map:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
 
 
-def _load_boundary(reports: Reports) -> tuple[pd.DataFrame, str, str, str, gpd.GeoDataFrame]:
+def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     """Loads a given boundary from a Reports object.
-
-    Loads, filters and converts shapefiles for later use
 
     Loads shapefile from path into GeoPandas dataframe
     Filters out unneeded shapes within all shapes loaded
     Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
+    Args:
+        reports: A Reports object with data. This contains shapefile paths, and labels for region codes and names
+
+    Returns:
+        GeoDataFrame with filtered and CRS transformed shapes
+
     """
-    # map_data, code_col and code_name all need to be set before loading shape file
-    map_data = reports.data  # contains shapefile paths, and labels for region codes and names
-    boundary_name = reports.geography.metadata.shapefile.name
-    code_name = reports.geography.metadata.shapefile.key
     code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
 
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
     all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
+    if reports.geography.metadata.shapefile.key not in all_shapes.columns:
+        raise KeyError(f"{reports.geography.metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
-    if code_name not in all_shapes.columns:
-        raise KeyError(f"{code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+    # Rename columns
+    shapes_col_map = {reports.geography.metadata.shapefile.key: "shape_codes", reports.geography.metadata.shapefile.name: "shape_names"}
+    all_shapes.columns = [shapes_col_map.get(col, col) for col in all_shapes.columns]
 
-    original_number_of_shapes = len(all_shapes.index)
-    logger.info(f"Filtering {original_number_of_shapes} shapes by {code_name} being in the {code_col} of the map_data")
-    logger.debug(f"Filtering {original_number_of_shapes} shapes by {code_name} being in \n{map_data[code_col]}")
-
-    list_codes = map_data[code_col].drop_duplicates().astype(str).to_list()
-    filtered_shapes = all_shapes.loc[all_shapes[code_name].isin(list_codes)]
-    logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
-
-    # Covert shape file to world co-ordinates
-    geo_data = filtered_shapes[["geometry", code_name, boundary_name]].to_crs(epsg=utility.WGS_84)
-    # logger.debug(f"geo_data\n{geo_data}")
-
-    logger.info(f"Geography changed to: {code_col} ({code_name}). Data has columns {map_data.columns}.")
-
-    return map_data, boundary_name, code_name, code_col, geo_data
+    # Filter and convert GeoDataFrame to world co-ordinates
+    logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the {code_col} column of the map_data")
+    all_codes = set(reports.data[code_col])
+    logger.debug(f"All codes list: \n{all_codes}")
+    geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=utility.WGS_84)
+    logger.info(f"Loaded {len(geo_data.index):,} {code_col} boundary shapes. Columns now in data: {reports.data.columns}.")
+    return geo_data
 
 
 def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict[str, Union[str, dict[int, str]]]:
