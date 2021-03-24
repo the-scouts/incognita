@@ -123,20 +123,22 @@ class Map:
         # score_col is column of dataframe used. Used for unique key.
 
         # fmt: off
-        folium.GeoJson(
-            data=merged_data.to_json(),
-            name=dimension["legend"],  # the name of the Layer, as it will appear in the layer controls,
-            style_function=lambda x: {
-                "fillColor": _map_colourmap(x["properties"], score_col, significance_threshold, colourmap),
-                "color": "black",
-                "fillOpacity": _map_opacity(x["properties"], score_col, significance_threshold),
-                "weight": 0.10,
-            },
-            tooltip=folium.GeoJsonTooltip(fields=[boundary_name, score_col], aliases=["Name", score_col_label], localize=True),
-            show=show,
-        ).add_to(self.map)
+        self.map.add_child(
+            folium.GeoJson(
+                data=merged_data.to_json(),
+                name=dimension["legend"],  # the name of the Layer, as it will appear in the layer controls,
+                style_function=lambda x: {
+                    "fillColor": _map_colourmap(x["properties"], score_col, significance_threshold, colourmap),
+                    "color": "black",
+                    "fillOpacity": _map_opacity(x["properties"], score_col, significance_threshold),
+                    "weight": 0.10,
+                },
+                tooltip=folium.GeoJsonTooltip(fields=[boundary_name, score_col], aliases=["Name", score_col_label], localize=True),
+                show=show,
+            )
+        )
         # fmt: on
-        colourmap.add_to(self.map)
+        self.map.add_child(colourmap)
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True) -> None:
         """Adds the sections provided as markers to map with the colour, and data
@@ -163,7 +165,8 @@ class Map:
         sections = sections.sort_values("Object_ID").reset_index(drop=True)
 
         if layer_name not in self.layers:
-            self.add_layer(layer_name, cluster_markers, show_layer)
+            layer_type = MarkerCluster if cluster_markers else FeatureGroup
+            self.layers[layer_name] = self.map.add_child(layer_type(name=layer_name, show=show_layer))
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1]
@@ -313,23 +316,17 @@ class Map:
             cluster_markers: Should we cluster the markers?
 
         """
-        data: pd.DataFrame = scout_data.census_data
-        unit_type_label = scout_census.column_labels.UNIT_TYPE
-
         if single_section:
-            filtered_data = data
+            filtered_data = scout_data.census_data
             section_types = {getattr(scout_census.column_labels.sections, single_section).type}
         else:
-            max_year = data["Year"].max()
-            latest_year_records = data.loc[data["Year"] == max_year]
-
-            filtered_data = latest_year_records
+            filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
-
-        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_name=layer,  cluster_markers=cluster_markers)
+        filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
+        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer_name=layer,  cluster_markers=cluster_markers)
 
     def add_custom_data(
-        self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None
+        self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None
     ) -> None:
         """Function to add custom data as markers on map
 
@@ -339,7 +336,6 @@ class Map:
             location_cols: Indicates whether adding data with postcodes or co-ordinates
                 - if postcodes, str "Postcodes"
                 - if co-ordinates, dict of co-ordinate data with keys ["crs", "x", "y"]
-            markers_clustered: Whether to cluster the markers or not
             marker_data: list of strings for values in data that should be in popup
 
         """
@@ -360,7 +356,7 @@ class Map:
         if location_cols["crs"] != utility.WGS_84:
             custom_data = custom_data.to_crs(epsg=utility.WGS_84)
 
-        self.add_layer(layer_name, markers_clustered)
+        self.layers[layer_name] = self.map.add_child(FeatureGroup(name=layer_name, show=True))
 
         # Plot marker and include marker_data in the popup for every item in custom_data
         def add_popup_data(row):
@@ -393,20 +389,6 @@ class Map:
 
     def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
-
-    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True) -> None:
-        """Adds a maker layer to the map
-
-        Args:
-            name: The name of the layer - appears in LayerControl on Map
-            markers_clustered: Whether the markers should cluster or not
-            show:
-
-        """
-        if markers_clustered:
-            self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)
-        else:
-            self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
 
     def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections") -> None:
         """Adds a leaflet marker to the map using given values
