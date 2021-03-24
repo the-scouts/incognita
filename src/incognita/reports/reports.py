@@ -162,35 +162,24 @@ class Reports:
             return group_list.str.cat(sep="\n"), group_list.size
 
         def _young_people_numbers_groupby(group_df: pd.DataFrame) -> dict:
-            output = {}
-            dicts: pd.Series = group_df.groupby(["Year"], sort=True).apply(_year_groupby).to_list()
-            for row in dicts:
-                output |= row
-            return output
-
-        def _year_groupby(group_df: pd.DataFrame) -> dict:
-            census_year = group_df.name
-            output = {}
-            all_young_people = 0
-            waiting_list = 0
-
-            for section in section_cols:
-                total_young_people = group_df[getattr(scout_census.column_labels.sections, section).total].sum()
-                all_young_people += total_young_people
-                if opt_section_numbers:
-                    output[f"{section}-{census_year}"] = total_young_people
-                if opt_number_of_sections:
-                    # TODO correct for pluralisation (e.g. Colony -> Colonys not Colonies)
-                    output[f"{getattr(scout_census.column_labels.sections, section).type}s-{census_year}"] = group_df[getattr(scout_census.column_labels.sections, section).unit_label].sum()
-                if "waiting_list" in getattr(scout_census.column_labels.sections, section):
-                    waiting_list += group_df[getattr(scout_census.column_labels.sections, section).waiting_list].sum()
-
+            metric_cols = {}
+            if opt_section_numbers:
+                metric_cols |= {section_model.total: "" for section_name, section_model in sections_model if section_name != "Network"}
+            if opt_number_of_sections:
+                # TODO correct for pluralisation (e.g. Colony -> Colonys not Colonies)
+                metric_cols |= {section_model.unit_label: f"{section_model.type}s" for section_name, section_model in sections_model if section_name != "Network"}
             if opt_6_to_17_numbers:
-                output[f"All-{census_year}"] = all_young_people
+                metric_cols["All"] = ""
             if opt_waiting_list_totals:
-                output[f"Waiting List-{census_year}"] = waiting_list
+                metric_cols["Waiting List"] = ""
             if opt_adult_numbers:
-                output[f"Adults-{census_year}"] = group_df[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum().sum()
+                metric_cols["Adults"] = ""
+
+            output = {}
+            for census_year, year_data in group_df.groupby(["Year"], sort=True)[[*metric_cols]].sum().to_dict("index").items():
+                for section, num in year_data.items():
+                    key = section.removesuffix('_total')
+                    output[f"{metric_cols[key] if metric_cols[section] else key}-{census_year}"] = num
             return output
 
         def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
@@ -226,6 +215,12 @@ class Reports:
 
         # TODO pandas > 1.1 move to new dropna=False groupby
         self.scout_data.census_data[[geog_name]] = self.scout_data.census_data[[geog_name]].fillna("DUMMY")
+
+        total_cols = [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
+        waiting_cols = [section_model.waiting_list for section_name, section_model in sections_model if section_name != "Network"]
+        self.scout_data.census_data["All"] = self.scout_data.census_data[total_cols].sum(axis=1).astype("Int32")
+        self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
+        self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
 
         # Check that our pivot keeps the total membership constant
         yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
