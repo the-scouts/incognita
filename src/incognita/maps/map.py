@@ -422,51 +422,34 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
 
 def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict[str, Union[str, dict[int, str]]]:
     # fmt: off
-    colours = cycle([
+    colours = cycle((
         "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
         "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
-    ])
+    ))
     # fmt: on
     grouping_ids = scout_data.census_data[grouping_column].drop_duplicates()
     mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
-    colour_mapping = {"census_column": grouping_column, "mapping": mapping}
-    return colour_mapping
+    return {"census_column": grouping_column, "mapping": mapping}
 
 
 def _map_colour_map(properties: dict, column: str, threshold: float, colour_map: colormap.ColorMap) -> str:
     """Returns colour from colour map function and value
 
-    Args:
-        properties: dictionary of properties
-        column:
-        threshold:
-        colour_map: a Branca Colormap object to calculate the region's colour
-
     Returns:
         hexadecimal colour value "#RRGGBB"
 
     """
-    # logger.debug(f"Colouring {properties} by {column}")
     area_score = properties.get(column)
     if area_score is None:
-        logger.debug(f"Colouring gray. key: {column}, score: {area_score}")
-        return "#cccccc"
-    elif abs(area_score) < threshold:
-        return "#ffbe33"
-    elif float(area_score) == 0:
-        return "#555555"
-    else:
-        return colour_map(area_score)
+        return "#cccccc"  # grey
+    if abs(area_score) < threshold:
+        return "#ffbe33"  # light yellow
+    return colour_map(area_score)
 
 
 def _map_opacity(properties: dict, column: str, threshold: float) -> float:
     """Decides if a feature's value is important enough to be shown"""
-    default_opacity = 0.33
-
-    if not threshold:
-        return default_opacity
     area_score = properties.get(column)
     if area_score is None:
         return 1
-
-    return default_opacity if abs(area_score) > threshold else default_opacity / 4
+    return 1/3 if abs(area_score) >= threshold else 1/12
