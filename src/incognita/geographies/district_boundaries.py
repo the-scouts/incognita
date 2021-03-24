@@ -23,10 +23,10 @@ class DistrictBoundaries:
         """
 
         # Find all the District IDs and names
-        districts = self.scout_data.data[[scout_census.column_labels.id.DISTRICT, scout_census.column_labels.name.DISTRICT]].drop_duplicates()
+        districts = self.scout_data.census_data[[scout_census.column_labels.id.DISTRICT, scout_census.column_labels.name.DISTRICT]].drop_duplicates()
 
         # Finds all the records with valid postcodes in the Scout Census
-        valid_locations = self.scout_data.data.loc[self.scout_data.data[scout_census.column_labels.VALID_POSTCODE] == 1]
+        valid_locations = self.scout_data.census_data.loc[self.scout_data.census_data[scout_census.column_labels.VALID_POSTCODE] == 1]
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row

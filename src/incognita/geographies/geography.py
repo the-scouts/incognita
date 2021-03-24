@@ -109,7 +109,7 @@ class Geography:
 
         # Filters scout data to values passed through (values in column `column' in `values_list')
         # Gets associated ons code column from filtered records
-        records = scout_data.data.loc[scout_data.data[column].isin(value_list), ons_boundary].drop_duplicates().dropna()
+        records = scout_data.census_data.loc[scout_data.census_data[column].isin(value_list), ons_boundary].drop_duplicates().dropna()
         logger.debug(f"Found {len(records)} records that match {column} in {value_list}")
 
         # Removes original ons-census merge errors
@@ -136,8 +136,8 @@ class Geography:
         logger.info("Creates geometry")
         # Reduce columns in dataset to minimum requirements
         data_with_points = gpd.GeoDataFrame(
-            scout_data.data[[field, boundary]],
-            geometry=gpd.points_from_xy(scout_data.data.long, scout_data.data.lat),
+            scout_data.census_data[[field, boundary]],
+            geometry=gpd.points_from_xy(scout_data.census_data.long, scout_data.census_data.lat),
             crs=utility.WGS_84,
         )
 

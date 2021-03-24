@@ -79,8 +79,8 @@ if __name__ == "__main__":
     mapper.set_region_of_colour("C_name", {county_name})
     your_sections = dict(name="Your Sections", markers_clustered=False, show=True)
     # other_sections = dict(name="Other Sections", markers_clustered=False, show=False)
-    # mapper.add_meeting_places_to_map(scout_data.data.loc[~(scout_data.data["C_name"] == county_name)], "lightgray", ["youth membership"], other_sections)
-    mapper.add_meeting_places_to_map(scout_data.data.loc[scout_data.data["C_name"] == county_name], mapper.district_colour_mapping(), ["youth membership"], your_sections)
+    # mapper.add_meeting_places_to_map(scout_data.census_data.loc[~(scout_data.census_data["C_name"] == county_name)], "lightgray", ["youth membership"], other_sections)
+    mapper.add_meeting_places_to_map(scout_data.census_data.loc[scout_data.census_data["C_name"] == county_name], mapper.district_colour_mapping(), ["youth membership"], your_sections)
 
     # Save the map and display
     mapper.save_map()

@@ -37,7 +37,7 @@ class ScoutData:
         # We assume no custom path has been passed, but allow for one to be used
         census_path = config.SETTINGS.census_extract.merged if census_path is None else census_path
         self.scout_census: scout_census.ScoutCensus = scout_census.ScoutCensus(census_path, load_data=load_census_data)
-        self.data: pd.DataFrame = self.scout_census.data
+        self.census_data: pd.DataFrame = self.scout_census.data
         self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
         logger.info(f"Loading Scout Census data finished, {time.time() - self.start_time:.2f} seconds elapsed.")
 
@@ -46,7 +46,7 @@ class ScoutData:
             start_time = time.time()
 
             # Check if the data has been merged with the ONS postcode directory
-            if scout_census.column_labels.VALID_POSTCODE in self.data.columns:
+            if scout_census.column_labels.VALID_POSTCODE in self.census_data.columns:
                 self.ons_pd = ons_postcode_directory_may_19
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {scout_census.column_labels.VALID_POSTCODE} column")
@@ -63,22 +63,22 @@ class ScoutData:
             exclusion_analysis:
 
         """
-        self.data = utility.filter_records(self.data, field, value_list, mask, exclusion_analysis)
+        self.census_data = utility.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:
-            uid = Path(f"{hash(self.data.shape)}_{shapes_key}_{path.stem}.feather")
+            uid = Path(f"{hash(self.census_data.shape)}_{shapes_key}_{path.stem}.feather")
             if uid.is_file():
                 data = pd.read_feather(uid).set_index("index")
-                assert self.data.equals(data[self.data.columns])
-                self.data = data
+                assert self.census_data.equals(data[self.census_data.columns])
+                self.census_data = data
                 return
         else:
             uid = None
 
         if self.points_data.empty:
-            idx = pd.Series(self.data.index, name="object_index")
-            self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.data.long, self.data.lat), crs=utility.WGS_84)
+            idx = pd.Series(self.census_data.index, name="object_index")
+            self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.census_data.long, self.census_data.lat), crs=utility.WGS_84)
 
         if path is not None:
             all_shapes = gpd.read_file(path)
@@ -89,9 +89,9 @@ class ScoutData:
         shapes = all_shapes[[shapes_key, "geometry"]].to_crs(epsg=utility.WGS_84)
 
         spatial_merged = gpd.sjoin(self.points_data, shapes, how="left", op="within").set_index("object_index")
-        merged = self.data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)
-        assert self.data.equals(merged[self.data.columns])
-        self.data = merged
+        merged = self.census_data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)
+        assert self.census_data.equals(merged[self.census_data.columns])
+        self.census_data = merged
         if path is not None and uid is not None:
             merged.reset_index(drop=False).to_feather(uid)
 

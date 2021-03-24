@@ -36,7 +36,7 @@ class HistorySummary:
 
         # Must have imd scores and deciles already in census_postcode_data.
         logger.info(f"Grouping data by {census_col}")
-        data = self.scout_data.data
+        data = self.scout_data.census_data
         grouped_data = data.groupby([census_col], sort=False)
 
         # create dataframe of all constant values, which happen to all be scout org hierachy related
@@ -143,7 +143,7 @@ class HistorySummary:
 
         logger.info(f"Getting group ID list in column {scout_census.column_labels.id.GROUP}")
         # Iterate through Groups looking for new Sections
-        group_ids = self.scout_data.data[scout_census.column_labels.id.GROUP].dropna().drop_duplicates().to_list()
+        group_ids = self.scout_data.census_data[scout_census.column_labels.id.GROUP].dropna().drop_duplicates().to_list()
 
         logger.info(f"Found {len(group_ids)} Groups")
 
@@ -159,7 +159,7 @@ class HistorySummary:
         #
         # .
 
-        scout_data = self.scout_data.data.fillna({scout_census.column_labels.id.GROUP: 0, scout_census.column_labels.id.DISTRICT: 0})
+        scout_data = self.scout_data.census_data.fillna({scout_census.column_labels.id.GROUP: 0, scout_census.column_labels.id.DISTRICT: 0})
 
         for group_id in group_ids:
             logger.info(f"Investigating {group_id}")
@@ -210,7 +210,7 @@ class HistorySummary:
         logger.info("Finding new Explorer Sections")
         # Iterate through District looking for new Sections
 
-        district_ids = self.scout_data.data[scout_census.column_labels.id.DISTRICT].drop_duplicates().dropna().to_list()
+        district_ids = self.scout_data.census_data[scout_census.column_labels.id.DISTRICT].drop_duplicates().dropna().to_list()
 
         for district_id in district_ids:
             logger.info(f"Investigating {district_id}")

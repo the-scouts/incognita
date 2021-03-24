@@ -327,7 +327,7 @@ class Map:
             cluster_markers: Should we cluster the markers?
 
         """
-        data: pd.DataFrame = scout_data.data
+        data: pd.DataFrame = scout_data.census_data
         unit_type_label = scout_census.column_labels.UNIT_TYPE
 
         if single_section:
@@ -413,7 +413,7 @@ class Map:
             "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
         ])
         # fmt: on
-        grouping_ids = self.scout_data.data[grouping_column].drop_duplicates()
+        grouping_ids = self.scout_data.census_data[grouping_column].drop_duplicates()
         mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
         colour_mapping = {"census_column": grouping_column, "mapping": mapping}
         return colour_mapping

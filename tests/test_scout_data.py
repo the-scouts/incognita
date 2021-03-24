@@ -22,7 +22,7 @@ def scout_data_factory():
 
     def _scout_data_factory(data_df: pd.DataFrame) -> ScoutData:
         sd = ScoutData(load_census_data=False, merged_csv=False)
-        sd.data = data_df
+        sd.census_data = data_df
         return sd
 
     return _scout_data_factory
@@ -65,7 +65,7 @@ def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
     scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=True, exclusion_analysis=False)
 
     expected_outcome = data.loc[~(data[COLUMN_NAME] == first_country_code)]
-    assert scout_data_stub.data.equals(expected_outcome)
+    assert scout_data_stub.census_data.equals(expected_outcome)
 
 
 @hypothesis.given(CountryDataFrame)
@@ -75,7 +75,7 @@ def test_filter_records_exclusion(scout_data_factory, data: pd.DataFrame):
     scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=False, exclusion_analysis=False)
 
     expected_outcome = data.loc[data[COLUMN_NAME] == first_country_code]
-    assert scout_data_stub.data.equals(expected_outcome)
+    assert scout_data_stub.census_data.equals(expected_outcome)
 
 
 @hypothesis.given(CountryDataFrame)
@@ -107,7 +107,7 @@ def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame: gpd.GeoD
     points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat), crs=utility.WGS_84)
     joined = gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")
     merged = data.merge(joined[["id"]], how="left", left_index=True, right_index=True)
-    assert sd.data.equals(merged)
+    assert sd.census_data.equals(merged)
 
 
 def test_close_script(caplog: pytest.LogCaptureFixture, scout_data_factory):

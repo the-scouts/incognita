@@ -121,13 +121,13 @@ if __name__ == "__main__":
 
     # combine all youth membership columns into a single total
     for section, section_dict in scout_census.column_labels.sections:
-        scout_data.data[f"{section}_total"] = scout_data.data[section_dict["youth_cols"]].sum(axis=1).astype("Int16")
+        scout_data.census_data[f"{section}_total"] = scout_data.census_data[section_dict["youth_cols"]].sum(axis=1).astype("Int16")
 
     # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
-    scout_data.data[scout_census.column_labels.name.ITEM] = scout_data.data[scout_census.column_labels.name.ITEM].str.replace("`", "")
+    scout_data.census_data[scout_census.column_labels.name.ITEM] = scout_data.census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")
 
     # merge the census extract and ONS postcode directory, and save the data to file
-    data = merge_ons_postcode_directory(scout_data.data, ons_postcode_directory_may_19)
+    data = merge_ons_postcode_directory(scout_data.census_data, ons_postcode_directory_may_19)
     save_merged_data(data, ons_postcode_directory_may_19.PUBLICATION_DATE)
 
     scout_data.close()

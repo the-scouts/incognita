@@ -43,11 +43,11 @@ class Reports:
 
         logger.info("Adding shapefile data")
         # self.scout_data = copy.copy(self.scout_data)
-        # self.scout_data.data = self.scout_data.data.copy()
+        # self.scout_data.census_data = self.scout_data.census_data.copy()
 
         shapefile_key = self.geography.metadata.shapefile.key
         self.scout_data.add_shape_data(shapefile_key, path=self.geography.metadata.shapefile.path)
-        self.scout_data.data = self.scout_data.data.rename(columns={shapefile_key: self.geography.metadata.key})
+        self.scout_data.census_data = self.scout_data.census_data.rename(columns={shapefile_key: self.geography.metadata.key})
 
     @time_function
     def filter_boundaries(self, field: str, value_list: set[str], boundary: str = "", distance: int = 0) -> None:
@@ -89,10 +89,10 @@ class Reports:
 
         region_ids = self.geography.boundary_codes["codes"].dropna().drop_duplicates()
 
-        district_ids_by_region = self.scout_data.data.loc[self.scout_data.data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
+        district_ids_by_region = self.scout_data.census_data.loc[self.scout_data.census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
-        region_ids_by_district = self.scout_data.data.loc[self.scout_data.data[district_id_column].isin(district_ids), [district_id_column, region_type]]
+        region_ids_by_district = self.scout_data.census_data.loc[self.scout_data.census_data[district_id_column].isin(district_ids), [district_id_column, region_type]]
         region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == scout_census.DEFAULT_VALUE)].dropna().drop_duplicates()
 
         # count of how many regions the district occupies:
@@ -139,9 +139,9 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
 
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
-        logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.data.index)} records")
+        logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
 
-        years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values().to_list()
+        years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values().to_list()
         if len(years) > 1:
             if historical:
                 logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
@@ -229,12 +229,12 @@ class Reports:
             }
 
         # TODO pandas > 1.1 move to new dropna=False groupby
-        self.scout_data.data[[geog_name]] = self.scout_data.data[[geog_name]].fillna("DUMMY")
+        self.scout_data.census_data[[geog_name]] = self.scout_data.census_data[[geog_name]].fillna("DUMMY")
 
         # Check that our pivot keeps the total membership constant
         yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
-        grouped_data = self.scout_data.data.groupby([geog_name], sort=False)
-        assert int(self.scout_data.data[yp_cols].sum().sum()) == int(grouped_data[yp_cols].sum().sum().sum())
+        grouped_data = self.scout_data.census_data.groupby([geog_name], sort=False)
+        assert int(self.scout_data.census_data[yp_cols].sum().sum()) == int(grouped_data[yp_cols].sum().sum().sum())
         dataframes = []
 
         if opt_groups or opt_number_of_groups:
@@ -256,7 +256,7 @@ class Reports:
             logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            awards_per_district_per_regions = self.scout_data.data.groupby(district_id_column).apply(_awards_per_region, district_numbers)
+            awards_per_district_per_regions = self.scout_data.census_data.groupby(district_id_column).apply(_awards_per_region, district_numbers)
             awards_per_district_per_regions = pd.DataFrame(awards_per_district_per_regions.values.tolist(), index=awards_per_district_per_regions.index)
 
             logger.debug(f"Adding awards data")
@@ -350,7 +350,7 @@ class Reports:
             uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
-        years = self.scout_data.data["Year"].drop_duplicates().dropna().sort_values()
+        years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values()
 
         # add uptake data
         for year in years:
