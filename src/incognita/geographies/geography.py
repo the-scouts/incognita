@@ -89,7 +89,7 @@ class Geography:
 
         return self.boundary_codes
 
-    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_boundary: str, column: str, value_list: set) -> None:
+    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_boundary: str, column: str, value_list: set) -> pd.DataFrame:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -116,9 +116,9 @@ class Geography:
         ons_codes = records[records != scout_census.DEFAULT_VALUE].to_list()
         logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {value_list}")
 
-        self.filter_ons_boundaries(ons_boundary, set(ons_codes))
+        return self.filter_ons_boundaries(ons_boundary, set(ons_codes))
 
-    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3_000) -> None:
+    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3_000) -> pd.DataFrame:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 
@@ -163,4 +163,4 @@ class Geography:
         logger.info(f"Found {len(nearby_values)} Sections nearby")
         logger.debug(f"Found {nearby_values}")
 
-        self.filter_ons_boundaries(boundary, set(nearby_values))
+        return self.filter_ons_boundaries(boundary, set(nearby_values))
