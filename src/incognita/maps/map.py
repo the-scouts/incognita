@@ -171,39 +171,31 @@ class Map:
         section_type = sections[scout_census.column_labels.UNIT_TYPE].map(utility.section_types)
         yp_total_cols = [section_model.total for section_name, section_model in scout_census.column_labels.sections]
         yp_totals = sections[yp_total_cols].sum(axis=1).astype(int).astype(str)  # Each row only has values for one section type
-        section_member_info = section_names + " : " + yp_totals + " " + section_type
+        sections["member_info"] = section_names + " : " + yp_totals + " " + section_type
 
         # This uses just the first top award - so only Diamond/QSA for Explorers/Network
         top_award_cols = [section_model.top_award[0] for section_name, section_model in scout_census.column_labels.sections]
         awards = sections[top_award_cols].sum(axis=1).astype(int).astype(str)
         award_eligible_cols = [section_model.top_award_eligible[0] for section_name, section_model in scout_census.column_labels.sections]
         eligible = sections[award_eligible_cols].sum(axis=1).astype(int).astype(str)
-        section_awards_info = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
+        sections["awards_info"] = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
 
         sections["marker_colour"] = sections[colour["census_column"]].map(colour["mapping"]) if isinstance(colour, dict) else colour
         if coloured_region_key and coloured_region is not None:
             # Areas outside the region_of_colour have markers coloured grey
             sections.loc[~sections[coloured_region_key].isin(coloured_region), "marker_colour"] = "gray"
 
-        sections_info_table = pd.DataFrame(
-            {
-                "postcode": sections[scout_census.column_labels.POSTCODE],
-                "lat": sections["lat"],
-                "long": sections["long"],
-                "marker_colour": sections["marker_colour"],
-                "district_ID": sections[scout_census.column_labels.id.DISTRICT],
-                # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
-                "group_ID": sections[scout_census.column_labels.id.GROUP].fillna(-1),
-                "county_name": sections[scout_census.column_labels.name.COUNTY],
-                "district_name": sections[scout_census.column_labels.name.DISTRICT],
-                "group_name": sections[scout_census.column_labels.name.GROUP],
-                "section_name": section_names,
-                "member_info": section_member_info,
-                "awards_info": section_awards_info,
-            }
-        )
-        sections_info_table = sections_info_table.set_index(["postcode", "district_ID", "group_ID"], drop=False)
-        sections_info_table = sections_info_table.dropna(subset=["district_ID"]).sort_index(level=[0, 1, 2])
+        sections["postcode"] = sections[scout_census.column_labels.POSTCODE]
+        sections["d_id"] = sections[scout_census.column_labels.id.DISTRICT]
+        # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
+        sections["g_id"] = sections[scout_census.column_labels.id.GROUP].fillna(-1)
+        sections["c_name"] = sections[scout_census.column_labels.name.COUNTY]
+        sections["d_name"] = sections[scout_census.column_labels.name.DISTRICT]
+        sections["g_name"] = sections[scout_census.column_labels.name.GROUP]
+        sections["section_name"] = section_names
+        sections_info_cols = ["postcode", "lat", "long", "marker_colour", "d_id", "g_id", "c_name", "d_name", "g_name", "section_name", "member_info", "awards_info"]
+        sections_info_table = sections[sections_info_cols].set_index(["postcode", "d_id", "g_id"], drop=False)
+        sections_info_table = sections_info_table.dropna(subset=["d_id"]).sort_index(level=[0, 1, 2])
 
         include_youth_data = "youth membership" in marker_data
         include_awards_data = "awards" in marker_data
@@ -212,17 +204,17 @@ class Map:
             # Find all the sections with the same postcode
             html = ""  # Construct the html to form the marker popup
             colocated_sections = sections_info_table.loc[(postcode,)]
-            for district_id in set(colocated_sections["district_ID"]):
+            for district_id in set(colocated_sections["d_id"]):
                 district_metadata = sections_info_table.loc[(postcode, district_id)]
-                county_name: str = district_metadata["county_name"].array[0]
-                district_name: str = district_metadata["district_name"].array[0]
+                county_name: str = district_metadata["c_name"].array[0]
+                district_name: str = district_metadata["d_name"].array[0]
 
                 # District sections first followed by Group sections
                 html += f"<h3>{district_name} ({county_name})</h3>"
-                for group_id in set(district_metadata["group_ID"]):  # Loop through sections in group-likes
+                for group_id in set(district_metadata["g_id"]):  # Loop through sections in group-likes
                     sub_table = sections_info_table.loc[(postcode, district_id, group_id)]
                     # Districts sections have a missing group ID as there is no group, so check for the magic reference value
-                    group_name = sub_table["group_name"].array[0] if group_id != -1 else "District"
+                    group_name = sub_table["g_name"].array[0] if group_id != -1 else "District"
 
                     html += f"<h4>{group_name}</h4><p align='center'>"
                     html += "<br>".join(sub_table["member_info"] if include_youth_data else sub_table["section_name"])
@@ -233,7 +225,7 @@ class Map:
 
             lat = round(colocated_sections["lat"].array[0], 4)
             long = round(colocated_sections["long"].array[0], 4)
-            marker_colour = str(colocated_sections["marker_colour"].array[0])
+            marker_colour = colocated_sections["marker_colour"].array[0]
             popup = folium.Popup(html, max_width=2650)  # Fixes physical size of popup
             layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
 
