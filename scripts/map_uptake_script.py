@@ -80,10 +80,9 @@ if __name__ == "__main__":
     mapper.show_map()
 
     # create_section_maps
-    # static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
     # for section_label in Reports.SECTION_AGES.keys():
     #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
-    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, scale=static_scale)
+    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, scale_index=[0, 8, 20], scale_step_boundaries=[0, 3, 4, 6, 8, 11])
     #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), ["youth membership"], single_section=section_label)
     #     section_map.save_map()
 

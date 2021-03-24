@@ -61,7 +61,7 @@ class Map:
         self._region_of_colour = None
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
-    def add_areas(self, value_col: str, tooltip: str, layer_name: str, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
+    def add_areas(self, value_col: str, tooltip: str, layer_name: str, reports: Reports, show: bool = False, scale_index: list[int] = None, scale_step_boundaries: list[int] = None, significance_threshold: float = 2.5) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
 
         Args:
@@ -70,9 +70,8 @@ class Map:
             layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
             reports:
             show: If True, show the layer by default
-            scale:
-                Allows a fixed value scale, default is boundaries at
-                0%, 20%, 40%, 60%, 80% and 100%.
+            scale_index: Allows a fixed value scale - colour indices
+            scale_step_boundaries: Fixed scale step boundary indices
             significance_threshold: If an area's value is significant enough to be displayed
 
         """
@@ -89,25 +88,16 @@ class Map:
             raise KeyError(f"{value_col} is not a valid column in the data.")
 
         non_zero_value_col = map_data[value_col][map_data[value_col] != 0].dropna().sort_values()
+        if scale_index is None:
+            scale_index = non_zero_value_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
+        if scale_step_boundaries is None:
+            quantiles = (0, 20, 40, 60, 80, 100)
+            scale_step_boundaries = [np.percentile(non_zero_value_col, q) for q in quantiles]
+        colour_map = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
+        colour_map.caption = layer_name
 
-        if not scale:
-            colourmap_index = non_zero_value_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
-            colourmap_min = map_data[value_col].min()
-            colourmap_max = map_data[value_col].max()
-
-            quantiles = [0, 20, 40, 60, 80, 100]
-            colourmap_step_index = [np.percentile(non_zero_value_col, q) for q in quantiles]
-        else:
-            colourmap_index = scale["index"]
-            colourmap_min = scale["min"]
-            colourmap_max = scale["max"]
-            colourmap_step_index = scale["boundaries"]
-
-        colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max).to_step(index=colourmap_step_index)
-        colourmap.caption = layer_name
-
-        logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
-        logger.info(f"Colour scale index values\n{colourmap_index}")
+        logger.info(f"Colour scale boundary values\n{scale_step_boundaries}")
+        logger.info(f"Colour scale index values\n{scale_index}")
 
         logger.info(f"Merging geo_json on {code_name} from shapefile with {code_col} from boundary report")
         merged_data = geo_data.merge(map_data, left_on=code_name, right_on=code_col).drop_duplicates()
@@ -122,7 +112,7 @@ class Map:
                 data=merged_data.to_json(),
                 name=layer_name,  # the name of the Layer, as it will appear in the layer controls,
                 style_function=lambda x: {
-                    "fillColor": _map_colourmap(x["properties"], value_col, significance_threshold, colourmap),
+                    "fillColor": _map_colourmap(x["properties"], value_col, significance_threshold, colour_map),
                     "color": "black",
                     "fillOpacity": _map_opacity(x["properties"], value_col, significance_threshold),
                     "weight": 0.10,
@@ -132,7 +122,7 @@ class Map:
             )
         )
         # fmt: on
-        self.map.add_child(colourmap)
+        self.map.add_child(colour_map)
 
     def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True) -> None:
         """Adds the sections provided as markers to map with the colour, and data
