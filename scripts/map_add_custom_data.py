@@ -29,7 +29,7 @@ if __name__ == "__main__":
         location_cols="Postcodes",
         marker_data=["EstablishmentName"],
     )
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), ["youth membership"], single_section="Beavers")
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), {"youth membership"}, single_section="Beavers")
 
     # Save the map and display
     mapper.save_map()

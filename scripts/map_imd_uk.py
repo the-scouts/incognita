@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", iz, show=True)
 
     # Plot sections
-    mapper.add_meeting_places_to_map(sections=scout_data.census_data, colour=mapper.district_colour_mapping(scout_data), marker_data=["youth membership"], cluster_markers=True, coloured_region=countries, coloured_region_key="X_name")
+    mapper.add_meeting_places_to_map(sections=scout_data.census_data, colour=mapper.district_colour_mapping(scout_data), marker_data={"youth membership"}, cluster_markers=True, coloured_region=countries, coloured_region_key="X_name")
 
     # Save the map and display
     mapper.save_map()

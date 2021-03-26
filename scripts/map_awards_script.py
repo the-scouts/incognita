@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # Plot
     mapper.add_areas("%-QSA", "QSA %", "QSA %", reports, show=True)
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), ["youth membership", "awards"], single_section="Explorers", cluster_markers=True)
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), {"youth membership", "awards"}, single_section="Explorers", cluster_markers=True)
 
     # Save the map and display
     mapper.save_map()

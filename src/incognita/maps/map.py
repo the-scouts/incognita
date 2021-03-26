@@ -140,7 +140,7 @@ class Map:
         # fmt: on
         self.map.add_child(colour_map)
 
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True, coloured_region: set[str] = None, coloured_region_key: str = "", ) -> None:
+    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: set[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True, coloured_region: set[str] = None, coloured_region_key: str = "", ) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 

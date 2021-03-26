@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # Plot
     mapper.add_areas("imd_decile", "IMD", "IMD Decile", reports, show=True, significance_threshold=0)
-    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(scout_data), ["youth membership"], coloured_region={county_name}, coloured_region_key="C_name")
+    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(scout_data), {"youth membership"}, coloured_region={county_name}, coloured_region_key="C_name")
 
     # Save the map and display
     mapper.save_map()
