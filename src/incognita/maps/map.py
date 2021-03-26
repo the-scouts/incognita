@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from itertools import cycle
+from pathlib import Path
 from typing import Literal, TYPE_CHECKING, Union
 import webbrowser
 
@@ -9,6 +10,7 @@ import branca
 import folium
 from folium.map import FeatureGroup
 from folium.plugins import MarkerCluster
+from folium.raster_layers import ENV as folium_templates
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -21,9 +23,13 @@ from incognita.utility import config
 from incognita.utility import utility
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from branca import colormap
+
+attribution_string = "&copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>"
+tiles_attr = Path(folium_templates.loader.provider.module_path, "templates/tiles/cartodbpositronnolabels/attr.txt")
+if tiles_attr.read_text() != attribution_string:
+    tiles_attr.with_suffix(".bak.txt").write_text(tiles_attr.read_text())
+    tiles_attr.write_text(attribution_string)
 
 
 class Map:
@@ -51,7 +57,7 @@ class Map:
         self.map: folium.Map = folium.Map(
             location=[53.5, -1.49],
             zoom_start=6,
-            attr="Map data &copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>",
+            attr=attribution_string,
             # tiles='OpenStreetMap',
             tiles="CartoDB positron nolabels",
             **leaflet_kwargs,
