@@ -188,48 +188,67 @@ class Map:
             sections.loc[~sections[coloured_region_key].isin(coloured_region), "marker_colour"] = "gray"
 
         sections["postcode"] = sections[scout_census.column_labels.POSTCODE]
-        sections["d_id"] = sections[scout_census.column_labels.id.DISTRICT]
-        # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
-        sections["g_id"] = sections[scout_census.column_labels.id.GROUP].fillna(-1)
         sections["c_name"] = sections[scout_census.column_labels.name.COUNTY]
         sections["d_name"] = sections[scout_census.column_labels.name.DISTRICT]
-        sections["g_name"] = sections[scout_census.column_labels.name.GROUP]
+        sections["g_name"] = sections[scout_census.column_labels.name.GROUP].astype(str).fillna("District")
         sections["section_name"] = section_names
-        sections_info_cols = ["postcode", "lat", "long", "marker_colour", "d_id", "g_id", "c_name", "d_name", "g_name", "section_name", "member_info", "awards_info"]
-        sections_info_table = sections[sections_info_cols].set_index(["postcode", "d_id", "g_id"], drop=False)
-        sections_info_table = sections_info_table.dropna(subset=["d_id"]).sort_index(level=[0, 1, 2])
+        sections_info_cols = ["postcode", "lat", "long", "marker_colour", "c_name", "d_name", "g_name", "section_name", "member_info", "awards_info"]
+        sections_info_table = sections[sections_info_cols].dropna(subset=["d_name"]).dropna(subset=["postcode"])
 
-        include_youth_data = "youth membership" in marker_data
+        # else the final marker would not be added
+        last_row = pd.Series(sections_info_table.iloc[0].to_dict() | {"postcode": "~ FINAL"}, name=0)
+        sections_info_table = sections_info_table.append(last_row)
+
+        # set and sort index
+        sections_info_table = sections_info_table.set_index(["postcode", "d_name", "g_name"], drop=True).sort_index(level=[0, 1, 2])
+
+        # pre-calculate inner loop vars
+        overview_col = "member_info" if "youth membership" in marker_data else "section_name"
         include_awards_data = "awards" in marker_data
 
-        for postcode in set(sections[scout_census.column_labels.POSTCODE].dropna()):
-            # Find all the sections with the same postcode
-            html = ""  # Construct the html to form the marker popup
-            colocated_sections = sections_info_table.loc[(postcode,)]
-            for district_id in set(colocated_sections["d_id"]):
-                district_metadata = sections_info_table.loc[(postcode, district_id)]
-                county_name: str = district_metadata["c_name"].array[0]
-                district_name: str = district_metadata["d_name"].array[0]
+        # initialise change-detector variables
+        old_postcode = sections_info_table.index[0][0]
+        old_district_name = ""
+        reset_district = False
+
+        # initialise first marker variables
+        html = ""
+        lat = round(sections_info_table["lat"].array[0], 4)
+        long = round(sections_info_table["long"].array[0], 4)
+        marker_colour = sections_info_table["marker_colour"].array[0]
+
+        # Find all the sections with the same postcode:
+        for (postcode, district_name, group_name), sub_table in sections_info_table.groupby(level=[0, 1, 2]):
+            if old_postcode != postcode:
+                # Add a marker each time the postcode changes.
+                old_postcode = postcode
+
+                popup = folium.Popup(html, max_width=2650)  # Fixes physical size of popup
+                layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
+
+                lat = round(sub_table["lat"].array[0], 4)
+                long = round(sub_table["long"].array[0], 4)
+                marker_colour = sub_table["marker_colour"].array[0]
+
+                # reset HTML string and mark district name for re-adding
+                html = ""
+                reset_district = True
+
+            if old_district_name != district_name or reset_district:
+                old_district_name = district_name
+                reset_district = False
+
+                county_name = sub_table["c_name"].array[0]
 
                 # District sections first followed by Group sections
                 html += f"<h3>{district_name} ({county_name})</h3>"
-                for group_id in set(district_metadata["g_id"]):  # Loop through sections in group-likes
-                    sub_table = sections_info_table.loc[(postcode, district_id, group_id)]
-                    # Districts sections have a missing group ID as there is no group, so check for the magic reference value
-                    group_name = sub_table["g_name"].array[0] if group_id != -1 else "District"
 
-                    html += f"<h4>{group_name}</h4><p align='center'>"
-                    html += "<br>".join(sub_table["member_info"] if include_youth_data else sub_table["section_name"])
-                    if include_awards_data and group_name != "District":
-                        awards_info = "<br>".join(sub_table["awards_info"])
-                        html += "<br>" + awards_info
-                    html += "</p>"
-
-            lat = round(colocated_sections["lat"].array[0], 4)
-            long = round(colocated_sections["long"].array[0], 4)
-            marker_colour = colocated_sections["marker_colour"].array[0]
-            popup = folium.Popup(html, max_width=2650)  # Fixes physical size of popup
-            layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
+            html += f"<h4>{group_name}</h4><p align='center'>"
+            html += "<br>".join(sub_table[overview_col])
+            if include_awards_data and group_name != "District":
+                awards_info = "<br>".join(sub_table["awards_info"])
+                html += "<br>" + awards_info
+            html += "</p>"
 
     def add_sections_to_map(
         self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False, coloured_region: set[str] = None, coloured_region_key: str = "",
