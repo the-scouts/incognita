@@ -147,7 +147,7 @@ class Map:
         Args:
             sections: Census records relating to Sections with lat and long Columns
             colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-            marker_data: List of strings which determines content for popup, including:
+            marker_data: Set of strings which determines content for popup, including:
                 - youth membership
                 - awards
             layer_name: Name of map layer for meeting places. Default = "Sections"
@@ -176,17 +176,22 @@ class Map:
         self.map.fit_bounds(((valid_points.lat.min(), valid_points.long.min()), (valid_points.lat.max(), valid_points.long.max())))
 
         section_names = sections["name"].astype(str)
-        section_type = sections[scout_census.column_labels.UNIT_TYPE].map(utility.section_types)
-        yp_total_cols = [section_model.total for section_name, section_model in scout_census.column_labels.sections]
-        yp_totals = sections[yp_total_cols].sum(axis=1).astype(int).astype(str)  # Each row only has values for one section type
-        sections["member_info"] = section_names + " : " + yp_totals + " " + section_type
 
-        # This uses just the first top award - so only Diamond/QSA for Explorers/Network
-        top_award_cols = [section_model.top_award[0] for section_name, section_model in scout_census.column_labels.sections]
-        awards = sections[top_award_cols].sum(axis=1).astype(int).astype(str)
-        award_eligible_cols = [section_model.top_award_eligible[0] for section_name, section_model in scout_census.column_labels.sections]
-        eligible = sections[award_eligible_cols].sum(axis=1).astype(int).astype(str)
-        sections["awards_info"] = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
+        if "youth membership" in marker_data:
+            section_type = sections[scout_census.column_labels.UNIT_TYPE].map(utility.section_types)
+            yp_total_cols = [section_model.total for section_name, section_model in scout_census.column_labels.sections]
+            yp_totals = sections[yp_total_cols].sum(axis=1).astype(int).astype(str)  # Each row only has values for one section type
+            sections["sect_overview"] = section_names + " : " + yp_totals + " " + section_type
+        else:
+            sections["sect_overview"] = section_names
+
+        if "awards" in marker_data:
+            # This uses just the first top award - so only Diamond/QSA for Explorers/Network
+            top_award_cols = [section_model.top_award[0] for section_name, section_model in scout_census.column_labels.sections]
+            awards = sections[top_award_cols].sum(axis=1).astype(int).astype(str)
+            award_eligible_cols = [section_model.top_award_eligible[0] for section_name, section_model in scout_census.column_labels.sections]
+            eligible = sections[award_eligible_cols].sum(axis=1).astype(int).astype(str)
+            sections["awards_info"] = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
 
         sections["marker_colour"] = sections[colour["census_column"]].map(colour["mapping"]) if isinstance(colour, dict) else colour
         if coloured_region_key and coloured_region is not None:
@@ -197,8 +202,10 @@ class Map:
         sections["c_name"] = sections[scout_census.column_labels.name.COUNTY]
         sections["d_name"] = sections[scout_census.column_labels.name.DISTRICT]
         sections["g_name"] = sections[scout_census.column_labels.name.GROUP].astype(str).fillna("District")
-        sections["section_name"] = section_names
-        sections_info_cols = ["postcode", "lat", "long", "marker_colour", "c_name", "d_name", "g_name", "section_name", "member_info", "awards_info"]
+
+        sections_info_cols = ["postcode", "lat", "long", "marker_colour", "c_name", "d_name", "g_name", "sect_overview"]
+        if "awards" in marker_data:
+            sections_info_cols += ["awards_info"]
         sections_info_table = sections[sections_info_cols].dropna(subset=["d_name"]).dropna(subset=["postcode"])
 
         # else the final marker would not be added
@@ -209,7 +216,6 @@ class Map:
         sections_info_table = sections_info_table.set_index(["postcode", "d_name", "g_name"], drop=True).sort_index(level=[0, 1, 2])
 
         # pre-calculate inner loop vars
-        overview_col = "member_info" if "youth membership" in marker_data else "section_name"
         include_awards_data = "awards" in marker_data
 
         # initialise change-detector variables
@@ -250,14 +256,14 @@ class Map:
                 html += f"<h3>{district_name} ({county_name})</h3>"
 
             html += f"<h4>{group_name}</h4><p align='center'>"
-            html += "<br>".join(sub_table[overview_col])
+            html += "<br>".join(sub_table["sect_overview"])
             if include_awards_data and group_name != "District":
                 awards_info = "<br>".join(sub_table["awards_info"])
                 html += "<br>" + awards_info
             html += "</p>"
 
     def add_sections_to_map(
-        self, scout_data: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False, coloured_region: set[str] = None, coloured_region_key: str = "",
+        self, scout_data: ScoutData, colour: Union[str, dict], marker_data: set[str], single_section: str = None, layer: str = "Sections", cluster_markers: bool = False, coloured_region: set[str] = None, coloured_region_key: str = "",
     ) -> None:
         """Filter sections and add to map.
 
