@@ -51,7 +51,7 @@ class ScoutData:
             else:
                 raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {scout_census.column_labels.VALID_POSTCODE} column")
 
-            logger.info(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS Postcode data finished, {time.time() - start_time:.2f} seconds elapsed.")
+            logger.info(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS data finished, {time.time() - start_time:.2f} seconds elapsed.")
 
     def filter_records(self, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.

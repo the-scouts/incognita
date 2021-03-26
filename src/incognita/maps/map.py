@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from itertools import cycle
 from typing import Literal, TYPE_CHECKING, Union
 import webbrowser
@@ -40,6 +41,7 @@ class Map:
             map_name: Filename for the saved map
 
         """
+        logger.info("Initialising folium map")
         # kwargs to leaflet
         leaflet_kwargs = dict(
             zoomSnap=0.05,
@@ -83,6 +85,7 @@ class Map:
             significance_threshold: If an area's value is significant enough to be displayed
 
         """
+
         colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
         map_data = reports.data  # contains shapefile paths, and labels for region codes and names
         code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
@@ -104,12 +107,11 @@ class Map:
         colour_map = branca.colormap.LinearColormap(colors=colours, index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
         colour_map.caption = layer_name
 
-        logger.info(f"Colour scale boundary values\n{scale_step_boundaries}")
-        logger.info(f"Colour scale index values\n{scale_index}")
+        logger.info(f"Colour scale boundary values {scale_step_boundaries}")
+        logger.info(f"Colour scale index values {scale_index}")
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with {code_col} from boundary report")
         merged_data = geo_data.merge(map_data, left_on="shape_codes", right_on=code_col).drop_duplicates()
-        logger.debug(f"Merged_data\n{merged_data}")
         if len(merged_data.index) == 0:
             logger.error("Data unsuccessfully merged resulting in zero records")
             raise Exception("Data unsuccessfully merged resulting in zero records")
@@ -343,7 +345,11 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
 
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
+    logger.info("Loading Shapefile data")
+    logger.debug(f"Shapefile path: {reports.geography.metadata.shapefile.path}")
+    start_time = time.time()
     all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
+    logger.info(f"Loading Shapefile data finished, {time.time() - start_time:.2f} seconds elapsed")
     if reports.geography.metadata.shapefile.key not in all_shapes.columns:
         raise KeyError(f"{reports.geography.metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
@@ -354,9 +360,9 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     # Filter and convert GeoDataFrame to world co-ordinates
     logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the {code_col} column of the map_data")
     all_codes = set(reports.data[code_col])
-    logger.debug(f"All codes list: \n{all_codes}")
+    logger.debug(f"All codes list: {all_codes}")
     geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=utility.WGS_84)
-    logger.info(f"Loaded {len(geo_data.index):,} {code_col} boundary shapes. Columns now in data: {reports.data.columns}.")
+    logger.info(f"Loaded {len(geo_data.index):,} {code_col} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
     return geo_data
 
 

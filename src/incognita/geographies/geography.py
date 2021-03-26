@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
 import geopandas as gpd
@@ -49,8 +50,12 @@ class Geography:
         self.name: str = self.metadata.key  # human readable name
 
         # Names & Codes file path
+        logger.debug(f"Loading {geography_name} codes map")
         boundary_codes_dtypes = {self.metadata.codes.key: self.metadata.codes.key_type, self.metadata.codes.name: "string"}
+        start_time = time.time()
         codes_map = pd.read_csv(root.DATA_ROOT / self.metadata.codes.path, dtype=boundary_codes_dtypes)
+        logger.debug(f"Loading {geography_name} codes map finished, {time.time() - start_time:.2f} seconds elapsed")
+        logger.debug(f"Normalising {geography_name} codes columns")
         codes_map.columns = codes_map.columns.map({self.metadata.codes.key: "codes", self.metadata.codes.name: "names"})
         self.boundary_codes: pd.DataFrame = codes_map
 
