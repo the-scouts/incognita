@@ -196,9 +196,14 @@ class Reports:
         dataframes = []
 
         if opt_groups or opt_number_of_groups:
+            # Used to list the groups that operate within the boundary.
+            # Gets all groups in the census_data dataframe and calculates the
+            # number of groups.
             logger.debug(f"Adding group data")
-            group_table: pd.Series = grouped_data[scout_census.column_labels.name.GROUP].apply(_groups_groupby)
-            dataframes.append(pd.DataFrame(group_table.values.tolist(), columns=["Groups", "Number of Groups"]))
+            groups = self.scout_data.census_data[[geog_name, scout_census.column_labels.name.GROUP]].copy()
+            groups[scout_census.column_labels.name.GROUP] = groups[scout_census.column_labels.name.GROUP].str.strip()
+            g = groups.drop_duplicates().dropna().groupby([geog_name], sort=False)[scout_census.column_labels.name.GROUP]
+            dataframes.append(pd.DataFrame({"Groups": g.unique().apply("\n".join), "Number of Groups": g.nunique(dropna=True)}))
 
         if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
             logger.debug(f"Adding young people numbers")
