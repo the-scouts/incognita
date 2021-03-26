@@ -148,18 +148,6 @@ class Reports:
         district_id_column = scout_census.column_labels.id.DISTRICT
         award_name = sections_model.Beavers.top_award
         award_eligible = sections_model.Beavers.top_award_eligible
-        section_cols = [section_name for section_name, section_model in sections_model if section_name != "Network"]
-
-        def _groups_groupby(group_series: pd.Series) -> (str, int):
-            # Used to list the groups that operate within the boundary
-            # Gets all groups in the records_in_boundary dataframe
-            # Removes NaN values
-            # Converts all values to strings to make sure the string operations work
-            # Removes leading and trailing whitespace
-            # Concatenates the Series to a string with a newline separator
-            # Calculates the number of groups
-            group_list: pd.Series = group_series.dropna().drop_duplicates().str.strip()
-            return group_list.str.cat(sep="\n"), group_list.size
 
         def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
             summed = group_df[[award_name, award_eligible]].sum()
