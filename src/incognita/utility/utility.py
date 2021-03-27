@@ -128,16 +128,6 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     return data
 
 
-def section_from_type(section_type: str) -> str:
-    """returns section from section types lookup dict
-
-    Args:
-        section_type:
-
-    """
-    return section_types[section_type]
-
-
 def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: ONSPostcodeDirectory) -> pd.Series:
     """Calculate IMD decile from ranks, country codes and ONS metadata.
 

@@ -97,8 +97,8 @@ class Map:
         code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
         geo_data = _load_boundary(reports)
 
-        # Set score col properties to use for a particular boundary
-        logger.info(f"Setting score column to {value_col} (displayed: {tooltip})")
+        # Set value col properties to use for a particular boundary
+        logger.info(f"Setting choropleth column to {value_col} (displayed: {tooltip})")
 
         if value_col not in map_data.columns:
             logger.error(f"{value_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
