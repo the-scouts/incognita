@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # Generate boundary report
     reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("oslaua", {la_code})  # Leeds LA code
-    reports.create_boundary_report(["Section numbers"], report_name="leeds_sections")
+    reports.create_boundary_report({"Section numbers"}, report_name="leeds_sections")
 
     # Create map object
     mapper = Map(map_name="Leeds")

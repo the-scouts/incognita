@@ -13,8 +13,8 @@ if __name__ == "__main__":
 
     reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("C_name", {county_name}, "oslaua")
-    reports.create_boundary_report(["Section numbers"], report_name=f"{county_name} by LSOA")  # TODO: before postcode filtering
-    # reports.create_boundary_report(["Section numbers"], historical=True, report_name=f"{county_name}_by_lsoa")  # TODO: before postcode filtering
+    reports.create_boundary_report({"Section numbers"}, report_name=f"{county_name} by LSOA")  # TODO: before postcode filtering
+    # reports.create_boundary_report({"Section numbers"}, historical=True, report_name=f"{county_name}_by_lsoa")  # TODO: before postcode filtering
 
     # Create map object
     mapper = Map(map_name=f"{county_name}")

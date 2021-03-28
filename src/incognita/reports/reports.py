@@ -107,7 +107,7 @@ class Reports:
         return dict(nested_dict)  # Return the mapping
 
     @time_function
-    def create_boundary_report(self, options: list = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
+    def create_boundary_report(self, options: set[str] = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
         """Produces .csv file summarising by boundary provided.
 
         Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
@@ -122,8 +122,6 @@ class Reports:
         # Set default option set for `options`
         if options is None:
             options = {"Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"}
-        else:
-            options = set(options)
 
         opt_number_of_sections = "Number of Sections" in options
         opt_number_of_groups = "Number of Groups" in options

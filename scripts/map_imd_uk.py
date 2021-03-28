@@ -23,11 +23,11 @@ if __name__ == "__main__":
 
     lsoa = Reports("LSOA", scout_data)
     lsoa.filter_boundaries("ctry", country_codes)
-    lsoa.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="lsoa_ew")
+    lsoa.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="lsoa_ew")
 
     # iz = Reports("Intermediate Zone", scout_data)
     # iz.filter_boundaries(field="ctry", value_list={"S92000003"})
-    # iz.create_boundary_report(["Section numbers", "6 to 17 numbers"], report_name="iz_all")
+    # iz.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="iz_all")
 
     # Create map object
     mapper = Map(map_name="lsoa_ew_map 6")

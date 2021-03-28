@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # Generate boundary report
     reports = Reports("Local Authority", scout_data)
-    reports.create_boundary_report(["awards"], report_name="laua_awards_report")
+    reports.create_boundary_report({"awards"}, report_name="laua_awards_report")
 
     # Create map object
     mapper = Map(map_name="UK_QSA_awards")
