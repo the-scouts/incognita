@@ -284,9 +284,7 @@ class Reports:
         except KeyError:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 
-        try:
-            boundary_report: pd.DataFrame = self.boundary_report
-        except KeyError:
+        if self.boundary_report is None:
             raise AttributeError("Geography report doesn't exist")
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
@@ -322,9 +320,9 @@ class Reports:
             # Check we did not accidentally expand the population!
             # assert merged_age_profile["Pop_All"].sum() == reduced_age_profile_pd["Pop_All"].sum()  # this will fail
             assert pivoted_age_profile["Pop_All"].sum() == merged_age_profile_no_na["Pop_All"].sum()
-            uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on="codes", right_index=True, sort=False)
+            uptake_report = self.boundary_report.merge(pivoted_age_profile, how="left", left_on="codes", right_index=True, sort=False)
         else:
-            uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
+            uptake_report = self.boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
         years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values()

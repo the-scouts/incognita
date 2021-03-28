@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 sections_model = scout_census.column_labels.sections
-section_types = {getattr(sections_model, section_name).type: section_name for section_name, section_model in sections_model}
+section_types = {section_model.type: section_name for section_name, section_model in sections_model}
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
@@ -74,7 +74,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     """
     # Count number of rows
     original_records = len(data.index)
-    excluded_data = None
+    excluded_data = original_data = None
 
     # Filter records
     if mask:
@@ -96,7 +96,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     logger.info(f"Resulting in {remaining_records} records remaining.")
 
     if exclusion_analysis:
-        cols = [scout_census.column_labels.UNIT_TYPE] + [getattr(sections_model, section).total for section in sections_model]
+        cols = [scout_census.column_labels.UNIT_TYPE] + [section_model.total for section, section_model in sections_model]
         if not all([col in data.columns for col in cols]):
             raise ValueError("Required columns are not in dataset!\n" f"Required columns are: {cols}.\n" f"Your columns are: {data.columns.to_list()}")
 
@@ -107,8 +107,8 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
         # Prints number of members and % of members filtered out for each section
         for section_name, section_model in sections_model:
             logger.debug(f"Analysis of {section_name} member exclusions")
-            section_type = getattr(sections_model, section_name).type
-            members_col = getattr(sections_model, section_name).total
+            section_type = section_model.type
+            members_col = section_model.total
 
             excluded_sections = excluded_data.loc[excluded_data[scout_census.column_labels.UNIT_TYPE] == section_type]
             excluded_members = 0
