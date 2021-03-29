@@ -155,6 +155,7 @@ class ScoutCensus:
         census_file_path: path to input file with Census data.
 
     """
+
     def __init__(self, census_file_path: Path, load_data: bool = True):
         if not load_data:
             self.data = pd.DataFrame()

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import time
 from itertools import cycle
 from pathlib import Path
+import time
 from typing import Literal, TYPE_CHECKING, Union
 import webbrowser
 
@@ -122,7 +122,6 @@ class Map:
             logger.error("Data unsuccessfully merged resulting in zero records")
             raise Exception("Data unsuccessfully merged resulting in zero records")
 
-        # fmt: off
         self.map.add_child(
             folium.GeoJson(
                 data=merged_data.to_json(),
@@ -137,10 +136,19 @@ class Map:
                 show=show,
             )
         )
-        # fmt: on
         self.map.add_child(colour_map)
 
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: set[str], layer_name: str = "Sections", cluster_markers: bool = False, show_layer: bool = True, coloured_region: set[str] = None, coloured_region_key: str = "", ) -> None:
+    def add_meeting_places_to_map(
+        self,
+        sections: pd.DataFrame,
+        colour: Union[str, dict],
+        marker_data: set[str],
+        layer_name: str = "Sections",
+        cluster_markers: bool = False,
+        show_layer: bool = True,
+        coloured_region: set[str] = None,
+        coloured_region_key: str = "",
+    ) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
@@ -263,7 +271,15 @@ class Map:
             html += "</p>"
 
     def add_sections_to_map(
-        self, scout_data: ScoutData, colour: Union[str, dict], marker_data: set[str], single_section: str = None, layer: str = "Sections", cluster_markers: bool = False, coloured_region: set[str] = None, coloured_region_key: str = "",
+        self,
+        scout_data: ScoutData,
+        colour: Union[str, dict],
+        marker_data: set[str],
+        single_section: str = None,
+        layer: str = "Sections",
+        cluster_markers: bool = False,
+        coloured_region: set[str] = None,
+        coloured_region_key: str = "",
     ) -> None:
         """Filter sections and add to map.
 
@@ -294,7 +310,7 @@ class Map:
             filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
-        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer_name=layer, cluster_markers=cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
+        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
 
     def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None) -> None:
         """Function to add custom data as markers on map
@@ -332,13 +348,17 @@ class Map:
         # Plot marker and include marker_data in the popup for every item in custom_data
         icon = folium.Icon(color="green")
         if marker_data:
+
             def add_popup_data(row):
                 if not np.isnan(row.geometry.x):
-                    layer.add_child(folium.Marker(
+                    layer.add_child(
+                        folium.Marker(
                             location=[round(row.geometry.y, 4), round(row.geometry.x, 4)],
                             popup=folium.Popup(html="".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data), max_width=2650),
-                            icon=icon
-                    ))
+                            icon=icon,
+                        )
+                    )
+
             custom_data.apply(add_popup_data, axis=1)
         else:
             for points in custom_data.geometry[custom_data.geometry.x.notna()].to_list():
@@ -429,4 +449,4 @@ def _map_opacity(properties: dict, column: str, threshold: float) -> float:
     area_score = properties.get(column)
     if area_score is None:
         return 1
-    return 1/3 if abs(area_score) >= threshold else 1/12
+    return 1 / 3 if abs(area_score) >= threshold else 1 / 12

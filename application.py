@@ -5,6 +5,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 dashboard = dash.Dash(__name__, external_stylesheets=["https://codepen.io/chriddyp/pen/bWLwgP.css"])
+app = dashboard.server
 
 dashboard.layout = html.Div(
     [
@@ -22,5 +23,3 @@ dashboard.input_layout = html.Div([dcc.Upload(id="upload-scout-data", children=h
 
 if __name__ == "__main__":
     dashboard.run_server(debug=False)
-else:
-    app = dashboard.server

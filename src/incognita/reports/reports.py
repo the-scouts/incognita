@@ -82,13 +82,14 @@ class Reports:
 
         region_type = ons_code  # Census column heading for the region geography type
         district_id_column = scout_census.column_labels.id.DISTRICT
+        census_data = self.scout_data.census_data
 
         region_ids = self.geography.boundary_codes["codes"].dropna().drop_duplicates()
 
-        district_ids_by_region = self.scout_data.census_data.loc[self.scout_data.census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
+        district_ids_by_region = census_data.loc[census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
         district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
 
-        region_ids_by_district = self.scout_data.census_data.loc[self.scout_data.census_data[district_id_column].isin(district_ids), [district_id_column, region_type]]
+        region_ids_by_district = census_data.loc[census_data[district_id_column].isin(district_ids), [district_id_column, region_type]]
         region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == scout_census.DEFAULT_VALUE)].dropna().drop_duplicates()
 
         # count of how many regions the district occupies:
@@ -221,7 +222,7 @@ class Reports:
                 metric_cols += ["Adults"]
             agg = self.scout_data.census_data.groupby([geog_name, "Year"], sort=True)[metric_cols].sum()
             agg = agg.unstack().sort_index()
-            agg.columns = [f"{rename.get(key, key)}-{census_year}".replace('_total', "") for key, census_year in agg.columns]
+            agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
         if opt_awards:
