@@ -10,7 +10,7 @@ import branca
 import folium
 from folium.map import FeatureGroup
 from folium.plugins import MarkerCluster
-from folium.raster_layers import ENV as folium_templates
+from folium.raster_layers import ENV as FOLIUM_TEMPLATES
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from branca import colormap
 
 attribution_string = "&copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>"
-tiles_attr = Path(folium_templates.loader.provider.module_path, "templates/tiles/cartodbpositronnolabels/attr.txt")
+tiles_attr = Path(FOLIUM_TEMPLATES.loader.provider.module_path, "templates/tiles/cartodbpositronnolabels/attr.txt")
 if tiles_attr.read_text() != attribution_string:
     tiles_attr.with_suffix(".bak.txt").write_text(tiles_attr.read_text())
     tiles_attr.write_text(attribution_string)
