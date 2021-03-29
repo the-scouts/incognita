@@ -11,9 +11,8 @@ if __name__ == "__main__":
     set_up_logger()
 
     logger.info("Starting")
-    may_19_fields = set(ons_postcode_directory_may_19.fields)
     to_keep = ("oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "imd", "imd_decile")  # 'lat', 'long', 'nys_districts', 'pcd'
-    fields = [f for f in to_keep if f in may_19_fields]
+    fields = [f for f in to_keep if f in ons_postcode_directory_may_19.fields]
 
     # Load Full ONS Postcode Directory
     data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ons_postcode_directory_may_19.data_types, encoding="utf-8")
@@ -29,7 +28,7 @@ if __name__ == "__main__":
     # # TODO Needed?:
     # for field, dtype in data.dtypes.items():
     #     if dtype == "category":
-    #         data[field] = data[field].cat.add_categories([scout_census.ScoutCensus.DEFAULT_VALUE])
+    #         data[field] = data[field].cat.add_categories([scout_census.DEFAULT_VALUE])
 
     # Save minified full ONS Postcode Directory
     reduced_data_with_coords = data[fields + ["lat", "long"]].copy()

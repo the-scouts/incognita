@@ -21,16 +21,15 @@ if __name__ == "__main__":
     scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
 
     # Generate boundary report
-    reports = Reports("lad", scout_data)
-    reports.create_boundary_report(["awards"], report_name="laua_awards_report")
+    reports = Reports("Local Authority", scout_data)
+    reports.create_boundary_report({"awards"}, report_name="laua_awards_report")
 
     # Create map object
-    mapper = Map(scout_data, map_name="UK_QSA_awards")
+    mapper = Map(map_name="UK_QSA_awards")
 
     # Plot
-    dimension = {"column": "%-QSA", "tooltip": "QSA %", "legend": "QSA %"}
-    mapper.add_areas(dimension, reports, show=True)
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(), ["youth membership", "awards"], single_section="Explorers", cluster_markers=True)
+    mapper.add_areas("%-QSA", "QSA %", "QSA %", reports, show=True)
+    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), {"youth membership", "awards"}, single_section="Explorers", cluster_markers=True)
 
     # Save the map and display
     mapper.save_map()

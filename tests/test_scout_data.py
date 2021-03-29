@@ -9,7 +9,7 @@ import hypothesis.strategies as st
 import pandas as pd
 import pytest
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.utility import utility
 
@@ -22,7 +22,7 @@ def scout_data_factory():
 
     def _scout_data_factory(data_df: pd.DataFrame) -> ScoutData:
         sd = ScoutData(load_census_data=False, merged_csv=False)
-        sd.data = data_df
+        sd.census_data = data_df
         return sd
 
     return _scout_data_factory
@@ -52,10 +52,10 @@ LocationDataFrame = data_frames(
 def test_scout_data_columns(scout_data_factory):
     scout_data_stub = scout_data_factory(pd.DataFrame())
 
-    column_labels = ScoutCensus.column_labels
-    columns = [*column_labels["id"].values(), *column_labels["name"].values()]
+    column_labels = scout_census.column_labels
+    columns = {col for key, col in (*column_labels.name, *column_labels.id)}
 
-    assert scout_data_stub.columns == columns
+    assert scout_data_stub.filterable_columns == columns
 
 
 @hypothesis.given(CountryDataFrame)
@@ -65,7 +65,7 @@ def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
     scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=True, exclusion_analysis=False)
 
     expected_outcome = data.loc[~(data[COLUMN_NAME] == first_country_code)]
-    assert scout_data_stub.data.equals(expected_outcome)
+    assert scout_data_stub.census_data.equals(expected_outcome)
 
 
 @hypothesis.given(CountryDataFrame)
@@ -75,7 +75,7 @@ def test_filter_records_exclusion(scout_data_factory, data: pd.DataFrame):
     scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=False, exclusion_analysis=False)
 
     expected_outcome = data.loc[data[COLUMN_NAME] == first_country_code]
-    assert scout_data_stub.data.equals(expected_outcome)
+    assert scout_data_stub.census_data.equals(expected_outcome)
 
 
 @hypothesis.given(CountryDataFrame)
@@ -89,7 +89,7 @@ def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_fac
 
 
 @hypothesis.given(LocationDataFrame)
-@hypothesis.settings(deadline=250)  # extend deadline for pip CI testing
+@hypothesis.settings(deadline=300)  # extend deadline for pip CI testing
 def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame: gpd.GeoDataFrame, data: pd.DataFrame):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
@@ -99,7 +99,7 @@ def test_add_shape_data_points_data(scout_data_factory, blank_geo_data_frame: gp
 
 
 @hypothesis.given(LocationDataFrame)
-@hypothesis.settings(deadline=300)  # set deadline to 300 milliseconds per run
+@hypothesis.settings(deadline=450)  # set deadline to 300 milliseconds per run
 def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame: gpd.GeoDataFrame, data: pd.DataFrame):
     sd = scout_data_factory(data)
     sd.add_shape_data("id", gdf=blank_geo_data_frame)
@@ -107,7 +107,7 @@ def test_add_shape_data_merge(scout_data_factory, blank_geo_data_frame: gpd.GeoD
     points_data = gpd.GeoDataFrame(geometry=gpd.points_from_xy(data.long, data.lat), crs=utility.WGS_84)
     joined = gpd.sjoin(points_data, blank_geo_data_frame, how="left", op="intersects")
     merged = data.merge(joined[["id"]], how="left", left_index=True, right_index=True)
-    assert sd.data.equals(merged)
+    assert sd.census_data.equals(merged)
 
 
 def test_close_script(caplog: pytest.LogCaptureFixture, scout_data_factory):

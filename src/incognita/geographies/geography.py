@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
 import shapely.geometry
 
+from incognita.data import scout_census
 from incognita.data.ons_pd import Boundary
 from incognita.logger import logger
 from incognita.utility import config
@@ -13,8 +15,6 @@ from incognita.utility import root
 from incognita.utility import utility
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from incognita.data.ons_pd import ONSPostcodeDirectory
     from incognita.data.scout_data import ScoutData
 
@@ -24,53 +24,43 @@ class Geography:
     used and methods for selecting and excluding regions.
 
     Attributes:
-        metadata: Information about the boundary type
-        region_ids_mapping: Table of region codes and human-readable names for those codes
+        metadata: incognita.data.ons_pd.Boundary object with geography metadata
+        boundary_codes: Table mapping region codes to human-readable names
         name: Human readable ('nice') name for the geography
     """
 
     def __init__(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
-        boundary, codes_map = self._load_boundary(geography_name, ons_pd)
-
-        self.metadata: Boundary = boundary
-        self.region_ids_mapping: pd.DataFrame = codes_map
-        self.name: str = boundary.name  # human readable name
-
-    @staticmethod
-    def _load_boundary(geography_name: str, ons_pd: ONSPostcodeDirectory) -> tuple[Boundary, pd.DataFrame]:
-        """Loads metadata for a given geography type.
+        """Instantiates Geography, loads metadata for a given geography type.
 
         Args:
             geography_name:
-                The type of boundary, e.g. lsoa11, pcon etc. Must be a key in
-                ONSPostcodeDirectory.BOUNDARIES or in the custom-boundaries
-                table in incognita-config.toml
+                The type of boundary, e.g. "LSOA", "Constituency" etc. Must be
+                an ONS or specified custom boundary.
             ons_pd:
-                A reference to an ONS Postcode Directory model instance
-
-        Returns:
-            boundary: incognita.data.ons_pd.Boundary object with geography metadata
-            codes_map: dataframe mapping boundary codes -> names
+                An ONSPostcodeDirectory model with boundaries for a given release
 
         """
-        logger.info(f"Setting the boundary to {geography_name}")
+        logger.info(f"Setting the boundary by {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
         boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries
-        if geography_name in boundaries_dict:
-            boundary = boundaries_dict[geography_name]
-
-            # Names & Codes file path
-            boundary_codes_dtypes = {boundary.codes.key: boundary.codes.key_type, boundary.codes.name: "string"}
-            codes_map = pd.read_csv(root.DATA_ROOT / boundary.codes.path, dtype=boundary_codes_dtypes)
-            # TODO normalise codes_map to always have two columns - `codes` and `names`
-        else:
+        if geography_name not in boundaries_dict:
             raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
+        self.metadata: Boundary = boundaries_dict[geography_name]
+        self.name: str = self.metadata.key  # human readable name
 
-        return boundary, codes_map
+        # Names & Codes file path
+        logger.debug(f"Loading {geography_name} codes map")
+        boundary_codes_dtypes = {self.metadata.codes.key: self.metadata.codes.key_type, self.metadata.codes.name: "string"}
+        start_time = time.time()
+        codes_map = pd.read_csv(root.DATA_ROOT / self.metadata.codes.path, dtype=boundary_codes_dtypes)
+        logger.debug(f"Loading {geography_name} codes map finished, {time.time() - start_time:.2f} seconds elapsed")
+        logger.debug(f"Normalising {geography_name} codes columns")
+        codes_map.columns = codes_map.columns.map({self.metadata.codes.key: "codes", self.metadata.codes.name: "names"})
+        self.boundary_codes: pd.DataFrame = codes_map
 
     def filter_ons_boundaries(self, field: str, value_list: set) -> pd.DataFrame:
-        """Filters the region_ids_mapping table by if the area code is within both value_list and the census_data table.
+        """Filters the boundary_codes table by if the area code is within both value_list and the census_data table.
 
         Uses ONS Postcode Directory to find which of set boundaries are within
         the area defined by the value_list.
@@ -80,31 +70,31 @@ class Geography:
             value_list: The values on which to filter
 
         Returns:
-             Filtered self.region_ids_mapping
+             Filtered self.boundary_codes
 
         """
 
         # Transforms codes from values_list in column 'field' to codes for the current geography
-        # 'field' is the start geography and 'metadata.name' is the target geography
+        # 'field' is the start geography and 'metadata.key' is the target geography
         # Returns a list
-        logger.info(f"Filtering {len(self.region_ids_mapping)} {self.name} boundaries by {field} being in {value_list}")
+        logger.info(f"Filtering {len(self.boundary_codes)} {self.name} boundaries by {field} being in {value_list}")
         logger.debug(f"Loading ONS postcode data.")
         ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
-            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.metadata.name].drop_duplicates().to_list()
+            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.metadata.key].drop_duplicates().to_list()
         except KeyError:
-            msg = f"{self.metadata.name} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
+            msg = f"{self.metadata.key} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
             logger.error(msg)
             raise KeyError(msg) from None
         logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
-        self.region_ids_mapping = self.region_ids_mapping.loc[self.region_ids_mapping[self.metadata.codes.key].isin(set(boundary_subset))]
-        logger.info(f"Resulting in {len(self.region_ids_mapping)} {self.name} boundaries")
+        self.boundary_codes = self.boundary_codes.loc[self.boundary_codes["codes"].isin(set(boundary_subset))]
+        logger.info(f"Resulting in {len(self.boundary_codes)} {self.name} boundaries")
 
-        return self.region_ids_mapping
+        return self.boundary_codes
 
-    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_boundary: str, column: str, value_list: set) -> None:
+    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_boundary: str, column: str, value_list: set) -> pd.DataFrame:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -124,16 +114,16 @@ class Geography:
 
         # Filters scout data to values passed through (values in column `column' in `values_list')
         # Gets associated ons code column from filtered records
-        records = scout_data.data.loc[scout_data.data[column].isin(value_list), ons_boundary].drop_duplicates().dropna()
+        records = scout_data.census_data.loc[scout_data.census_data[column].isin(value_list), ons_boundary].drop_duplicates().dropna()
         logger.debug(f"Found {len(records)} records that match {column} in {value_list}")
 
         # Removes original ons-census merge errors
-        ons_codes = records[records != scout_data.DEFAULT_VALUE].to_list()
+        ons_codes = records[records != scout_census.DEFAULT_VALUE].to_list()
         logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {value_list}")
 
-        self.filter_ons_boundaries(ons_boundary, set(ons_codes))
+        return self.filter_ons_boundaries(ons_boundary, set(ons_codes))
 
-    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3_000) -> None:
+    def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3_000) -> pd.DataFrame:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
         partially or fully within three kilometres of the external border (convex hull)
 
@@ -151,8 +141,8 @@ class Geography:
         logger.info("Creates geometry")
         # Reduce columns in dataset to minimum requirements
         data_with_points = gpd.GeoDataFrame(
-            scout_data.data[[field, boundary]],
-            geometry=gpd.points_from_xy(scout_data.data.long, scout_data.data.lat),
+            scout_data.census_data[[field, boundary]],
+            geometry=gpd.points_from_xy(scout_data.census_data.long, scout_data.census_data.lat),
             crs=utility.WGS_84,
         )
 
@@ -178,4 +168,4 @@ class Geography:
         logger.info(f"Found {len(nearby_values)} Sections nearby")
         logger.debug(f"Found {nearby_values}")
 
-        self.filter_ons_boundaries(boundary, set(nearby_values))
+        return self.filter_ons_boundaries(boundary, set(nearby_values))

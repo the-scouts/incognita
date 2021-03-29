@@ -4,16 +4,16 @@ import pygeos.constructive
 import shapely.geometry
 import shapely.ops
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.utility import utility
 
 
 class DistrictBoundaries:
-    def __init__(self, scout_data_object: ScoutData):
-        self.scout_data: ScoutData = scout_data_object
-        self.ons_pd = scout_data_object.ons_pd
+    def __init__(self, scout_data: ScoutData):
+        self.scout_data: ScoutData = scout_data
+        self.ons_pd = scout_data.ons_pd
 
     def create_district_boundaries(self) -> None:
         """Creates a GeoJSON file for the District Boundaries of the Scout Census.
@@ -23,10 +23,10 @@ class DistrictBoundaries:
         """
 
         # Find all the District IDs and names
-        districts = self.scout_data.data[[ScoutCensus.column_labels["id"]["DISTRICT"], ScoutCensus.column_labels["name"]["DISTRICT"]]].drop_duplicates()
+        districts = self.scout_data.census_data[[scout_census.column_labels.id.DISTRICT, scout_census.column_labels.name.DISTRICT]].drop_duplicates()
 
         # Finds all the records with valid postcodes in the Scout Census
-        valid_locations = self.scout_data.data.loc[self.scout_data.data[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
+        valid_locations = self.scout_data.census_data.loc[self.scout_data.census_data[scout_census.column_labels.VALID_POSTCODE] == 1]
 
         # Creates a new dataframe with a subset of columns resulting in
         # each location being a distinct row

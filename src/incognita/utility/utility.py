@@ -4,7 +4,7 @@ from functools import wraps
 import time
 from typing import TYPE_CHECKING
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.logger import logger
 from incognita.utility import config
 
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
-sections_dict = ScoutCensus.column_labels["sections"]
-section_types = {sections_dict[section]["type"]: section for section in sections_dict.keys()}
+sections_model = scout_census.column_labels.sections
+section_types = {section_model.type: section_name for section_name, section_model in sections_model}
 
 # EPSG values for the co-ordinate reference systems that we use
 WGS_84 = 4326  # World Geodetic System 1984 (Used in GPS)
@@ -74,7 +74,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     """
     # Count number of rows
     original_records = len(data.index)
-    excluded_data = None
+    excluded_data = original_data = None
 
     # Filter records
     if mask:
@@ -96,7 +96,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     logger.info(f"Resulting in {remaining_records} records remaining.")
 
     if exclusion_analysis:
-        cols = [ScoutCensus.column_labels["UNIT_TYPE"]] + [sections_dict[section]["total"] for section in sections_dict.keys()]
+        cols = [scout_census.column_labels.UNIT_TYPE] + [section_model.total for section, section_model in sections_model]
         if not all([col in data.columns for col in cols]):
             raise ValueError("Required columns are not in dataset!\n" f"Required columns are: {cols}.\n" f"Your columns are: {data.columns.to_list()}")
 
@@ -105,41 +105,27 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
         logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
         # Prints number of members and % of members filtered out for each section
-        for section in sections_dict.keys():
-            logger.debug(f"Analysis of {section} member exclusions")
-            section_type = sections_dict[section]["type"]
-            members_col = sections_dict[section]["total"]
+        for section_name, section_model in sections_model:
+            logger.debug(f"Analysis of {section_name} member exclusions")
+            section_type = section_model.type
+            members_col = section_model.total
 
-            excluded_sections = excluded_data.loc[excluded_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type]
+            excluded_sections = excluded_data.loc[excluded_data[scout_census.column_labels.UNIT_TYPE] == section_type]
             excluded_members = 0
             if not excluded_sections.empty:
                 logger.debug(f"Excluded sections\n{excluded_sections}")
-                logger.debug(f"Finding number of excluded {section} by summing {members_col}")
+                logger.debug(f"Finding number of excluded {section_name} by summing {members_col}")
                 excluded_members = excluded_sections[members_col].sum()
-                logger.debug(f"{excluded_members} {section} excluded")
+                logger.debug(f"{excluded_members} {section_name} excluded")
 
-            original_members = original_data.loc[original_data[ScoutCensus.column_labels["UNIT_TYPE"]] == section_type, members_col].sum()
+            original_members = original_data.loc[original_data[scout_census.column_labels.UNIT_TYPE] == section_type, members_col].sum()
 
             if original_members > 0:
-                logger.info(f"{excluded_members} {section} members were removed ({excluded_members / original_members * 100}%) of total")
+                logger.info(f"{excluded_members} {section_name} members were removed ({excluded_members / original_members * 100}%) of total")
             else:
-                logger.info(f"There are no {section} members present in data")
+                logger.info(f"There are no {section_name} members present in data")
 
     return data
-
-
-def section_from_type(section_type: str) -> str:
-    """returns section from section types lookup dict
-
-    Args:
-        section_type:
-
-    """
-    return section_types[section_type]
-
-
-def section_from_type_vector(section_type: pd.Series) -> pd.Series:
-    return section_type.map(section_types)
 
 
 def calc_imd_decile(imd_ranks: pd.Series, country_codes: pd.Series, ons_object: ONSPostcodeDirectory) -> pd.Series:

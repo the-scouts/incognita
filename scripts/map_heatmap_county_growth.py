@@ -62,7 +62,7 @@ if __name__ == "__main__":
         "Number of Sections",
     ]
 
-    # lad_reports = Reports("lad", scout_data)
+    # lad_reports = Reports("Local Authority", scout_data)
     # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
     # lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):
@@ -72,9 +72,9 @@ if __name__ == "__main__":
     # lad_reports.data[f"Sections_change"] = (lad_reports.data[['Colonys-2020', 'Packs-2020', 'Troops-2020', 'Units-2020']].sum(axis=1) / lad_reports.data[['Colonys-2019', 'Packs-2019', 'Troops-2019', 'Units-2019']].sum(axis=1) - 1) * 100
 
     cty_reports = Reports("County", scout_data)
-    cty_reports.ons_pd.fields.append(cty_reports.geography.metadata.name)
+    cty_reports.ons_pd.fields.add(cty_reports.geography.metadata.key)
     cty_reports.filter_boundaries("ctry", {"W92000004"})
-    cty_reports.geography.region_ids_mapping = cty_reports.geography.region_ids_mapping[cty_reports.geography.region_ids_mapping["ctyua19cd"].str.startswith("W")]
+    cty_reports.geography.boundary_codes = cty_reports.geography.boundary_codes[cty_reports.geography.boundary_codes["codes"].str.startswith("W")]
     cty_reports.add_shapefile_data()
     cty_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - Counties")
     cty_reports.create_uptake_report(report_name=f"{location_name} - Counties (uptake)")
@@ -90,63 +90,48 @@ if __name__ == "__main__":
         / cty_reports.data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1)
         - 1
     ) * 100
-    cty_reports._save_report(cty_reports.data, f"{location_name} - Counties with change")
+    utility.save_report(cty_reports.data, f"{location_name} - Counties with change")
 
     # Create map object
-    mapper = Map(scout_data, map_name=f"{location_name} uptake map")
+    mapper = Map(map_name=f"{location_name} uptake map")
 
-    # dimension = {"column": "All_change", "tooltip": "% Change 6-18", "legend": "% Change 6-18 (LADs)"}
-    # mapper.add_areas(dimension, lad_reports)
+    # mapper.add_areas("All_change", "% Change 6-18", "% Change 6-18 (LADs)", lad_reports)
 
     # TODO BUG only last add areas has correct colour mapping for same reports instance
 
-    dimension = {"column": "All_change", "tooltip": "% Change 6-18", "legend": "% Change 6-18 (Counties)"}
-    mapper.add_areas(dimension, cty_reports, show=True)
+    mapper.add_areas("All_change", "% Change 6-18", "% Change 6-18 (Counties)", cty_reports, show=True)
 
-    dimension = {"column": "Beavers_change", "tooltip": "% Change Beavers", "legend": "% Change Beavers (Counties)"}
-    mapper.add_areas(dimension, cty_reports)
+    mapper.add_areas("Beavers_change", "% Change Beavers", "% Change Beavers (Counties)", cty_reports)
 
-    dimension = {"column": "Cubs_change", "tooltip": "% Change Cubs", "legend": "% Change Cubs (Counties)"}
-    mapper.add_areas(dimension, cty_reports)
+    mapper.add_areas("Cubs_change", "% Change Cubs", "% Change Cubs (Counties)", cty_reports)
 
-    dimension = {"column": "Scouts_change", "tooltip": "% Change Scouts", "legend": "% Change Scouts (Counties)"}
-    mapper.add_areas(dimension, cty_reports)
+    mapper.add_areas("Scouts_change", "% Change Scouts", "% Change Scouts (Counties)", cty_reports)
 
-    dimension = {"column": "Explorers_change", "tooltip": "% Change Explorers", "legend": "% Change Explorers (Counties)"}
-    mapper.add_areas(dimension, cty_reports)
+    mapper.add_areas("Explorers_change", "% Change Explorers", "% Change Explorers (Counties)", cty_reports)
 
-    dimension = {"column": "Adults_change", "tooltip": "% Change Adults", "legend": "% Change Adults (Counties)"}
-    mapper.add_areas(dimension, cty_reports)
+    mapper.add_areas("Adults_change", "% Change Adults", "% Change Adults (Counties)", cty_reports)
 
-    dimension = {"column": "Sections_change", "tooltip": "% Change # Sections", "legend": "% Change # Sections (Counties)"}
-    mapper.add_areas(dimension, cty_reports)
+    mapper.add_areas("Sections_change", "% Change # Sections", "% Change # Sections (Counties)", cty_reports)
 
-    # dimension = {"column": "%-All-2020", "tooltip": "% Uptake 6-18", "legend": "% Uptake 6-18 (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-All-2020", "% Uptake 6-18", "% Uptake 6-18 (Counties)", cty_reports, significance_threshold=0)
     #
-    # dimension = {"column": "%-Beavers-2020", "tooltip": "% Uptake Beavers", "legend": "% Uptake Beavers (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Beavers-2020", "% Uptake Beavers", "% Uptake Beavers (Counties)", cty_reports, significance_threshold=0)
     #
-    # dimension = {"column": "%-Cubs-2020", "tooltip": "% Uptake Cubs", "legend": "% Uptake Cubs (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Cubs-2020", "% Uptake Cubs", "% Uptake Cubs (Counties)", cty_reports, significance_threshold=0)
     #
-    # dimension = {"column": "%-Scouts-2020", "tooltip": "% Uptake Scouts", "legend": "% Uptake Scouts (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Scouts-2020", "% Uptake Scouts", "% Uptake Scouts (Counties)", cty_reports, significance_threshold=0)
     #
-    # dimension = {"column": "%-Explorers-2020", "tooltip": "% Uptake Explorers", "legend": "% Uptake Explorers (Counties)"}
-    # mapper.add_areas(dimension, cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Explorers-2020", "% Uptake Explorers", "% Uptake Explorers (Counties)", cty_reports, significance_threshold=0)
 
     # Save the map and display
     mapper.save_map()
     mapper.show_map()
 
     # create_section_maps
-    # static_scale = {"index": [0, 8, 20], "min": 0, "max": 20, "boundaries": [0, 3, 4, 6, 8, 11]}
     # for section_label in Reports.SECTION_AGES.keys():
-    #     dimension = {"column": f"%-{section_label}-{year}", "tooltip": section_label, "legend": f"{year} {section_label} uptake (%)"}
-    #     section_map = Map(scout_data, map_name=f"pcon_uptake_report_{section_label}")
-    #     section_map.add_areas(dimension, pcon_reports, scale=static_scale)
-    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(), ["youth membership"], single_section=section_label)
+    #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
+    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, scale_index=[0, 8, 20], scale_step_boundaries=[0, 3, 4, 6, 8, 11])
+    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), {"youth membership"}, single_section=section_label)
     #     section_map.save_map()
 
     # get script execution time etc.

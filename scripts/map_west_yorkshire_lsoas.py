@@ -11,19 +11,17 @@ if __name__ == "__main__":
     scout_data.filter_records("C_name", {county_name})  # "Shropshire", "West Mercia"
     scout_data.filter_records("postcode_is_valid", {1})
 
-    reports = Reports("lsoa", scout_data)
+    reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("C_name", {county_name}, "oslaua")
-    reports.create_boundary_report(["Section numbers"], report_name=f"{county_name} by LSOA")  # TODO: before postcode filtering
-    # reports.create_boundary_report(["Section numbers"], historical=True, report_name=f"{county_name}_by_lsoa")  # TODO: before postcode filtering
+    reports.create_boundary_report({"Section numbers"}, report_name=f"{county_name} by LSOA")  # TODO: before postcode filtering
+    # reports.create_boundary_report({"Section numbers"}, historical=True, report_name=f"{county_name}_by_lsoa")  # TODO: before postcode filtering
 
     # Create map object
-    mapper = Map(scout_data, map_name=f"{county_name}")
+    mapper = Map(map_name=f"{county_name}")
 
     # Plot
-    dimension = {"column": "imd_decile", "tooltip": "IMD", "legend": "IMD Decile"}
-    mapper.add_areas(dimension, reports, show=True, significance_threshold=0)
-    mapper.set_region_of_colour("C_name", {county_name})
-    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(), ["youth membership"])
+    mapper.add_areas("imd_decile", "IMD", "IMD Decile", reports, show=True, significance_threshold=0)
+    mapper.add_sections_to_map(scout_data, mapper.county_colour_mapping(scout_data), {"youth membership"}, coloured_region={county_name}, coloured_region_key="C_name")
 
     # Save the map and display
     mapper.save_map()

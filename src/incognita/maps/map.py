@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from itertools import cycle
+from pathlib import Path
+import time
 from typing import Literal, TYPE_CHECKING, Union
 import webbrowser
 
@@ -8,11 +10,12 @@ import branca
 import folium
 from folium.map import FeatureGroup
 from folium.plugins import MarkerCluster
+from folium.raster_layers import ENV as FOLIUM_TEMPLATES
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from incognita.data.scout_census import ScoutCensus
+from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.reports.reports import Reports
@@ -20,292 +23,263 @@ from incognita.utility import config
 from incognita.utility import utility
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from branca import colormap
+
+attribution_string = "&copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>"
+tiles_attr = Path(FOLIUM_TEMPLATES.loader.provider.module_path, "templates/tiles/cartodbpositronnolabels/attr.txt")
+if tiles_attr.read_text() != attribution_string:
+    tiles_attr.with_suffix(".bak.txt").write_text(tiles_attr.read_text())
+    tiles_attr.write_text(attribution_string)
 
 
 class Map:
     """This class enables easy plotting of maps with a shape file.
 
     Attributes:
-        map_data: contains shapefile paths, and labels for region codes and names
-        CODE_COL: holds the name of the region class, e.g. oslaua, pcon
-        SCORE_COL: holds the column name of the choropleth dimension
-        score_col_label: tooltip label for the self.SCORE_COL value
         map: holds the folium map object
 
     """
 
-    def __init__(self, scout_data_object: ScoutData, map_name: str):
+    def __init__(self, map_name: str):
         """Initialise Map class.
 
         Args:
-            scout_data_object: ScoutData object with data
             map_name: Filename for the saved map
 
         """
-        # Can be set by set_region_of_colour
-        self._region_of_colour = None
-
-        self.scout_data = scout_data_object
-
-        self.out_file = config.SETTINGS.folders.output.joinpath(map_name).with_suffix(".html")
-
+        logger.info("Initialising folium map")
+        # kwargs to leaflet
+        leaflet_kwargs = dict(
+            zoomSnap=0.05,
+            zoomDelta=0.1,
+        )
         # Create folium map
         self.map: folium.Map = folium.Map(
             location=[53.5, -1.49],
             zoom_start=6,
-            attr="Map data &copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>",
+            attr=attribution_string,
             # tiles='OpenStreetMap',
             tiles="CartoDB positron nolabels",
-            # kwargs to leaflet
-            zoomSnap=0.05,
-            zoomDelta=0.1,
+            **leaflet_kwargs,
         )
         # self.map_labels = folium.TileLayer("CartoDB positron onlylabels", overlay=True)
-        self.SCORE_COL: dict = {}
-        self.layers: dict = {}
+        self.map.add_child(folium.LayerControl(collapsed=False))  # Add layer control to map
 
-        self.score_col_label: str = ""
-        self.score_col_key: str = ""
-        self.boundary_name: str = ""
-        self.code_name: str = ""
-        self.CODE_COL: str = ""
-        self.map_data: pd.DataFrame = pd.DataFrame()
+        self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
-        self.geo_data = None
-
-    def add_areas(self, dimension: dict, reports: Reports, show: bool = False, scale: dict = None, significance_threshold: float = 2.5) -> None:
+    def add_areas(
+        self,
+        value_col: str,
+        tooltip: str,
+        layer_name: str,
+        reports: Reports,
+        show: bool = False,
+        scale_index: list[int] = None,
+        scale_step_boundaries: list[int] = None,
+        significance_threshold: float = 2.5,
+    ) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
 
         Args:
-            dimension: specifies the column of the data to score against
+            value_col: Data column to use for choropleth colour values
+            tooltip: Mouseover tooltip for each boundary (e.g. "% Change 6-18")
+            layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
             reports:
             show: If True, show the layer by default
-            scale:
-                Allows a fixed value scale, default is boundaries at
-                0%, 20%, 40%, 60%, 80% and 100%.
+            scale_index: Allows a fixed value scale - colour indices
+            scale_step_boundaries: Fixed scale step boundary indices
             significance_threshold: If an area's value is significant enough to be displayed
 
         """
-        colours = ["#4dac26", "#b8e186", "#f1b6da", "#d01c8b"]
-        self.set_boundary(reports)
 
-        # Set score col properties to use for a particular boundary
-        self.score_col_key = f"{self.boundary_name}_{dimension['column']}"
-        self.SCORE_COL[self.score_col_key] = dimension["column"]
-        self.score_col_label = dimension["tooltip"]
-        logger.info(f"Setting score column to {dimension['column']} (displayed: {self.score_col_label})")
+        colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
+        map_data = reports.data  # contains shapefile paths, and labels for region codes and names
+        code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
+        geo_data = _load_boundary(reports)
 
-        self.validate_columns()
+        # Set value col properties to use for a particular boundary
+        logger.info(f"Setting choropleth column to {value_col} (displayed: {tooltip})")
 
-        non_zero_score_col = self.map_data[dimension["column"]].loc[self.map_data[dimension["column"]] != 0]
-        non_zero_score_col = non_zero_score_col.dropna().sort_values(axis=0)
+        if value_col not in map_data.columns:
+            logger.error(f"{value_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
+            raise KeyError(f"{value_col} is not a valid column in the data.")
 
-        if not scale:
-            colourmap_index = non_zero_score_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
-            colourmap_min = self.map_data[dimension["column"]].min()
-            colourmap_max = self.map_data[dimension["column"]].max()
+        non_zero_value_col = map_data[value_col][map_data[value_col] != 0].dropna().sort_values()
+        if scale_index is None:
+            scale_index = non_zero_value_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
+        if scale_step_boundaries is None:
+            quantiles = (0, 20, 40, 60, 80, 100)
+            scale_step_boundaries = [np.percentile(non_zero_value_col, q) for q in quantiles]
+        colour_map = branca.colormap.LinearColormap(colors=colours, index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
+        colour_map.caption = layer_name
 
-            quantiles = [0, 20, 40, 60, 80, 100]
-            colourmap_step_index = [np.percentile(non_zero_score_col, q) for q in quantiles]
-        else:
-            colourmap_index = scale["index"]
-            colourmap_min = scale["min"]
-            colourmap_max = scale["max"]
-            colourmap_step_index = scale["boundaries"]
+        logger.info(f"Colour scale boundary values {scale_step_boundaries}")
+        logger.info(f"Colour scale index values {scale_index}")
 
-        colourmap = branca.colormap.LinearColormap(colors=list(reversed(colours)), index=colourmap_index, vmin=colourmap_min, vmax=colourmap_max)
-        colourmap = colourmap.to_step(index=colourmap_step_index)
-        colourmap.caption = dimension["legend"]
-
-        logger.info(f"Colour scale boundary values\n{colourmap_step_index}")
-        logger.info(f"Colour scale index values\n{colourmap_index}")
-
-        logger.info(f"Merging geo_json on {self.code_name} from shapefile with {self.CODE_COL} from boundary report")
-        merged_data = self.geo_data.merge(self.map_data, left_on=self.code_name, right_on=self.CODE_COL).drop_duplicates()
-        logger.debug(f"Merged_data\n{merged_data}")
+        logger.info(f"Merging geo_json on shape_codes from shapefile with {code_col} from boundary report")
+        merged_data = geo_data.merge(map_data, left_on="shape_codes", right_on=code_col).drop_duplicates()
         if len(merged_data.index) == 0:
-            logger.error("Data unsuccesfully merged resulting in zero records")
-            raise Exception("Data unsuccesfully merged resulting in zero records")
+            logger.error("Data unsuccessfully merged resulting in zero records")
+            raise Exception("Data unsuccessfully merged resulting in zero records")
 
-        # dimension['column'] is column of dataframe used. Used for unique key.
-        boundary_name = f"{self.boundary_name}_{dimension['column']}"
+        self.map.add_child(
+            folium.GeoJson(
+                data=merged_data.to_json(),
+                name=layer_name,  # the name of the Layer, as it will appear in the layer controls,
+                style_function=lambda x: {
+                    "fillColor": _map_colour_map(x["properties"], value_col, significance_threshold, colour_map),
+                    "color": "black",
+                    "fillOpacity": _map_opacity(x["properties"], value_col, significance_threshold),
+                    "weight": 0.10,
+                },
+                tooltip=folium.GeoJsonTooltip(fields=["shape_names", value_col], aliases=["Name", tooltip], localize=True),
+                show=show,
+            )
+        )
+        self.map.add_child(colour_map)
 
-        # fmt: off
-        folium.GeoJson(
-            data=merged_data.to_json(),
-            name=dimension["legend"],  # the name of the Layer, as it will appear in the layer controls,
-            style_function=lambda x: {
-                "fillColor": self._map_colourmap(x["properties"], boundary_name, significance_threshold, colourmap),
-                "color": "black",
-                "fillOpacity": self._map_opacity(x["properties"], boundary_name, significance_threshold),
-                "weight": 0.10,
-            },
-            tooltip=folium.GeoJsonTooltip(fields=[self.boundary_name, self.SCORE_COL[boundary_name]], aliases=["Name", self.score_col_label], localize=True,),
-            show=show,
-        ).add_to(self.map)
-        # fmt: on
-        colourmap.add_to(self.map)
-        del merged_data
-
-        # del non_zero_score_col, colourmap_index, colourmap_min, colourmap_max, colourmap_step_index, colourmap
-
-    def add_meeting_places_to_map(self, sections: pd.DataFrame, colour: Union[str, dict], marker_data: list, layer: dict = None) -> None:
+    def add_meeting_places_to_map(
+        self,
+        sections: pd.DataFrame,
+        colour: Union[str, dict],
+        marker_data: set[str],
+        layer_name: str = "Sections",
+        cluster_markers: bool = False,
+        show_layer: bool = True,
+        coloured_region: set[str] = None,
+        coloured_region_key: str = "",
+    ) -> None:
         """Adds the sections provided as markers to map with the colour, and data
         indicated by marker_data.
 
         Args:
             sections: Census records relating to Sections with lat and long Columns
             colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
-            marker_data: List of strings which determines content for popup, including:
+            marker_data: Set of strings which determines content for popup, including:
                 - youth membership
                 - awards
-            layer: Name & properties of layer on map to add meeting places to.
-                - Default = {"name"="Sections", "markers_clustered"=False}
+            layer_name: Name of map layer for meeting places. Default = "Sections"
+            cluster_markers: Whether to cluster markers on the map
+            show_layer: Whether to show the layer by default
+            coloured_region: If specified, markers on the map but not within coloured_region are grey
+            coloured_region_key: Column for coloured_region boundary codes
 
         """
         logger.info("Adding section markers to map")
 
-        # check that sections dataframe has data
-        if sections.empty:
+        # check that sections dataframe has data, and that there are any sections
+        if sections.empty or (sections[scout_census.column_labels.id.DISTRICT].dropna().empty and sections[scout_census.column_labels.id.GROUP].dropna().empty):
             return
 
         # Sort sections dataframe
-        sections = sections.sort_values("Object_ID").reset_index(drop=True)
+        sections = sections.sort_values(scout_census.column_labels.id.OBJECT).reset_index(drop=True)
 
-        if not self.layers.get(layer["name"]):
-            layer = dict(name="Sections", markers_clustered=False) if layer is None else layer
-            self.add_layer(layer["name"], layer["markers_clustered"])
+        if layer_name in self.map._children:  # NoQA
+            raise ValueError("Layer already used!")
+        layer_type = MarkerCluster if cluster_markers else FeatureGroup
+        layer = layer_type(name=layer_name, show=show_layer).add_to(self.map)
 
         # Sets the map so that it opens in the right area
-        valid_points = sections.loc[sections[ScoutCensus.column_labels["VALID_POSTCODE"]] == 1]
+        valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1, ["lat", "long"]]
+        self.map.fit_bounds(((valid_points.lat.min(), valid_points.long.min()), (valid_points.lat.max(), valid_points.long.max())))
 
-        # Sets the map so it opens in the right area
-        self.map.fit_bounds([[valid_points["lat"].min(), valid_points["long"].min()], [valid_points["lat"].max(), valid_points["long"].max()]])
+        section_names = sections["name"].astype(str)
 
-        # IDs for finding sections
-        district_sections_group_code = -1
-        postcodes_ids = sections[ScoutCensus.column_labels["POSTCODE"]]
-        district_ids = sections[ScoutCensus.column_labels["id"]["DISTRICT"]]
-        # Districts sections have a missing group ID as there is no group, so fill this with a magic reference value
-        group_ids = sections[ScoutCensus.column_labels["id"]["GROUP"]].fillna(district_sections_group_code)
+        if "youth membership" in marker_data:
+            section_type = sections[scout_census.column_labels.UNIT_TYPE].map(utility.section_types)
+            yp_total_cols = [section_model.total for section_name, section_model in scout_census.column_labels.sections]
+            yp_totals = sections[yp_total_cols].sum(axis=1).astype(int).astype(str)  # Each row only has values for one section type
+            sections["sect_overview"] = section_names + " : " + yp_totals + " " + section_type
+        else:
+            sections["sect_overview"] = section_names
 
-        # IDs for iteration
-        postcodes = postcodes_ids.drop_duplicates().dropna().astype(str).to_list()
+        if "awards" in marker_data:
+            # This uses just the first top award - so only Diamond/QSA for Explorers/Network
+            top_award_cols = [section_model.top_award[0] for section_name, section_model in scout_census.column_labels.sections]
+            awards = sections[top_award_cols].sum(axis=1).astype(int).astype(str)
+            award_eligible_cols = [section_model.top_award_eligible[0] for section_name, section_model in scout_census.column_labels.sections]
+            eligible = sections[award_eligible_cols].sum(axis=1).astype(int).astype(str)
+            sections["awards_info"] = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
 
-        # Initialise variables
-        sections_info_table = pd.DataFrame()
-
-        # Test for if there are any sections
-        if not group_ids.dropna().empty or district_ids.dropna().empty:
-            unit_type = sections[ScoutCensus.column_labels["UNIT_TYPE"]]
-            sections["section"] = utility.section_from_type_vector(unit_type)
-            section_names = sections["name"].astype("string")
-            sections["yp"] = sections.lookup(sections.index, sections["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["total"]))
-            section_member_info = section_names + " : " + sections["yp"].astype(str) + " " + sections["section"] + "<br>"
-
-            # Awful, awful workaround as Units & Network top awards are lists not strings. Effectivley we only tabluate for groups.
-            grp_sects = sections[sections[ScoutCensus.column_labels["UNIT_TYPE"]].isin(["Colony", "Pack", "Troop"])]
-            sections["awards"] = pd.Series(
-                grp_sects[grp_sects["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award"])].values.diagonal(), grp_sects.index
-            ).astype("Int32")
-            sections["eligible"] = pd.Series(
-                grp_sects[grp_sects["section"].map(lambda x: ScoutCensus.column_labels["sections"][x]["top_award_eligible"])].values.diagonal(), grp_sects.index
-            ).astype("Int32")
-            section_awards_info = section_names + " : " + sections["awards"].astype(str) + " Top Awards out of " + sections["eligible"].astype(str) + " eligible<br>"
-
-            if isinstance(colour, dict):
-                census_column = colour["census_column"]
-                colour_mapping = colour["mapping"]
-                sections["marker_colour"] = sections[census_column].map(colour_mapping)
-            else:
-                sections["marker_colour"] = colour
-
+        sections["marker_colour"] = sections[colour["census_column"]].map(colour["mapping"]) if isinstance(colour, dict) else colour
+        if coloured_region_key and coloured_region is not None:
             # Areas outside the region_of_colour have markers coloured grey
-            if self._region_of_colour:
-                sections.loc[~sections[self._region_of_colour["column"]].isin(self._region_of_colour["value_list"]), "marker_colour"] = "gray"
+            sections.loc[~sections[coloured_region_key].isin(coloured_region), "marker_colour"] = "gray"
 
-            # fmt: off
-            sections_info_table = pd.DataFrame({
-                "postcode": postcodes_ids,
-                "lat": sections["lat"],
-                "long": sections["long"],
-                "marker_colour": sections["marker_colour"],
-                "district_ID": district_ids,
-                "group_ID": group_ids,
-                "county_name": sections[ScoutCensus.column_labels["name"]["COUNTY"]],
-                "district_name": sections[ScoutCensus.column_labels["name"]["DISTRICT"]],
-                "group_name": sections[ScoutCensus.column_labels["name"]["GROUP"]],
-                "section_name": section_names,
-                "member_info": section_member_info,
-                "awards_info": section_awards_info,
-            })
-            # fmt: on
-            sections_info_table = sections_info_table.reset_index().set_index(["postcode", "district_ID", "group_ID", "index"], drop=False).drop("index", axis=1)
-            sections_info_table = sections_info_table.dropna(subset=["district_ID"]).sort_index(level=[0, 1, 2, 3])
+        sections["postcode"] = sections[scout_census.column_labels.POSTCODE]
+        sections["c_name"] = sections[scout_census.column_labels.name.COUNTY]
+        sections["d_name"] = sections[scout_census.column_labels.name.DISTRICT]
+        sections["g_name"] = sections[scout_census.column_labels.name.GROUP].astype(str).fillna("District")
 
-        _sect_info_type = dict[str, str]
-        _group_info_type = dict[str, Union[str, _sect_info_type]]
-        _district_info_type = dict[str, Union[str, float, _group_info_type]]
-        _postcode_info_type = dict[str, _district_info_type]
-        postcode_info: _postcode_info_type = {}
-        for postcode in postcodes:
-            # Find all the sections with the same postcode
-            colocated_sections = sections_info_table.loc[(postcode,)]
-            location_row = colocated_sections.iloc[0].to_dict()
-            postcode_info[postcode] = {
-                "$lat": float(location_row["lat"]),
-                "$long": float(location_row["long"]),
-                "$marker_colour": str(location_row["marker_colour"]),
-            }
+        sections_info_cols = ["postcode", "lat", "long", "marker_colour", "c_name", "d_name", "g_name", "sect_overview"]
+        if "awards" in marker_data:
+            sections_info_cols += ["awards_info"]
+        sections_info_table = sections[sections_info_cols].dropna(subset=["d_name"]).dropna(subset=["postcode"])
 
-            district_ids = colocated_sections["district_ID"].drop_duplicates()
-            for district_id in district_ids:
-                district_metadata = sections_info_table.loc[(postcode, district_id)]
-                county_name = district_metadata["county_name"].to_list()[0]
-                district_name = district_metadata["district_name"].to_list()[0]
+        # else the final marker would not be added
+        last_row = pd.Series(sections_info_table.iloc[0].to_dict() | {"postcode": "~ FINAL"}, name=0)
+        sections_info_table = sections_info_table.append(last_row)
 
-                # Initialise info dict. Note usage of '$' in the County key, this is as districts must only have letters in their names.
-                postcode_info[postcode][district_name] = {"$County": county_name}
+        # set and sort index
+        sections_info_table = sections_info_table.set_index(["postcode", "d_name", "g_name"], drop=True).sort_index(level=[0, 1, 2])
 
-                # Loop through sections in group-likes
-                group_ids = district_metadata["group_ID"].drop_duplicates()
-                for group_id in group_ids:
-                    sub_table = sections_info_table.loc[(postcode, district_id, group_id)]
-                    group_name = sub_table["group_name"].to_list()[0] if group_id != district_sections_group_code else "District"
-                    postcode_info[postcode][district_name][group_name] = {
-                        "sect_names": "".join(sub_table["section_name"] + "<br>"),
-                        "member_info": "".join(sub_table["member_info"]),
-                        "awards_info": "<br>" + "".join(sub_table["awards_info"]),
-                    }
+        # pre-calculate inner loop vars
+        include_awards_data = "awards" in marker_data
 
-        for postcode_name, postcode_dict in postcode_info.items():
-            lat = postcode_dict.pop("$lat")
-            long = postcode_dict.pop("$long")
-            marker_colour = postcode_dict.pop("$marker_colour")
-            html = ""
+        # initialise change-detector variables
+        old_postcode = sections_info_table.index[0][0]
+        old_district_name = ""
+        reset_district = False
 
-            for district_name, district_dict in postcode_dict.items():
-                # Construct the html to form the marker popup
+        # initialise first marker variables
+        html = ""
+        lat = round(sections_info_table["lat"].array[0], 4)
+        long = round(sections_info_table["long"].array[0], 4)
+        marker_colour = sections_info_table["marker_colour"].array[0]
+
+        # Find all the sections with the same postcode:
+        for (postcode, district_name, group_name), sub_table in sections_info_table.groupby(level=[0, 1, 2]):
+            if old_postcode != postcode:
+                # Add a marker each time the postcode changes.
+                old_postcode = postcode
+
+                popup = folium.Popup(html, max_width=2650)  # Fixes physical size of popup
+                layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
+
+                lat = round(sub_table["lat"].array[0], 4)
+                long = round(sub_table["long"].array[0], 4)
+                marker_colour = sub_table["marker_colour"].array[0]
+
+                # reset HTML string and mark district name for re-adding
+                html = ""
+                reset_district = True
+
+            if old_district_name != district_name or reset_district:
+                old_district_name = district_name
+                reset_district = False
+
+                county_name = sub_table["c_name"].array[0]
+
                 # District sections first followed by Group sections
-                county_name = district_dict.pop("$County")
                 html += f"<h3>{district_name} ({county_name})</h3>"
 
-                for child, child_dict in district_dict.items():
-                    html += f"<h4>{child}</h4><p align='center'>"
-                    html += child_dict["member_info"] if "youth membership" in marker_data else child_dict["sect_names"]
-                    if "awards" in marker_data and child != "District":
-                        html += child_dict["awards_info"]
-                    html += "</p>"
-
-            # Fixes physical size of popup
-            popup = folium.Popup(html, max_width=2650)
-            self.add_marker(lat, long, popup, marker_colour, layer["name"])
+            html += f"<h4>{group_name}</h4><p align='center'>"
+            html += "<br>".join(sub_table["sect_overview"])
+            if include_awards_data and group_name != "District":
+                awards_info = "<br>".join(sub_table["awards_info"])
+                html += "<br>" + awards_info
+            html += "</p>"
 
     def add_sections_to_map(
-        self, scout_data_object: ScoutData, colour: Union[str, dict], marker_data: list, single_section: str = None, layer: str = "Sections", cluster_markers: bool = False
+        self,
+        scout_data: ScoutData,
+        colour: Union[str, dict],
+        marker_data: set[str],
+        single_section: str = None,
+        layer: str = "Sections",
+        cluster_markers: bool = False,
+        coloured_region: set[str] = None,
+        coloured_region_key: str = "",
     ) -> None:
         """Filter sections and add to map.
 
@@ -317,37 +291,28 @@ class Map:
         that have returned in the latest year of the dataset.
 
         Args:
-            scout_data_object:
+            scout_data:
             colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
             marker_data: List of strings which determines content for popup, including:
                 - youth membership
                 - awards
             single_section: One of Beavers, Cubs, Scouts, Explorers, Network
-            layer: The layer of the map that the setions are added to
+            layer: The layer of the map that the sections are added to
             cluster_markers: Should we cluster the markers?
+            coloured_region: If specified, markers on the map but not within coloured_region are grey
+            coloured_region_key: Column for coloured_region boundary codes
 
         """
-        data: pd.DataFrame = scout_data_object.data
-        unit_type_label = ScoutCensus.column_labels["UNIT_TYPE"]
-
         if single_section:
-            filtered_data = data
-            section_type = ScoutCensus.column_labels["sections"][single_section]["type"]
-            section_types = [section_type]
+            filtered_data = scout_data.census_data
+            section_types = {getattr(scout_census.column_labels.sections, single_section).type}
         else:
-            max_year = data["Year"].max()
-            latest_year_records = data.loc[data["Year"] == max_year]
+            filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
+            section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
+        filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
+        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
 
-            filtered_data = latest_year_records
-            section_types = ScoutCensus.get_section_type([ScoutCensus.UNIT_LEVEL_GROUP, ScoutCensus.UNIT_LEVEL_DISTRICT])
-
-        self.add_layer(layer, cluster_markers)
-        layer_data = dict(name=layer, markers_clustered=cluster_markers)
-        self.add_meeting_places_to_map(filtered_data.loc[filtered_data[unit_type_label].isin(section_types)], colour, marker_data, layer_data)
-
-    def add_custom_data(
-        self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], markers_clustered: bool = False, marker_data: list = None
-    ) -> None:
+    def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None) -> None:
         """Function to add custom data as markers on map
 
         Args:
@@ -356,7 +321,6 @@ class Map:
             location_cols: Indicates whether adding data with postcodes or co-ordinates
                 - if postcodes, str "Postcodes"
                 - if co-ordinates, dict of co-ordinate data with keys ["crs", "x", "y"]
-            markers_clustered: Whether to cluster the markers or not
             marker_data: list of strings for values in data that should be in popup
 
         """
@@ -377,155 +341,112 @@ class Map:
         if location_cols["crs"] != utility.WGS_84:
             custom_data = custom_data.to_crs(epsg=utility.WGS_84)
 
-        self.add_layer(layer_name, markers_clustered)
+        if layer_name in self.map._children:  # NoQA
+            raise ValueError("Layer already used!")
+        layer = FeatureGroup(name=layer_name, show=True).add_to(self.map)
 
         # Plot marker and include marker_data in the popup for every item in custom_data
-        def add_popup_data(row):
-            if marker_data:
-                html = ""
-                for marker_col in marker_data:
-                    html += f'<p align="center">{row[marker_col]}</p>'
-                iframe = folium.IFrame(html=html, width=350, height=100)
-                popup = folium.Popup(iframe, max_width=2650)
-            else:
-                popup = None
-            if not np.isnan(row.geometry.x):
-                self.add_marker(row.geometry.y, row.geometry.x, popup, colour="green", layer_name=layer_name)
+        icon = folium.Icon(color="green")
+        if marker_data:
 
-        custom_data.apply(add_popup_data, axis=1)
+            def add_popup_data(row):
+                if not np.isnan(row.geometry.x):
+                    layer.add_child(
+                        folium.Marker(
+                            location=[round(row.geometry.y, 4), round(row.geometry.x, 4)],
+                            popup=folium.Popup(html="".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data), max_width=2650),
+                            icon=icon,
+                        )
+                    )
+
+            custom_data.apply(add_popup_data, axis=1)
+        else:
+            for points in custom_data.geometry[custom_data.geometry.x.notna()].to_list():
+                layer.add_child(folium.Marker(location=[round(points.y, 4), round(points.x, 4)], popup=None, icon=icon))
 
     def save_map(self) -> None:
         """Saves the folium map to a HTML file"""
-        # Add layer control to map
-        folium.LayerControl(collapsed=False).add_to(self.map)
         self.map.save(f"{self.out_file}")
 
     def show_map(self) -> None:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    def set_region_of_colour(self, column: str, value_list: set) -> None:
-        self._region_of_colour = {"column": column, "value_list": value_list}
+    def district_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
+        return _generic_colour_mapping(scout_data, scout_census.column_labels.id.DISTRICT)
 
-    def generic_colour_mapping(self, grouping_column: str) -> dict:
-        # fmt: off
-        colours = cycle([
-            "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
-            "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
-        ])
-        # fmt: on
-        grouping_ids = self.scout_data.data[grouping_column].drop_duplicates()
-        mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
-        colour_mapping = {"census_column": grouping_column, "mapping": mapping}
-        return colour_mapping
+    def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
+        return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
 
-    def district_colour_mapping(self) -> dict:
-        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["DISTRICT"])
 
-    def county_colour_mapping(self) -> dict:
-        return self.generic_colour_mapping(ScoutCensus.column_labels["id"]["COUNTY"])
+def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
+    """Loads a given boundary from a Reports object.
 
-    def validate_columns(self) -> None:
-        if self.SCORE_COL[self.score_col_key] not in self.map_data.columns:
-            logger.error(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data. \n" f"Valid columns include {self.map_data.columns}")
-            raise KeyError(f"{self.SCORE_COL[self.score_col_key]} is not a valid column in the data.")
+    Loads shapefile from path into GeoPandas dataframe
+    Filters out unneeded shapes within all shapes loaded
+    Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
-    def set_boundary(self, reports: Reports) -> None:
-        """Changes the boundary to a new boundary.
+    Args:
+        reports: A Reports object with data. This contains shapefile paths, and labels for region codes and names
 
-        Loads, filters and converts shapefiles for later use
+    Returns:
+        GeoDataFrame with filtered and CRS transformed shapes
 
-        Loads shapefile from path into GeoPandas dataframe
-        Filters out unneeded shapes within all shapes loaded
-        Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
+    """
+    code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
 
-        """
-        self.map_data = reports.data
-        self.boundary_name = reports.geography.metadata.shapefile.name
-        self.code_name = reports.geography.metadata.shapefile.key
-        self.CODE_COL = reports.geography.metadata.name
-        # map_data, CODE_COL and code_name all must be set before loading shape file
+    # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
+    logger.info("Loading Shapefile data")
+    logger.debug(f"Shapefile path: {reports.geography.metadata.shapefile.path}")
+    start_time = time.time()
+    all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
+    logger.info(f"Loading Shapefile data finished, {time.time() - start_time:.2f} seconds elapsed")
+    if reports.geography.metadata.shapefile.key not in all_shapes.columns:
+        raise KeyError(f"{reports.geography.metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
-        # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
-        all_shapes = gpd.GeoDataFrame.from_file(reports.geography.metadata.shapefile.path)
+    # Rename columns
+    shapes_col_map = {reports.geography.metadata.shapefile.key: "shape_codes", reports.geography.metadata.shapefile.name: "shape_names"}
+    all_shapes.columns = [shapes_col_map.get(col, col) for col in all_shapes.columns]
 
-        if self.code_name not in all_shapes.columns:
-            raise KeyError(f"{self.code_name} not present in shapefile. Valid columns are: {all_shapes.columns}")
+    # Filter and convert GeoDataFrame to world co-ordinates
+    logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the {code_col} column of the map_data")
+    all_codes = set(reports.data[code_col])
+    logger.debug(f"All codes list: {all_codes}")
+    geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=utility.WGS_84)
+    logger.info(f"Loaded {len(geo_data.index):,} {code_col} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
+    return geo_data
 
-        original_number_of_shapes = len(all_shapes.index)
-        logger.info(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in the {self.CODE_COL} of the map_data")
-        logger.debug(f"Filtering {original_number_of_shapes} shapes by {self.code_name} being in \n{self.map_data[self.CODE_COL]}")
 
-        list_codes = self.map_data[self.CODE_COL].drop_duplicates().astype(str).to_list()
-        filtered_shapes = all_shapes.loc[all_shapes[self.code_name].isin(list_codes)]
-        logger.info(f"Resulting in {len(filtered_shapes.index)} shapes")
+def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict[str, Union[str, dict[int, str]]]:
+    # fmt: off
+    colours = cycle((
+        "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
+        "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
+    ))
+    # fmt: on
+    grouping_ids = scout_data.census_data[grouping_column].drop_duplicates()
+    mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
+    return {"census_column": grouping_column, "mapping": mapping}
 
-        # Covert shape file to world co-ordinates
-        self.geo_data = filtered_shapes[["geometry", self.code_name, self.boundary_name]].to_crs(epsg=utility.WGS_84)
-        # logger.debug(f"geo_data\n{self.geo_data}")
 
-        logger.info(f"Geography changed to: {self.CODE_COL} ({self.code_name}). Data has columns {self.map_data.columns}.")
+def _map_colour_map(properties: dict, column: str, threshold: float, colour_map: colormap.ColorMap) -> str:
+    """Returns colour from colour map function and value
 
-    def add_layer(self, name: str, markers_clustered: bool = False, show: bool = True) -> None:
-        """Adds a maker layer to the map
+    Returns:
+        hexadecimal colour value "#RRGGBB"
 
-        Args:
-            name: The name of the layer - appears in LayerControl on Map
-            markers_clustered: Whether the markers should cluster or not
-            show:
+    """
+    area_score = properties.get(column)
+    if area_score is None:
+        return "#cccccc"  # grey
+    if abs(area_score) < threshold:
+        return "#ffbe33"  # light yellow
+    return colour_map(area_score)
 
-        """
-        if markers_clustered:
-            self.layers[name] = MarkerCluster(name=name, show=show).add_to(self.map)
-        else:
-            self.layers[name] = FeatureGroup(name=name, show=show).add_to(self.map)
 
-    def _map_colourmap(self, properties: dict, boundary_name: str, threshold: float, colourmap: colormap.ColorMap) -> str:
-        """Returns colour from colour map function and value
-
-        Args:
-            properties: dictionary of properties
-            boundary_name:
-            threshold:
-            colourmap: a Branca Colormap object to calculate the region's colour
-
-        Returns:
-            hexadecimal colour value "#RRGGBB"
-
-        """
-        # logger.debug(f"Colouring {properties} by {self.SCORE_COL[boundary_name]}")
-        area_score = properties.get(self.SCORE_COL[boundary_name])
-        if area_score is None:
-            logger.debug(f"Colouring gray. key: {boundary_name}, score: {area_score}")
-            return "#cccccc"
-        elif abs(area_score) < threshold:
-            return "#ffbe33"
-        elif float(area_score) == 0:
-            return "#555555"
-        else:
-            return colourmap(area_score)
-
-    def _map_opacity(self, properties: dict, boundary_name: str, threshold: float) -> float:
-        """Decides if a feature's value is important enough to be shown"""
-        default_opacity = 0.33
-
-        if not threshold:
-            return default_opacity
-        area_score = properties.get(self.SCORE_COL[boundary_name])
-        if area_score is None:
-            return 1
-
-        return default_opacity if abs(area_score) > threshold else default_opacity / 4
-
-    def add_marker(self, lat: float, long: float, popup: folium.Popup, colour: str, layer_name: str = "Sections") -> None:
-        """Adds a leaflet marker to the map using given values
-
-        Args:
-            lat: latitude of the marker
-            long: longitude of the marker
-            popup: popup text for the marker
-            colour: colour for the marker
-            layer_name: name of the layer that markers are added to
-
-        """
-        folium.Marker(location=[round(lat, 4), round(long, 4)], popup=popup, icon=folium.Icon(color=colour)).add_to(self.layers[layer_name])
+def _map_opacity(properties: dict, column: str, threshold: float) -> float:
+    """Decides if a feature's value is important enough to be shown"""
+    area_score = properties.get(column)
+    if area_score is None:
+        return 1
+    return 1 / 3 if abs(area_score) >= threshold else 1 / 12

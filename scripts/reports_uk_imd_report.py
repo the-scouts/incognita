@@ -10,7 +10,7 @@ if __name__ == "__main__":
     scout_data.filter_records("C_name", {county_name})
     scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
-    reports = Reports("imd_decile", scout_data)
-    reports.create_boundary_report(["Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"], report_name=f"{county_name} - {year} IMD report")
+    reports = Reports("IMD Decile", scout_data)
+    reports.create_boundary_report({"Groups", "Number of Groups", "Number of Sections", "Section numbers", "waiting list total"}, report_name=f"{county_name} - {year} IMD report")
 
     scout_data.close()
