@@ -144,9 +144,6 @@ class Reports:
                 logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
         sections_model = scout_census.column_labels.sections
-        district_id_column = scout_census.column_labels.id.DISTRICT
-        award_name = sections_model.Beavers.top_award[0]
-        award_eligible = sections_model.Beavers.top_award_eligible[0]
 
         # TODO pandas > 1.1 move to new dropna=False groupby
         self.scout_data.census_data[[geog_name]] = self.scout_data.census_data[[geog_name]].fillna("DUMMY")
@@ -157,10 +154,6 @@ class Reports:
         self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
         self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
 
-        # Check that our pivot keeps the total membership constant
-        yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
-        grouped_data = self.scout_data.census_data.groupby([geog_name], sort=False)
-        assert int(self.scout_data.census_data[yp_cols].sum().sum()) == int(grouped_data[yp_cols].sum().sum().sum())
         dataframes = []
 
         if opt_groups or opt_number_of_groups:
@@ -170,8 +163,8 @@ class Reports:
             logger.debug(f"Adding group data")
             groups = self.scout_data.census_data[[geog_name, scout_census.column_labels.name.GROUP]].copy()
             groups[scout_census.column_labels.name.GROUP] = groups[scout_census.column_labels.name.GROUP].str.strip()
-            g = groups.drop_duplicates().dropna().groupby([geog_name], sort=False)[scout_census.column_labels.name.GROUP]
-            dataframes.append(pd.DataFrame({"Groups": g.unique().apply("\n".join), "Number of Groups": g.nunique(dropna=True)}))
+            grouped_rgn = groups.drop_duplicates().dropna().groupby([geog_name])[scout_census.column_labels.name.GROUP]
+            dataframes.append(pd.DataFrame({"Groups": grouped_rgn.unique().apply("\n".join), "Number of Groups": grouped_rgn.nunique(dropna=True)}))
 
         if opt_section_numbers or opt_number_of_sections or opt_6_to_17_numbers or opt_waiting_list_totals or opt_adult_numbers:
             logger.debug(f"Adding young people numbers")
@@ -189,7 +182,7 @@ class Reports:
                 metric_cols += ["Waiting List"]
             if opt_adult_numbers:
                 metric_cols += ["Adults"]
-            agg = self.scout_data.census_data.groupby([geog_name, "Year"], sort=True)[metric_cols].sum().unstack().sort_index()
+            agg = self.scout_data.census_data.groupby([geog_name, "Year"])[metric_cols].sum().unstack().sort_index()
             agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
@@ -199,21 +192,30 @@ class Reports:
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
+            district_id_column = scout_census.column_labels.id.DISTRICT
+            award_name = sections_model.Beavers.top_award[0]
+            award_eligible = sections_model.Beavers.top_award_eligible[0]
+
             logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            g = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column)
-            ons_regions_in_district = g[district_id_column].first().map(district_numbers)
+            grouped_dist = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column)
+            ons_regions_in_district = grouped_dist[district_id_column].first().map(district_numbers)
             awards_per_district_per_regions = pd.DataFrame({
                 # QSAs achieved in district, divided by the number of regions the district is in
-                "QSA": g["Queens_Scout_Awards"].sum() / ons_regions_in_district,
+                "QSA": grouped_dist["Queens_Scout_Awards"].sum() / ons_regions_in_district,
                 # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
-                "qsa_eligible": g["Eligible4QSA"].sum() / ons_regions_in_district,
+                "qsa_eligible": grouped_dist["Eligible4QSA"].sum() / ons_regions_in_district,
             })
 
+            # Check that our pivot keeps the total membership constant
+            yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
+            grouped_rgn = self.scout_data.census_data.groupby([geog_name])
+            assert int(self.scout_data.census_data[yp_cols].sum().sum()) == int(grouped_rgn[yp_cols].sum().sum().sum())
+
             logger.debug(f"Adding awards data")
-            award_total = grouped_data[award_name].sum()
-            eligible_total = grouped_data[award_eligible].sum()
+            award_total = grouped_rgn[award_name].sum()
+            eligible_total = grouped_rgn[award_eligible].sum()
             award_prop = 100 * award_total / eligible_total
             award_prop[eligible_total == 0] = pd.NA
 
@@ -222,7 +224,7 @@ class Reports:
 
             # calculates the nominal QSAs per ONS region specified.
             # Divides total # of awards by the number of Scout Districts that the ONS Region is in
-            region_ids = grouped_data.name.first().index.to_series()
+            region_ids = grouped_rgn.name.first().index.to_series()
             if geog_name == "D_ID":
                 district_ids = region_ids
             else:
