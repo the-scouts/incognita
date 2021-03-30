@@ -145,26 +145,8 @@ class Reports:
 
         sections_model = scout_census.column_labels.sections
         district_id_column = scout_census.column_labels.id.DISTRICT
-        award_name = sections_model.Beavers.top_award
-        award_eligible = sections_model.Beavers.top_award_eligible
-
-        def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
-            summed = group_df[[award_name, award_eligible]].sum()
-            output = summed.to_dict()
-            if summed[award_eligible] > 0:
-                output[f"%-{award_name}"] = (summed[award_name] * 100) / summed[award_eligible]
-
-            # calculates the nominal QSAs per ONS region specified.
-            # Divides total # of awards by the number of Scout Districts that the ONS Region is in
-            code = group_df.name
-            district_ids = awards_mapping.get(code, {}) if not geog_name == "D_ID" else {code: 1}
-            awards_regions_data = awards_data.loc[[d_id for d_id in district_ids.keys()]].sum()
-
-            output["QSA"] = awards_regions_data["QSA"]
-            if awards_regions_data["qsa_eligible"] > 0:
-                output["%-QSA"] = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
-
-            return output
+        award_name = sections_model.Beavers.top_award[0]
+        award_eligible = sections_model.Beavers.top_award_eligible[0]
 
         # TODO pandas > 1.1 move to new dropna=False groupby
         self.scout_data.census_data[[geog_name]] = self.scout_data.census_data[[geog_name]].fillna("DUMMY")
@@ -220,10 +202,8 @@ class Reports:
             logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-
-            self.scout_data.census_data["district_numbers"] = self.scout_data.census_data[district_id_column].map(district_numbers).astype("Int16")
-            g = self.scout_data.census_data.groupby(district_id_column)
-            ons_regions_in_district = g["district_numbers"].first()
+            g = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column)
+            ons_regions_in_district = g[district_id_column].first().map(district_numbers)
             awards_per_district_per_regions = pd.DataFrame({
                 # QSAs achieved in district, divided by the number of regions the district is in
                 "QSA": g["Queens_Scout_Awards"].sum() / ons_regions_in_district,
@@ -232,12 +212,33 @@ class Reports:
             })
 
             logger.debug(f"Adding awards data")
-            awards_table: pd.DataFrame = grouped_data.apply(_awards_groupby, awards_per_district_per_regions)
-            awards_table: pd.DataFrame = pd.DataFrame(awards_table.values.tolist(), index=awards_table.index)
-            top_award = awards_table[f"%-{sections_model.Beavers.top_award}"]
-            max_value = top_award.quantile(0.95)
-            awards_table[f"%-{sections_model.Beavers.top_award}"] = top_award.clip(upper=max_value)
-            dataframes.append(awards_table)
+            award_total = grouped_data[award_name].sum()
+            eligible_total = grouped_data[award_eligible].sum()
+            award_prop = 100 * award_total / eligible_total
+            award_prop[eligible_total == 0] = pd.NA
+
+            max_value = award_prop.quantile(0.95)
+            award_prop = award_prop.clip(upper=max_value)
+
+            # calculates the nominal QSAs per ONS region specified.
+            # Divides total # of awards by the number of Scout Districts that the ONS Region is in
+            region_ids = grouped_data.name.first().index.to_series()
+            if geog_name == "D_ID":
+                district_ids = region_ids
+            else:
+                region_district_map = {rgn_id: list(district_dict) for rgn_id, district_dict in awards_mapping.items()}
+                district_ids = region_ids.map(region_district_map)
+            awards_regions_data = pd.DataFrame.from_dict({idx: awards_per_district_per_regions.loc[ids].sum() for idx, ids in district_ids.items()}, orient="index")
+            qsa_prop = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
+            qsa_prop[awards_regions_data["qsa_eligible"] == 0] = pd.NA
+
+            dataframes.append(pd.DataFrame({
+                award_name: award_total,
+                award_eligible: eligible_total,
+                f"%-{award_name}": award_prop,
+                "QSA": awards_regions_data["QSA"],
+                "%-QSA": qsa_prop,
+            }))
 
         # TODO find a way to keep DUMMY geography coding
         output_data: pd.DataFrame = self.geography.boundary_codes.reset_index(drop=True).copy()
