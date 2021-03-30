@@ -122,16 +122,15 @@ class Reports:
 
         # Set default option set for `options`
         if options is None:
-            options = {"Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"}
+            options = {"Number of Sections", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"}
 
-        opt_number_of_sections = "Number of Sections" in options
-        opt_number_of_groups = "Number of Groups" in options
         opt_groups = "Groups" in options
         opt_section_numbers = "Section numbers" in options
+        opt_number_of_sections = "Number of Sections" in options
         opt_6_to_17_numbers = "6 to 17 numbers" in options
-        opt_awards = "awards" in options
         opt_waiting_list_totals = "waiting list total" in options
         opt_adult_numbers = "Adult numbers" in options
+        opt_awards = "awards" in options
 
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
         logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
@@ -147,7 +146,7 @@ class Reports:
 
         dataframes = []
 
-        if opt_groups or opt_number_of_groups:
+        if opt_groups:
             # Used to list the groups that operate within the boundary.
             # Gets all groups in the census_data dataframe and calculates the
             # number of groups.
