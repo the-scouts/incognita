@@ -94,7 +94,6 @@ class Map:
 
         colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
         map_data = reports.data  # contains shapefile paths, and labels for region codes and names
-        code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
         geo_data = _load_boundary(reports)
 
         # Set value col properties to use for a particular boundary
@@ -116,8 +115,8 @@ class Map:
         logger.info(f"Colour scale boundary values {scale_step_boundaries}")
         logger.info(f"Colour scale index values {scale_index}")
 
-        logger.info(f"Merging geo_json on shape_codes from shapefile with {code_col} from boundary report")
-        merged_data = geo_data.merge(map_data, left_on="shape_codes", right_on=code_col).drop_duplicates()
+        logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
+        merged_data = geo_data.merge(map_data, left_on="shape_codes", right_on="codes").drop_duplicates()
         if len(merged_data.index) == 0:
             logger.error("Data unsuccessfully merged resulting in zero records")
             raise Exception("Data unsuccessfully merged resulting in zero records")
@@ -393,8 +392,6 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
         GeoDataFrame with filtered and CRS transformed shapes
 
     """
-    code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
-
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
     logger.info("Loading Shapefile data")
     logger.debug(f"Shapefile path: {reports.geography.metadata.shapefile.path}")
@@ -409,11 +406,11 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     all_shapes.columns = [shapes_col_map.get(col, col) for col in all_shapes.columns]
 
     # Filter and convert GeoDataFrame to world co-ordinates
-    logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the {code_col} column of the map_data")
-    all_codes = set(reports.data[code_col])
+    logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the codes column of the map_data")
+    all_codes = set(reports.data["codes"])
     logger.debug(f"All codes list: {all_codes}")
     geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=utility.WGS_84)
-    logger.info(f"Loaded {len(geo_data.index):,} {code_col} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
+    logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
     return geo_data
 
 
