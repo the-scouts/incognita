@@ -166,19 +166,6 @@ class Reports:
 
             return output
 
-        def _awards_per_region(district_records, district_nums) -> dict:
-            district_id = district_records.name
-            num_ons_regions_occupied_by_district = district_nums[district_id]
-
-            logger.debug(f"{district_id} in {num_ons_regions_occupied_by_district} ons boundaries")
-
-            return {
-                # QSAs achieved in district, divided by the number of regions the district is in
-                "QSA": district_records["Queens_Scout_Awards"].sum() / num_ons_regions_occupied_by_district,
-                # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
-                "qsa_eligible": district_records["Eligible4QSA"].sum() / num_ons_regions_occupied_by_district,
-            }
-
         # TODO pandas > 1.1 move to new dropna=False groupby
         self.scout_data.census_data[[geog_name]] = self.scout_data.census_data[[geog_name]].fillna("DUMMY")
 
@@ -204,7 +191,7 @@ class Reports:
             g = groups.drop_duplicates().dropna().groupby([geog_name], sort=False)[scout_census.column_labels.name.GROUP]
             dataframes.append(pd.DataFrame({"Groups": g.unique().apply("\n".join), "Number of Groups": g.nunique(dropna=True)}))
 
-        if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
+        if opt_section_numbers or opt_number_of_sections or opt_6_to_17_numbers or opt_waiting_list_totals or opt_adult_numbers:
             logger.debug(f"Adding young people numbers")
             metric_cols = []
             rename = {}
@@ -220,8 +207,7 @@ class Reports:
                 metric_cols += ["Waiting List"]
             if opt_adult_numbers:
                 metric_cols += ["Adults"]
-            agg = self.scout_data.census_data.groupby([geog_name, "Year"], sort=True)[metric_cols].sum()
-            agg = agg.unstack().sort_index()
+            agg = self.scout_data.census_data.groupby([geog_name, "Year"], sort=True)[metric_cols].sum().unstack().sort_index()
             agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
@@ -234,8 +220,16 @@ class Reports:
             logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            awards_per_district_per_regions = self.scout_data.census_data.groupby(district_id_column).apply(_awards_per_region, district_numbers)
-            awards_per_district_per_regions = pd.DataFrame(awards_per_district_per_regions.values.tolist(), index=awards_per_district_per_regions.index)
+
+            self.scout_data.census_data["district_numbers"] = self.scout_data.census_data[district_id_column].map(district_numbers).astype("Int16")
+            g = self.scout_data.census_data.groupby(district_id_column)
+            ons_regions_in_district = g["district_numbers"].first()
+            awards_per_district_per_regions = pd.DataFrame({
+                # QSAs achieved in district, divided by the number of regions the district is in
+                "QSA": g["Queens_Scout_Awards"].sum() / ons_regions_in_district,
+                # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
+                "qsa_eligible": g["Eligible4QSA"].sum() / ons_regions_in_district,
+            })
 
             logger.debug(f"Adding awards data")
             awards_table: pd.DataFrame = grouped_data.apply(_awards_groupby, awards_per_district_per_regions)
