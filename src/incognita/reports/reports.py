@@ -70,38 +70,38 @@ class Reports:
             return self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
         return self.geography.filter_boundaries_by_scout_area(self.scout_data, boundary, field, value_list)
 
-    def _ons_to_district_mapping(self, ons_code: str) -> dict:
-        """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
+    def _ons_to_district_mapping(self, region_type: str) -> dict:
+        """Create json file, containing which scout districts are within an
+        each ONS area, and how many ONS areas those districts are in.
 
         Args:
-            ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
+            region_type:
+                A field in the modified census report corresponding to an
+                administrative region (lsoa11, msoa11, oslaua, osward, pcon,
+                oscty, ctry, rgn). region_type is also a census column heading
+                for the region geography type
 
         """
 
         logger.debug("Creating mapping from ons boundary to scout district")
 
-        region_type = ons_code  # Census column heading for the region geography type
         district_id_column = scout_census.column_labels.id.DISTRICT
         census_data = self.scout_data.census_data
 
-        region_ids = self.geography.boundary_codes["codes"].dropna().drop_duplicates()
+        region_ids = set(self.geography.boundary_codes["codes"].dropna())
 
         district_ids_by_region = census_data.loc[census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
-        district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
-
-        region_ids_by_district = census_data.loc[census_data[district_id_column].isin(district_ids), [district_id_column, region_type]]
-        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == scout_census.DEFAULT_VALUE)].dropna().drop_duplicates()
+        district_ids = set(district_ids_by_region[district_id_column].dropna())
 
         # count of how many regions the district occupies:
-        count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})
+        count_regions_in_district = census_data.loc[
+            (census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)),
+            [district_id_column, region_type]
+        ].dropna().drop_duplicates().groupby(district_id_column).count().rename(columns={region_type: "count"})
+        count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column).set_index([region_type, district_id_column])
 
-        count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column)
-
-        count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
-
-        count_col: pd.Series = count_by_district_by_region["count"]
         nested_dict = {}
-        for (region_id, district_id), value in count_col.iteritems():
+        for (region_id, district_id), value in count_by_district_by_region["count"].items():
             nested_dict.setdefault(region_id, {})[district_id] = value
 
         logger.debug("Finished mapping from ons boundary to district")
@@ -136,7 +136,7 @@ class Reports:
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
         logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
 
-        years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values().to_list()
+        years = sorted(set(self.scout_data.census_data["Year"].dropna()))
         if len(years) > 1:
             if historical:
                 logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
@@ -144,12 +144,6 @@ class Reports:
                 logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
 
         sections_model = scout_census.column_labels.sections
-
-        total_cols = [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
-        waiting_cols = [section_model.waiting_list for section_name, section_model in sections_model if section_name != "Network"]
-        self.scout_data.census_data["All"] = self.scout_data.census_data[total_cols].sum(axis=1).astype("Int32")
-        self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
-        self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
 
         dataframes = []
 
@@ -164,6 +158,12 @@ class Reports:
             dataframes.append(pd.DataFrame({"Groups": grouped_rgn.unique().apply("\n".join), "Number of Groups": grouped_rgn.nunique(dropna=True)}))
 
         if opt_section_numbers or opt_number_of_sections or opt_6_to_17_numbers or opt_waiting_list_totals or opt_adult_numbers:
+            total_cols = [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
+            waiting_cols = [section_model.waiting_list for section_name, section_model in sections_model if section_name != "Network"]
+            self.scout_data.census_data["All"] = self.scout_data.census_data[total_cols].sum(axis=1).astype("Int32")
+            self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
+            self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
+
             logger.debug(f"Adding young people numbers")
             metric_cols = []
             rename = {}
