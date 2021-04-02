@@ -137,10 +137,9 @@ class Reports:
 
         years = sorted(set(self.scout_data.census_data["Year"].dropna()))
         if len(years) > 1:
-            if historical:
-                logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
-            else:
-                logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
+            if not historical:
+                raise ValueError(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
+            logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
 
         sections_model = scout_census.column_labels.sections
 
