@@ -247,7 +247,8 @@ class Reports:
                 self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
 
             logger.debug(f"Adding IMD deciles")
-            output_data = output_data.merge(self.ons_pd_data[["lsoa11", "imd_decile"]], how="left", left_on="codes", right_on="lsoa11")
+            imd_deciles = self.ons_pd_data[["lsoa11", "imd_decile"]].drop_duplicates()
+            output_data = output_data.merge(imd_deciles, how="left", left_on="codes", right_on="lsoa11").drop(columns="lsoa11")
 
         self.boundary_report = output_data
 
