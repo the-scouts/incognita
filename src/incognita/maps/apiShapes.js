@@ -33,9 +33,31 @@ const codeCol = "LSOA11CD"
 const queryParams = {outFields: "LSOA11CD,LSOA11NM", outSR: "4326", f: "geojson", geometryPrecision: "5"}  // https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
 const valToColour = val => color_map_d80f4596e4a049bca6cee55824dd4129.color(val - 1)
 
-const scale = ['#d01c8b', '#f1b6da', '#b8e186', '#4dac26']
-const limits = chroma.limits(Object.values(imd_bham), "q", scale.length- 1)
-const colours = chroma.scale(scale).colors(limits.length)
-const colMap = val => {for (let i = 0; i < limits.length; i++) if (limits[i] >= val) return colours[i]}
 
-let bhamLayer = loadShapesToLayer(imd_bham, apiBase, codeCol, queryParams, styleFuncGenerator(imd_bham, colMap), map_2ea91b0b3ba84b51bd12b87c02a38314)
+let colourScale = chroma.scale([ "#d01c8b", "#f1b6da", "#b8e186", "#4dac26" ]).domain([1, 2, 5, 10]).classes([1, 2, 4, 7, 10])
+let colours = val => colourScale(val-0.05).hex()
+
+/* .gradient div{height: 10px; display: inline-block;} needed */
+const renderLegend = (colourScale, breaks, out) => {
+    out.style.width = "410px"
+    out.style.height = "40px"
+    out.style.transform = "translate(-25px,16px)"
+    out.classList.add("key")
+    out.classList.add("caption")
+
+    steps = breaks.length
+    range = breaks[steps-1] - breaks[0]  // requires sorting small to large
+    c = out.appendChild(document.createElement('div'))
+    c.classList.add("gradient")
+    for (let i = 0; i < steps-1; i++) {
+        const next = breaks[i+1]
+        const curr = breaks[i]
+        normed = next - curr
+        d = c.appendChild(document.createElement('div'))
+        d.style.width = (100*normed/range)+'%'
+        d.style.background = colourScale(curr).hex()
+    }
+
+    let legendTitle = out.appendChild(document.createElement('span'))
+    legendTitle.innerHTML = "IMD Decile"
+}
