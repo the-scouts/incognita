@@ -9,7 +9,7 @@ const requestGeoJsonFromAPI = (colourData, apiBase, codeCol, queryParams) => {
     return chunkArr(Object.keys(colourData), 50).map(arrToFilterParam).map(createFetch)
 }
 const loadShapesToLayer = (colourData, apiBase, codeCol, queryParams, styleFunc, map) => {
-    let layer = L.geoJSON(false, {style: styleFunc}).addTo(map)
+    let layer = L.geoJSON(null, {style: styleFunc}).addTo(map)
     requestGeoJsonFromAPI(imd_bham, apiBase, codeCol, queryParams).map(apiRequest => apiRequest.then(geoJson => layer.addData(geoJson)))
     return layer
 }
@@ -32,5 +32,10 @@ const apiBase = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/servi
 const codeCol = "LSOA11CD"
 const queryParams = {outFields: "LSOA11CD,LSOA11NM", outSR: "4326", f: "geojson", geometryPrecision: "5"}  // https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
 const valToColour = val => color_map_d80f4596e4a049bca6cee55824dd4129.color(val - 1)
-let bhamLayer = loadShapesToLayer(imd_bham, apiBase, codeCol, queryParams, styleFuncGenerator(imd_bham, valToColour), map_2ea91b0b3ba84b51bd12b87c02a38314)
 
+const scale = ['#d01c8b', '#f1b6da', '#b8e186', '#4dac26']
+const limits = chroma.limits(Object.values(imd_bham), "q", scale.length- 1)
+const colours = chroma.scale(scale).colors(limits.length)
+const colMap = val => {for (let i = 0; i < limits.length; i++) if (limits[i] >= val) return colours[i]}
+
+let bhamLayer = loadShapesToLayer(imd_bham, apiBase, codeCol, queryParams, styleFuncGenerator(imd_bham, colMap), map_2ea91b0b3ba84b51bd12b87c02a38314)
