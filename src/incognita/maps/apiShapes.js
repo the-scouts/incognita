@@ -20,14 +20,18 @@ const loadShapesToLayer = (colourData, apiBase, codeCol, queryParams, styleFunc,
     return layer
 }
 // const concatGeoJSON = geoJsonArr => ({"type" : "FeatureCollection", "features": [].concat(...geoJsonArr.map(geoJson => geoJson.features))})
-const styleFunc = feature => {
-    const id = feature.properties.LSOA11CD
-    const val = imd_bham[id]
+const styleFuncGenerator = (colourData, colourFunc) => {
     const defaults = {"color": "black", "weight": 0.1}
-    if (val === undefined) return {...defaults, fillColor: "#cccccc", fillOpacity: 1}
-    if (Math.abs(val) < 0) return {...defaults, fillColor: "#ffbe33", fillOpacity: 1/12}
-    return {...defaults, fillColor: color_map_d80f4596e4a049bca6cee55824dd4129.color(val-1), fillOpacity: 1/3}
+    return feature => {
+        const id = feature.properties[codeCol]
+        const val = colourData[id]
+        if (val === undefined) return {...defaults, fillColor: "#cccccc", fillOpacity: 1}
+        if (Math.abs(val) < 0) return {...defaults, fillColor: "#ffbe33", fillOpacity: 1 / 12}
+        return {...defaults, fillColor: colourFunc(val), fillOpacity: 1 / 3}
+    }
+
 }
 
-let bhamLayer = loadShapesToLayer(imd_bham, apiBase, codeCol, queryParams, styleFunc, map_2ea91b0b3ba84b51bd12b87c02a38314)
+const valToColour = val => color_map_d80f4596e4a049bca6cee55824dd4129.color(val - 1)
+let bhamLayer = loadShapesToLayer(imd_bham, apiBase, codeCol, queryParams, styleFuncGenerator(imd_bham, valToColour), map_2ea91b0b3ba84b51bd12b87c02a38314)
 
