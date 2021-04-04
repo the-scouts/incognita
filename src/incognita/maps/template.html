@@ -40,12 +40,9 @@
     const baseMap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {"attribution": "\u0026copy; \u003ca href=\u0027https://openstreetmap.org\u0027\u003eOpenStreetMap\u003c/a\u003e, \u003ca href=\u0027https://cartodb.com/attributions\u0027\u003eCARTO\u003c/a\u003e", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}).addTo(map);
 
     // Legend init
-    const breaks = [1, 2, 4, 7, 10]
-    const colourScale = chroma.scale(["#d01c8b", "#f1b6da", "#b8e186", "#4dac26"]).domain([1, 2, 5, 10]).classes(breaks)
-    const colours = val => colourScale(val-0.05).hex()
-    const renderLegend = (colourScale, breaks, out) => {
-        let rules = "", labels = "<h4>" + "IMD Decile" + "</h4>"
-        const steps = breaks.length
+    const renderLegend = (title, colourScale, out) => {
+        let rules = "", labels = "<h4>" + title + "</h4>"
+        const breaks = colourScale.classes(), steps = breaks.length
         for (let i = 0; i < steps-1; i++) {  // requires sorting small to large
             const curr = breaks[i]
             const next = breaks[i+1]
@@ -55,12 +52,13 @@
         }
         out.innerHTML = labels
         document.querySelector('head').appendChild(document.createElement('style')).innerText = rules
-
         return out
     }
-    const colour_map = L.control({position: 'topright'});
-    colour_map.onAdd = map => renderLegend(colourScale, breaks, L.DomUtil.create('div', 'info legend'))
-    colour_map.addTo(map);
+    const createLegend = (title, colourScale) => {
+        const legend = L.control({position: 'topright'})
+        legend.onAdd = _map => renderLegend(title, colourScale, L.DomUtil.create('div', 'info legend'))
+        return legend.addTo(map)
+    }
 
     // Markers init
     const addMarkers = (markerData, iconSettings) => {
@@ -108,6 +106,10 @@
         return shapeLayer
     }
 
+    // Create colour scale
+    const colourScale = chroma.scale(["#d01c8b", "#f1b6da", "#b8e186", "#4dac26"]).domain([1, 2, 5, 10]).classes([1, 2, 4, 7, 10])
+    const colours = val => colourScale(val-0.05).hex()
+
     // Add LSOA shapes
     const apiBase = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?"
     const codeCol = "LSOA11CD"
@@ -126,6 +128,7 @@
     const markerLayer = addMarkers(markerData, iconSettings)
 
     // Control
+    createLegend("IMD Deciles", colourScale)
     L.control.layers({"OSM": baseMap}, {"markers": markerLayer, "fetch": bhamLayer}).addTo(map)
 </script>
 </body>
