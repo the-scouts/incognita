@@ -19,11 +19,10 @@
         .foliumtooltip table {margin: auto;}
         .foliumtooltip tr {text-align: left;}
         .foliumtooltip th {padding: 2px 8px 2px 2px;}
-        .legend div{width: 18px; height: 18px; display: block; opacity: 0.7;}
-        .legend div:before{content: '■'; margin-right: 2px; font-size: 25px; vertical-align: middle; display: inline-block; margin-top: -5px;}
-        .info { padding: 6px 8px; font: 14px/16px Arial, Helvetica, sans-serif; background: white; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; }
-        .info h4 { margin: 0 0 5px; color: #777; }
-        .legend { text-align: left; line-height: 18px; color: #555; }
+        .legend { text-align: left; color: #555; padding: 6px 8px; font: 14px/18px Arial, Helvetica, sans-serif; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; }
+        .legend h4 { margin: 0 0 5px; color: #777; }
+        .legend div{width: 100%; height: 18px; display: flex; align-items: center; justify-content: left; opacity: 0.7;}
+        .legend div:before{content: ""; display: inline-block; width: 16px; height: 16px; margin-right: 5px}
         .leaflet-data-marker svg {fill: lightblue;}
     </style>
 </head>
@@ -42,12 +41,12 @@
     const renderLegend = (title, colourScale, out) => {
         let rules = "", labels = "<h4>" + title + "</h4>"
         const breaks = colourScale.classes(), steps = breaks.length
-        for (let i = 0; i < steps-1; i++) {  // requires sorting small to large
+        for (let i = 0; i < steps; i++) {  // requires sorting small to large
             const curr = breaks[i]
-            const next = breaks[i+1]
+            const next = breaks[i+1] || breaks[breaks.length-1]+1 //plus step
 
-            labels += '<div id="leg-' + curr + '">' + curr + (next ? '&ndash;' + next : '+') + '</div>'
-            rules += '#leg-' + curr + ':before {color: ' + colourScale(curr+1).hex() + ';}'
+            labels += '<div id="leg-' + curr + '">' + curr + '&ndash;' + (next-1) + '</div>'//minus step
+            rules += '#leg-' + curr + ':before {background: ' + colourScale(curr).hex() + ';}'
         }
         out.innerHTML = labels
         document.querySelector('head').appendChild(document.createElement('style')).innerText = rules
@@ -96,7 +95,7 @@
             const val = colourData[id]
             if (val === undefined) return {...defaults, fillColor: "#cccccc", fillOpacity: 1}
             if (Math.abs(val) < 0) return {...defaults, fillColor: "#ffbe33", fillOpacity: 1 / 12}
-            return {...defaults, fillColor: colourFunc(val), fillOpacity: 1 / 3}
+            return {...defaults, fillColor: colourFunc(val).hex(), fillOpacity: 1 / 3}
         }
     }
     const createShapeLayer = (colourData, apiBase, codeCol, queryParams, colourFunc, map, nameCol, measureName, layerKey) => {
@@ -108,9 +107,15 @@
     }
 
     // Create colour scale
-    const colourScale = chroma.scale(["#d01c8b", "#f1b6da", "#b8e186", "#4dac26"]).domain([1, 2, 5, 10]).classes([1, 2, 4, 7, 10])
-    const colours = val => colourScale(val-0.05).hex()
+    const colourScale = chroma.scale(['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a']).domain([1, 10]).classes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     createLegend("IMD Deciles", colourScale)
+    /*
+    * TODO better legend function.
+    * TODO - maybe pass an array of intervals,
+    * TODO - maybe add a categorical flag,
+    * TODO - maybe use other colour scale method (limits/colours),
+    * TODO - maybe add a breaks -> intervals decomposition func
+    */
 
     // Add LSOA shapes
     createShapeLayer(
@@ -118,7 +123,7 @@
         "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?",
         "LSOA11CD",
         {outFields: "LSOA11CD,LSOA11NM", outSR: "4326", f: "geojson", geometryPrecision: "5"},  // https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
-        colours,
+        colourScale,
         map,
         "LSOA11NM",
         "IMD",
