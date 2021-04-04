@@ -36,7 +36,7 @@
     // Map init
     const map = L.map("map", {center: [53.5, -1.49], crs: L.CRS.EPSG3857, zoom: 6, zoomControl: true, preferCanvas: false, zoomSnap: 0.05, zoomDelta: 0.1, }).fitBounds([[52.390423, -2.0208369999999998], [52.58815, -1.758441]], {})
     const baseMap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {"attribution": "\u0026copy; \u003ca href=\u0027https://openstreetmap.org\u0027\u003eOpenStreetMap\u003c/a\u003e, \u003ca href=\u0027https://cartodb.com/attributions\u0027\u003eCARTO\u003c/a\u003e", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}).addTo(map);
-    let baseMaps = new Map([["Open Street Map", baseMap]]), layers = new Map()
+    const layersControl = L.control.layers({"Open Street Map": baseMap}, {}).addTo(map)
 
     // Legend init
     const renderLegend = (title, colourScale, out) => {
@@ -68,7 +68,7 @@
                 .setIcon(L.divIcon(iconSettings))
                 .bindPopup(markerObj.html, {"maxWidth": 2650})
         }
-        layers.set(layerKey, markerLayer)
+        layersControl.addOverlay(markerLayer, layerKey)
         return markerLayer
     }
 
@@ -103,13 +103,14 @@
         const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParams, styleFuncGenerator(colourData, codeCol, colourFunc), map)
         const tooltipData = layer => '<table><tr><th>Name</th><td>' + layer.feature.properties[nameCol] + '</td></tr><tr><th>' + measureName + '</th><td>' + colourData[layer.feature.properties[codeCol]] + '</td></tr></table>'
         shapeLayer.bindTooltip(tooltipData, {"className": "foliumtooltip", "sticky": true});
-        layers.set(layerKey, shapeLayer)
+        layersControl.addOverlay(shapeLayer, layerKey)
         return shapeLayer
     }
 
     // Create colour scale
     const colourScale = chroma.scale(["#d01c8b", "#f1b6da", "#b8e186", "#4dac26"]).domain([1, 2, 5, 10]).classes([1, 2, 4, 7, 10])
     const colours = val => colourScale(val-0.05).hex()
+    createLegend("IMD Deciles", colourScale)
 
     // Add LSOA shapes
     createShapeLayer(
@@ -133,10 +134,6 @@
     }
     const markerData = []
     addMarkers(markerData, iconSettings, "Markers")
-
-    // Control
-    createLegend("IMD Deciles", colourScale)
-    L.control.layers(Object.fromEntries(baseMaps.entries()), Object.fromEntries(layers.entries())).addTo(map)
 </script>
 </body>
 </html>
