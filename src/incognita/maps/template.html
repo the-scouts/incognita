@@ -35,7 +35,7 @@
 
     // Map init
     const map = L.map("map", {center: [53.5, -1.49], crs: L.CRS.EPSG3857, zoom: 6, zoomControl: true, preferCanvas: false, zoomSnap: 0.05, zoomDelta: 0.1, }).fitBounds([[52.390423, -2.0208369999999998], [52.58815, -1.758441]], {})
-    const baseMap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {"attribution": "\u0026copy; \u003ca href=\u0027https://openstreetmap.org\u0027\u003eOpenStreetMap\u003c/a\u003e, \u003ca href=\u0027https://cartodb.com/attributions\u0027\u003eCARTO\u003c/a\u003e", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}).addTo(map);
+    const baseMap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {"attribution": "© <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://carto.com/attribution/'>CARTO</a>", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}).addTo(map);
     const layersControl = L.control.layers({"Open Street Map": baseMap}, {}, {sortLayers: true, hideSingleBase: true, collapsed: false}).addTo(map)
 
     // Legend init
@@ -46,7 +46,7 @@
             const curr = breaks[i]
             const next = breaks[i+1] || breaks[breaks.length-1]+1 //plus step
 
-            labels += '<div id="leg-' + curr + '">' + curr + '&ndash;' + (next-1) + '</div>'//minus step
+            labels += '<div id="leg-' + curr + '">' + curr + '–' + (next-1) + '</div>'//minus step
             rules += '#leg-' + curr + ':before {background: ' + colourScale(curr).hex() + ';}'
         }
         out.innerHTML = labels
