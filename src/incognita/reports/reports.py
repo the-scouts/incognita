@@ -70,38 +70,38 @@ class Reports:
             return self.geography.filter_boundaries_near_scout_area(self.scout_data, boundary, field, value_list, distance)
         return self.geography.filter_boundaries_by_scout_area(self.scout_data, boundary, field, value_list)
 
-    def _ons_to_district_mapping(self, ons_code: str) -> dict:
-        """Create json file, containing which scout districts are within an each ONS area, and how many ONS areas those districts are in.
+    def _ons_to_district_mapping(self, region_type: str) -> dict:
+        """Create json file, containing which scout districts are within an
+        each ONS area, and how many ONS areas those districts are in.
 
         Args:
-            ons_code: A field in the modified census report corresponding to an administrative region (lsoa11, msoa11, oslaua, osward, pcon, oscty, ctry, rgn)
+            region_type:
+                A field in the modified census report corresponding to an
+                administrative region (lsoa11, msoa11, oslaua, osward, pcon,
+                oscty, ctry, rgn). region_type is also a census column heading
+                for the region geography type
 
         """
 
         logger.debug("Creating mapping from ons boundary to scout district")
 
-        region_type = ons_code  # Census column heading for the region geography type
         district_id_column = scout_census.column_labels.id.DISTRICT
         census_data = self.scout_data.census_data
 
-        region_ids = self.geography.boundary_codes["codes"].dropna().drop_duplicates()
+        region_ids = set(self.geography.boundary_codes["codes"].dropna())
 
         district_ids_by_region = census_data.loc[census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
-        district_ids = district_ids_by_region[district_id_column].dropna().drop_duplicates()
-
-        region_ids_by_district = census_data.loc[census_data[district_id_column].isin(district_ids), [district_id_column, region_type]]
-        region_ids_by_district = region_ids_by_district.loc[~(region_ids_by_district[region_type] == scout_census.DEFAULT_VALUE)].dropna().drop_duplicates()
+        district_ids = set(district_ids_by_region[district_id_column].dropna())
 
         # count of how many regions the district occupies:
-        count_regions_in_district = region_ids_by_district.groupby(district_id_column).count().rename(columns={region_type: "count"})
+        count_regions_in_district = census_data.loc[
+            (census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)),
+            [district_id_column, region_type]
+        ].dropna().drop_duplicates().groupby(district_id_column).count().rename(columns={region_type: "count"})
+        count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column).set_index([region_type, district_id_column])
 
-        count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column)
-
-        count_by_district_by_region = count_by_district_by_region.set_index([region_type, district_id_column])
-
-        count_col: pd.Series = count_by_district_by_region["count"]
         nested_dict = {}
-        for (region_id, district_id), value in count_col.iteritems():
+        for (region_id, district_id), value in count_by_district_by_region["count"].items():
             nested_dict.setdefault(region_id, {})[district_id] = value
 
         logger.debug("Finished mapping from ons boundary to district")
@@ -122,89 +122,46 @@ class Reports:
 
         # Set default option set for `options`
         if options is None:
-            options = {"Number of Sections", "Number of Groups", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"}
+            options = {"Number of Sections", "Groups", "Section numbers", "6 to 17 numbers", "awards", "waiting list total"}
 
-        opt_number_of_sections = "Number of Sections" in options
-        opt_number_of_groups = "Number of Groups" in options
         opt_groups = "Groups" in options
         opt_section_numbers = "Section numbers" in options
+        opt_number_of_sections = "Number of Sections" in options
         opt_6_to_17_numbers = "6 to 17 numbers" in options
-        opt_awards = "awards" in options
         opt_waiting_list_totals = "waiting list total" in options
         opt_adult_numbers = "Adult numbers" in options
+        opt_awards = "awards" in options
 
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
         logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
 
-        years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values().to_list()
+        years = sorted(set(self.scout_data.census_data["Year"].dropna()))
         if len(years) > 1:
-            if historical:
-                logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
-            else:
-                logger.error(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
+            if not historical:
+                raise ValueError(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
+            logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
 
         sections_model = scout_census.column_labels.sections
-        district_id_column = scout_census.column_labels.id.DISTRICT
-        award_name = sections_model.Beavers.top_award
-        award_eligible = sections_model.Beavers.top_award_eligible
 
-        def _awards_groupby(group_df: pd.DataFrame, awards_data: pd.DataFrame) -> dict:
-            summed = group_df[[award_name, award_eligible]].sum()
-            output = summed.to_dict()
-            if summed[award_eligible] > 0:
-                output[f"%-{award_name}"] = (summed[award_name] * 100) / summed[award_eligible]
-
-            # calculates the nominal QSAs per ONS region specified.
-            # Divides total # of awards by the number of Scout Districts that the ONS Region is in
-            code = group_df.name
-            district_ids = awards_mapping.get(code, {}) if not geog_name == "D_ID" else {code: 1}
-            awards_regions_data = awards_data.loc[[d_id for d_id in district_ids.keys()]].sum()
-
-            output["QSA"] = awards_regions_data["QSA"]
-            if awards_regions_data["qsa_eligible"] > 0:
-                output["%-QSA"] = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
-
-            return output
-
-        def _awards_per_region(district_records, district_nums) -> dict:
-            district_id = district_records.name
-            num_ons_regions_occupied_by_district = district_nums[district_id]
-
-            logger.debug(f"{district_id} in {num_ons_regions_occupied_by_district} ons boundaries")
-
-            return {
-                # QSAs achieved in district, divided by the number of regions the district is in
-                "QSA": district_records["Queens_Scout_Awards"].sum() / num_ons_regions_occupied_by_district,
-                # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
-                "qsa_eligible": district_records["Eligible4QSA"].sum() / num_ons_regions_occupied_by_district,
-            }
-
-        # TODO pandas > 1.1 move to new dropna=False groupby
-        self.scout_data.census_data[[geog_name]] = self.scout_data.census_data[[geog_name]].fillna("DUMMY")
-
-        total_cols = [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
-        waiting_cols = [section_model.waiting_list for section_name, section_model in sections_model if section_name != "Network"]
-        self.scout_data.census_data["All"] = self.scout_data.census_data[total_cols].sum(axis=1).astype("Int32")
-        self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
-        self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
-
-        # Check that our pivot keeps the total membership constant
-        yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
-        grouped_data = self.scout_data.census_data.groupby([geog_name], sort=False)
-        assert int(self.scout_data.census_data[yp_cols].sum().sum()) == int(grouped_data[yp_cols].sum().sum().sum())
         dataframes = []
 
-        if opt_groups or opt_number_of_groups:
+        if opt_groups:
             # Used to list the groups that operate within the boundary.
             # Gets all groups in the census_data dataframe and calculates the
             # number of groups.
             logger.debug(f"Adding group data")
             groups = self.scout_data.census_data[[geog_name, scout_census.column_labels.name.GROUP]].copy()
             groups[scout_census.column_labels.name.GROUP] = groups[scout_census.column_labels.name.GROUP].str.strip()
-            g = groups.drop_duplicates().dropna().groupby([geog_name], sort=False)[scout_census.column_labels.name.GROUP]
-            dataframes.append(pd.DataFrame({"Groups": g.unique().apply("\n".join), "Number of Groups": g.nunique(dropna=True)}))
+            grouped_rgn = groups.drop_duplicates().dropna().groupby([geog_name], dropna=False)[scout_census.column_labels.name.GROUP]
+            dataframes.append(pd.DataFrame({"Groups": grouped_rgn.unique().apply("\n".join), "Number of Groups": grouped_rgn.nunique(dropna=True)}))
 
-        if opt_section_numbers or opt_6_to_17_numbers or opt_waiting_list_totals or opt_number_of_sections:
+        if opt_section_numbers or opt_number_of_sections or opt_6_to_17_numbers or opt_waiting_list_totals or opt_adult_numbers:
+            total_cols = [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
+            waiting_cols = [section_model.waiting_list for section_name, section_model in sections_model if section_name != "Network"]
+            self.scout_data.census_data["All"] = self.scout_data.census_data[total_cols].sum(axis=1).astype("Int32")
+            self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
+            self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
+
             logger.debug(f"Adding young people numbers")
             metric_cols = []
             rename = {}
@@ -220,8 +177,7 @@ class Reports:
                 metric_cols += ["Waiting List"]
             if opt_adult_numbers:
                 metric_cols += ["Adults"]
-            agg = self.scout_data.census_data.groupby([geog_name, "Year"], sort=True)[metric_cols].sum()
-            agg = agg.unstack().sort_index()
+            agg = self.scout_data.census_data.groupby([geog_name, "Year"], dropna=False)[metric_cols].sum().unstack().sort_index()
             agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
@@ -231,19 +187,55 @@ class Reports:
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
+            district_id_column = scout_census.column_labels.id.DISTRICT
+            award_name = sections_model.Beavers.top_award[0]
+            award_eligible = sections_model.Beavers.top_award_eligible[0]
+
             logger.debug(f"Creating awards mapping")
             awards_mapping = self._ons_to_district_mapping(geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            awards_per_district_per_regions = self.scout_data.census_data.groupby(district_id_column).apply(_awards_per_region, district_numbers)
-            awards_per_district_per_regions = pd.DataFrame(awards_per_district_per_regions.values.tolist(), index=awards_per_district_per_regions.index)
+            grouped_dist = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column, dropna=False)
+            ons_regions_in_district = grouped_dist[district_id_column].first().map(district_numbers)
+            awards_per_district_per_regions = pd.DataFrame({
+                # QSAs achieved in district, divided by the number of regions the district is in
+                "QSA": grouped_dist["Queens_Scout_Awards"].sum() / ons_regions_in_district,
+                # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
+                "qsa_eligible": grouped_dist["Eligible4QSA"].sum() / ons_regions_in_district,
+            })
+
+            # Check that our pivot keeps the total membership constant
+            yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
+            grouped_rgn = self.scout_data.census_data.groupby([geog_name], dropna=False)
+            assert int(self.scout_data.census_data[yp_cols].sum().sum()) == int(grouped_rgn[yp_cols].sum().sum().sum())
 
             logger.debug(f"Adding awards data")
-            awards_table: pd.DataFrame = grouped_data.apply(_awards_groupby, awards_per_district_per_regions)
-            awards_table: pd.DataFrame = pd.DataFrame(awards_table.values.tolist(), index=awards_table.index)
-            top_award = awards_table[f"%-{sections_model.Beavers.top_award}"]
-            max_value = top_award.quantile(0.95)
-            awards_table[f"%-{sections_model.Beavers.top_award}"] = top_award.clip(upper=max_value)
-            dataframes.append(awards_table)
+            award_total = grouped_rgn[award_name].sum()
+            eligible_total = grouped_rgn[award_eligible].sum()
+            award_prop = 100 * award_total / eligible_total
+            award_prop[eligible_total == 0] = pd.NA
+
+            max_value = award_prop.quantile(0.95)
+            award_prop = award_prop.clip(upper=max_value)
+
+            # calculates the nominal QSAs per ONS region specified.
+            # Divides total # of awards by the number of Scout Districts that the ONS Region is in
+            region_ids = grouped_rgn.name.first().index.to_series()
+            if geog_name == "D_ID":
+                district_ids = region_ids
+            else:
+                region_district_map = {rgn_id: list(district_dict) for rgn_id, district_dict in awards_mapping.items()}
+                district_ids = region_ids.map(region_district_map)
+            awards_regions_data = pd.DataFrame.from_dict({idx: awards_per_district_per_regions.loc[ids].sum() for idx, ids in district_ids.items()}, orient="index")
+            qsa_prop = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
+            qsa_prop[awards_regions_data["qsa_eligible"] == 0] = pd.NA
+
+            dataframes.append(pd.DataFrame({
+                award_name: award_total,
+                award_eligible: eligible_total,
+                f"%-{award_name}": award_prop,
+                "QSA": awards_regions_data["QSA"],
+                "%-QSA": qsa_prop,
+            }))
 
         # TODO find a way to keep DUMMY geography coding
         output_data: pd.DataFrame = self.geography.boundary_codes.reset_index(drop=True).copy()
@@ -255,7 +247,8 @@ class Reports:
                 self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
 
             logger.debug(f"Adding IMD deciles")
-            output_data = output_data.merge(self.ons_pd_data[["lsoa11", "imd_decile"]], how="left", left_on="codes", right_on="lsoa11")
+            imd_deciles = self.ons_pd_data[["lsoa11", "imd_decile"]].drop_duplicates()
+            output_data = output_data.merge(imd_deciles, how="left", left_on="codes", right_on="lsoa11").drop(columns="lsoa11")
 
         self.boundary_report = output_data
 

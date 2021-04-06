@@ -69,7 +69,7 @@ class Map:
 
     def add_areas(
         self,
-        value_col: str,
+        var_col: str,
         tooltip: str,
         layer_name: str,
         reports: Reports,
@@ -81,7 +81,7 @@ class Map:
         """Creates a 2D colouring with geometry specified by the boundary
 
         Args:
-            value_col: Data column to use for choropleth colour values
+            var_col: Data column to use for choropleth colour values
             tooltip: Mouseover tooltip for each boundary (e.g. "% Change 6-18")
             layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
             reports:
@@ -91,48 +91,46 @@ class Map:
             significance_threshold: If an area's value is significant enough to be displayed
 
         """
+        if var_col not in reports.data.columns:
+            logger.error(f"{var_col} is not a valid column in the data. \n" f"Valid columns include {reports.data.columns}")
+            raise KeyError(f"{var_col} is not a valid column in the data.")
 
         colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
-        map_data = reports.data  # contains shapefile paths, and labels for region codes and names
-        code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
+        choropleth_data = reports.data[["codes", var_col]].set_index("codes")[var_col]  # contains shapefile paths, and labels for region codes and names
         geo_data = _load_boundary(reports)
 
         # Set value col properties to use for a particular boundary
-        logger.info(f"Setting choropleth column to {value_col} (displayed: {tooltip})")
+        logger.info(f"Setting choropleth column to {var_col} (displayed: {tooltip})")
 
-        if value_col not in map_data.columns:
-            logger.error(f"{value_col} is not a valid column in the data. \n" f"Valid columns include {map_data.columns}")
-            raise KeyError(f"{value_col} is not a valid column in the data.")
-
-        non_zero_value_col = map_data[value_col][map_data[value_col] != 0].dropna().sort_values()
+        non_zero_choropleth_data = choropleth_data[choropleth_data != 0].dropna().sort_values()
         if scale_index is None:
-            scale_index = non_zero_value_col.quantile([i / (len(colours) - 1) for i in range(len(colours))]).to_list()
+            scale_index = non_zero_choropleth_data.quantile(np.linspace(0, 1, len(colours))).to_list()
         if scale_step_boundaries is None:
             quantiles = (0, 20, 40, 60, 80, 100)
-            scale_step_boundaries = [np.percentile(non_zero_value_col, q) for q in quantiles]
+            scale_step_boundaries = [np.percentile(non_zero_choropleth_data, q) for q in quantiles]
         colour_map = branca.colormap.LinearColormap(colors=colours, index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
         colour_map.caption = layer_name
 
         logger.info(f"Colour scale boundary values {scale_step_boundaries}")
         logger.info(f"Colour scale index values {scale_index}")
 
-        logger.info(f"Merging geo_json on shape_codes from shapefile with {code_col} from boundary report")
-        merged_data = geo_data.merge(map_data, left_on="shape_codes", right_on=code_col).drop_duplicates()
+        logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
+        merged_data = geo_data.merge(choropleth_data, how="left", left_on="shape_codes", right_index=True).drop_duplicates()
         if len(merged_data.index) == 0:
             logger.error("Data unsuccessfully merged resulting in zero records")
-            raise Exception("Data unsuccessfully merged resulting in zero records")
+            raise RuntimeError("Data unsuccessfully merged resulting in zero records")
 
         self.map.add_child(
             folium.GeoJson(
                 data=merged_data.to_json(),
                 name=layer_name,  # the name of the Layer, as it will appear in the layer controls,
                 style_function=lambda x: {
-                    "fillColor": _map_colour_map(x["properties"], value_col, significance_threshold, colour_map),
+                    "fillColor": _map_colour_map(x["properties"], var_col, significance_threshold, colour_map),
                     "color": "black",
-                    "fillOpacity": _map_opacity(x["properties"], value_col, significance_threshold),
+                    "fillOpacity": _map_opacity(x["properties"], var_col, significance_threshold),
                     "weight": 0.10,
                 },
-                tooltip=folium.GeoJsonTooltip(fields=["shape_names", value_col], aliases=["Name", tooltip], localize=True),
+                tooltip=folium.GeoJsonTooltip(fields=["shape_names", var_col], aliases=["Name", tooltip], localize=True),
                 show=show,
             )
         )
@@ -393,8 +391,6 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
         GeoDataFrame with filtered and CRS transformed shapes
 
     """
-    code_col = reports.geography.metadata.key  # holds the name of the region class, e.g. oslaua, pcon
-
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
     logger.info("Loading Shapefile data")
     logger.debug(f"Shapefile path: {reports.geography.metadata.shapefile.path}")
@@ -409,11 +405,11 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     all_shapes.columns = [shapes_col_map.get(col, col) for col in all_shapes.columns]
 
     # Filter and convert GeoDataFrame to world co-ordinates
-    logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the {code_col} column of the map_data")
-    all_codes = set(reports.data[code_col])
+    logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the codes column of the map_data")
+    all_codes = set(reports.data["codes"])
     logger.debug(f"All codes list: {all_codes}")
     geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=utility.WGS_84)
-    logger.info(f"Loaded {len(geo_data.index):,} {code_col} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
+    logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
     return geo_data
 
 

@@ -55,6 +55,7 @@ class Geography:
         start_time = time.time()
         codes_map = pd.read_csv(root.DATA_ROOT / self.metadata.codes.path, dtype=boundary_codes_dtypes)
         logger.debug(f"Loading {geography_name} codes map finished, {time.time() - start_time:.2f} seconds elapsed")
+        codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in boundary_codes_dtypes])  # drop extras e.g. welsh names
         logger.debug(f"Normalising {geography_name} codes columns")
         codes_map.columns = codes_map.columns.map({self.metadata.codes.key: "codes", self.metadata.codes.name: "names"})
         self.boundary_codes: pd.DataFrame = codes_map
