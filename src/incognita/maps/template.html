@@ -121,11 +121,12 @@
             const val = colourData[id]
             if (val === undefined) return {...defaults, fillColor: "#cccccc", fillOpacity: 1}
             if (Math.abs(val) < 0) return {...defaults, fillColor: "#ffbe33", fillOpacity: 1 / 12}
-            return {...defaults, fillColor: colourFunc(val).hex(), fillOpacity: 1 / 3}
+            return {...defaults, fillColor: colourFunc(val), fillOpacity: 1 / 3}
         }
     }
-    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourFunc, codeCol, nameCol, measureName) => {
+    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourScale, codeCol, nameCol, measureName) => {
         const queryParamsAll = {...queryParams, outSR: "4326", f: "geojson", geometryPrecision: "5"}
+        const colourFunc = val => colourScale(val).hex()
         const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFuncGenerator(colourData, codeCol, colourFunc))
         const tooltipData = layer => '<table><tr><th>Name</th><td>' + layer.feature.properties[nameCol] + '</td></tr><tr><th>' + measureName + '</th><td>' + colourData[layer.feature.properties[codeCol]] + '</td></tr></table>'
         shapeLayer.bindTooltip(tooltipData, {"className": "foliumtooltip", "sticky": true});
