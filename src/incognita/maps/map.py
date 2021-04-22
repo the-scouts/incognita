@@ -446,3 +446,42 @@ def _map_opacity(properties: dict, column: str, threshold: float) -> float:
     if area_score is None:
         return 1
     return 1 / 3 if abs(area_score) >= threshold else 1 / 12
+
+
+def _output_colour_scale(unique_id: str, legend_key: str, colours: list[str], domain: tuple[int, int], classes: list[int]) -> str:
+    return f"""
+    
+    // Create colour scale
+    const colourScale{unique_id} = chroma.scale({colours}).domain({list(domain)}).classes({classes})
+    createLegend("{legend_key}", colourScale{unique_id})
+    """
+
+
+def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: str, query_params: dict[str, str], colour_scale_id, code_col, name_col, measure_name) -> str:
+    # query params reference: https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
+
+    return f"""
+
+    // Add boundary shapes
+    createShapeLayer(
+        "{legend_key}",
+        {colour_data},
+        "{api_base}",
+        {query_params},
+        colourScale{colour_scale_id},
+        "{code_col}",
+        "{name_col}",
+        "{measure_name}",
+    )"""
+
+
+def _output_marker_layer(legend_key: str, marker_data: list[dict[str, Union[float, str]]]) -> str:
+    # marker_data is lists of dicts of lat, lon, colour, html
+
+    return f"""
+    
+    // Add location markers
+    addMarkers(
+        "{legend_key}",
+        {marker_data},
+    )"""
