@@ -3,14 +3,10 @@ from __future__ import annotations
 from itertools import cycle
 from pathlib import Path
 import time
-from typing import Literal, TYPE_CHECKING, Union
+from string import Template
+from typing import Any, Literal, Union
 import webbrowser
 
-import branca
-import folium
-from folium.map import FeatureGroup
-from folium.plugins import MarkerCluster
-from folium.raster_layers import ENV as FOLIUM_TEMPLATES
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -22,15 +18,6 @@ from incognita.reports.reports import Reports
 from incognita.utility import config
 from incognita.utility import utility
 
-if TYPE_CHECKING:
-    from branca import colormap
-
-attribution_string = "&copy; <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://cartodb.com/attributions'>CARTO</a>"
-tiles_attr = Path(FOLIUM_TEMPLATES.loader.provider.module_path, "templates/tiles/cartodbpositronnolabels/attr.txt")
-if tiles_attr.read_text() != attribution_string:
-    tiles_attr.with_suffix(".bak.txt").write_text(tiles_attr.read_text())
-    tiles_attr.write_text(attribution_string)
-
 
 class Map:
     """This class enables easy plotting of maps with a shape file.
@@ -39,32 +26,17 @@ class Map:
         map: holds the folium map object
 
     """
+    template = Path(__file__).parent / "template.html"
 
-    def __init__(self, map_name: str):
+    def __init__(self, map_name: str, map_title: str):
         """Initialise Map class.
 
         Args:
             map_name: Filename for the saved map
 
         """
-        logger.info("Initialising folium map")
-        # kwargs to leaflet
-        leaflet_kwargs = dict(
-            zoomSnap=0.05,
-            zoomDelta=0.1,
-        )
-        # Create folium map
-        self.map: folium.Map = folium.Map(
-            location=[53.5, -1.49],
-            zoom_start=6,
-            attr=attribution_string,
-            # tiles='OpenStreetMap',
-            tiles="CartoDB positron nolabels",
-            **leaflet_kwargs,
-        )
-        # self.map_labels = folium.TileLayer("CartoDB positron onlylabels", overlay=True)
-        self.map.add_child(folium.LayerControl(collapsed=False))  # Add layer control to map
-
+        logger.info("Initialising leaflet map")
+        self.map: dict[str, Any] = {"map_title": map_title}
         self.out_file = config.SETTINGS.folders.output / f"{map_name}.html"
 
     def add_areas(
@@ -103,16 +75,13 @@ class Map:
         logger.info(f"Setting choropleth column to {var_col} (displayed: {tooltip})")
 
         non_zero_choropleth_data = choropleth_data[choropleth_data != 0].dropna().sort_values()
-        if scale_index is None:
-            scale_index = non_zero_choropleth_data.quantile(np.linspace(0, 1, len(colours))).to_list()
         if scale_step_boundaries is None:
             quantiles = (0, 20, 40, 60, 80, 100)
             scale_step_boundaries = [np.percentile(non_zero_choropleth_data, q) for q in quantiles]
-        colour_map = branca.colormap.LinearColormap(colors=colours, index=scale_index, vmin=min(scale_index), vmax=max(scale_index)).to_step(index=scale_step_boundaries)
-        colour_map.caption = layer_name
+        colour_map_id = "0"
+        self.map["colour_map"] = _output_colour_scale(colour_map_id, layer_name, colours, domain=(min(non_zero_choropleth_data), max(non_zero_choropleth_data)), classes=scale_step_boundaries)
 
         logger.info(f"Colour scale boundary values {scale_step_boundaries}")
-        logger.info(f"Colour scale index values {scale_index}")
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
         merged_data = geo_data.merge(choropleth_data, how="left", left_on="shape_codes", right_index=True).drop_duplicates()
@@ -120,21 +89,18 @@ class Map:
             logger.error("Data unsuccessfully merged resulting in zero records")
             raise RuntimeError("Data unsuccessfully merged resulting in zero records")
 
-        self.map.add_child(
-            folium.GeoJson(
-                data=merged_data.to_json(),
-                name=layer_name,  # the name of the Layer, as it will appear in the layer controls,
-                style_function=lambda x: {
-                    "fillColor": _map_colour_map(x["properties"], var_col, significance_threshold, colour_map),
-                    "color": "black",
-                    "fillOpacity": _map_opacity(x["properties"], var_col, significance_threshold),
-                    "weight": 0.10,
-                },
-                tooltip=folium.GeoJsonTooltip(fields=["shape_names", var_col], aliases=["Name", tooltip], localize=True),
-                show=show,
-            )
+        # TODO layer show/hide by default
+        self.map[f"layer_{layer_name}"] = _output_shape_layer(
+            legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
+            colour_data=merged_data[var_col].to_dict(),
+            api_base="https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?",
+            query_params={"outFields": "LSOA11CD,LSOA11NM"},  # TODO where do I get this value from?
+            colour_scale_id=colour_map_id,
+            threshold=significance_threshold,
+            code_col="LSOA11CD",  # TODO where do I get this value from?
+            name_col="LSOA11NM",  # TODO where do I get this value from?
+            measure_name=tooltip,
         )
-        self.map.add_child(colour_map)
 
     def add_meeting_places_to_map(
         self,
@@ -172,14 +138,12 @@ class Map:
         # Sort sections dataframe
         sections = sections.sort_values(scout_census.column_labels.id.OBJECT).reset_index(drop=True)
 
-        if layer_name in self.map._children:  # NoQA
+        if layer_name in self.map:
             raise ValueError("Layer already used!")
-        layer_type = MarkerCluster if cluster_markers else FeatureGroup
-        layer = layer_type(name=layer_name, show=show_layer).add_to(self.map)
 
         # Sets the map so that it opens in the right area
         valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1, ["lat", "long"]]
-        self.map.fit_bounds(((valid_points.lat.min(), valid_points.long.min()), (valid_points.lat.max(), valid_points.long.max())))
+        self.map["bounds"] = _output_fit_bounds(((valid_points.lat.min(), valid_points.long.min()), (valid_points.lat.max(), valid_points.long.max())))
 
         section_names = sections["name"].astype(str)
 
@@ -236,14 +200,13 @@ class Map:
         marker_colour = sections_info_table["marker_colour"].array[0]
 
         # Find all the sections with the same postcode:
+        out = []
         for (postcode, district_name, group_name), sub_table in sections_info_table.groupby(level=[0, 1, 2]):
             if old_postcode != postcode:
                 # Add a marker each time the postcode changes.
-                old_postcode = postcode
+                out.append({"lat": lat, "lon": long, "col": marker_colour, "html": html})
 
-                popup = folium.Popup(html, max_width=2650)  # Fixes physical size of popup
-                layer.add_child(folium.Marker(location=[lat, long], popup=popup, icon=folium.Icon(color=marker_colour)))
-
+                old_postcode = postcode  # update the old postcode
                 lat = round(sub_table["lat"].array[0], 4)
                 long = round(sub_table["long"].array[0], 4)
                 marker_colour = sub_table["marker_colour"].array[0]
@@ -267,6 +230,8 @@ class Map:
                 awards_info = "<br>".join(sub_table["awards_info"])
                 html += "<br>" + awards_info
             html += "</p>"
+        # TODO marker cluster/feature group
+        self.map[layer_name] = _output_marker_layer(layer_name, out)
 
     def add_sections_to_map(
         self,
@@ -341,39 +306,42 @@ class Map:
 
         if layer_name in self.map._children:  # NoQA
             raise ValueError("Layer already used!")
-        layer = FeatureGroup(name=layer_name, show=True).add_to(self.map)
 
         # Plot marker and include marker_data in the popup for every item in custom_data
-        icon = folium.Icon(color="green")
+        out = []
         if marker_data:
-
-            def add_popup_data(row):
-                if not np.isnan(row.geometry.x):
-                    layer.add_child(
-                        folium.Marker(
-                            location=[round(row.geometry.y, 4), round(row.geometry.x, 4)],
-                            popup=folium.Popup(html="".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data), max_width=2650),
-                            icon=icon,
-                        )
-                    )
-
-            custom_data.apply(add_popup_data, axis=1)
+            x_not_nan = custom_data.geometry.x.notna()
+            for row in custom_data[x_not_nan].itertuples():
+                out.append(
+                    {
+                        "lat": round(row.geometry.y, 4),
+                        "lon": round(row.geometry.x, 4),
+                        "col": "green",
+                        "html": "".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data)
+                    }
+                )
         else:
             for points in custom_data.geometry[custom_data.geometry.x.notna()].to_list():
-                layer.add_child(folium.Marker(location=[round(points.y, 4), round(points.x, 4)], popup=None, icon=icon))
+                out.append({"lat": round(points.y, 4), "lon": round(points.x, 4), "col": "green", "html": ""})
+        self.map[layer_name] = _output_marker_layer(layer_name, out)
 
     def save_map(self) -> None:
-        """Saves the folium map to a HTML file"""
-        self.map.save(f"{self.out_file}")
+        """Writes the map and saves to a HTML file"""
+        template = MapTemplate(Map.template.read_text(encoding="utf-8"))
+        map_title = self.map.pop("map_title")
+        funcs = "\n" + "\n".join(self.map.values())
+        self.out_file.write_text(template.substitute(title=map_title, functions=funcs))
 
     def show_map(self) -> None:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    def district_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
+    @staticmethod
+    def district_colour_mapping(scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.DISTRICT)
 
-    def county_colour_mapping(self, scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
+    @staticmethod
+    def county_colour_mapping(scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
         return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
 
 
@@ -425,29 +393,6 @@ def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict
     return {"census_column": grouping_column, "mapping": mapping}
 
 
-def _map_colour_map(properties: dict, column: str, threshold: float, colour_map: colormap.ColorMap) -> str:
-    """Returns colour from colour map function and value
-
-    Returns:
-        hexadecimal colour value "#RRGGBB"
-
-    """
-    area_score = properties.get(column)
-    if area_score is None:
-        return "#cccccc"  # grey
-    if abs(area_score) < threshold:
-        return "#ffbe33"  # light yellow
-    return colour_map(area_score)
-
-
-def _map_opacity(properties: dict, column: str, threshold: float) -> float:
-    """Decides if a feature's value is important enough to be shown"""
-    area_score = properties.get(column)
-    if area_score is None:
-        return 1
-    return 1 / 3 if abs(area_score) >= threshold else 1 / 12
-
-
 def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) -> str:
     south_west, north_east = bounds
     return f"""
@@ -457,16 +402,16 @@ def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) 
     """
 
 
-def _output_colour_scale(unique_id: str, legend_key: str, colours: list[str], domain: tuple[int, int], classes: list[int]) -> str:
+def _output_colour_scale(unique_id: str, legend_caption: str, colours: list[str], domain: tuple[int, int], classes: list[int]) -> str:
     return f"""
     
     // Create colour scale
     const colourScale{unique_id} = chroma.scale({colours}).domain({list(domain)}).classes({classes})
-    createLegend("{legend_key}", colourScale{unique_id})
+    createLegend("{legend_caption}", colourScale{unique_id})
     """
 
 
-def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: str, query_params: dict[str, str], colour_scale_id, code_col, name_col, measure_name) -> str:
+def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: str, query_params: dict[str, str], colour_scale_id, threshold: float, code_col, name_col, measure_name) -> str:
     # query params reference: https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
 
     return f"""
@@ -478,6 +423,7 @@ def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: 
         "{api_base}",
         {query_params},
         colourScale{colour_scale_id},
+        {threshold},
         "{code_col}",
         "{name_col}",
         "{measure_name}",
@@ -486,7 +432,6 @@ def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: 
 
 def _output_marker_layer(legend_key: str, marker_data: list[dict[str, Union[float, str]]]) -> str:
     # marker_data is lists of dicts of lat, lon, colour, html
-
     return f"""
     
     // Add location markers
@@ -494,3 +439,7 @@ def _output_marker_layer(legend_key: str, marker_data: list[dict[str, Union[floa
         "{legend_key}",
         {marker_data},
     )"""
+
+
+class MapTemplate(Template):
+    delimiter = "¦"

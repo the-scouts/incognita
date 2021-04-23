@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
     <meta charset="UTF-8">
-    <title>Birmingham Sections by IMD Decile</title>
+    <title>¦title</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
           integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
           crossorigin=""/>
@@ -115,34 +115,38 @@
         requestGeoJsonFromAPI(colourData, apiBase, codeCol, queryParams).map(apiRequest => apiRequest.then(geoJson => layer.addData(geoJson)))
         return layer
     }
-    const styleFuncGenerator = (colourData, codeCol, colourFunc) => {
+    const styleFuncGenerator = (colourData, codeCol, colourFunc, threshold) => {
         const defaults = {"color": "black", "weight": 0.1}
         return feature => {
             const id = feature.properties[codeCol]
             const val = colourData[id]
-            if (val === undefined) return {...defaults, fillColor: "#cccccc", fillOpacity: 1}
-            if (Math.abs(val) < 0) return {...defaults, fillColor: "#ffbe33", fillOpacity: 1 / 12}
+            if (val === undefined) return {...defaults, fillColor: "#ccc", fillOpacity: 1}
+            if (Math.abs(val) < threshold) return {...defaults, fillColor: "#fb3", fillOpacity: 1 / 12}
             return {...defaults, fillColor: colourFunc(val), fillOpacity: 1 / 3}
         }
     }
-    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourScale, codeCol, nameCol, measureName) => {
+    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourScale, threshold, codeCol, nameCol, measureName) => {
         const queryParamsAll = {...queryParams, outSR: "4326", f: "geojson", geometryPrecision: "5"}
         const colourFunc = val => colourScale(val).hex()
-        const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFuncGenerator(colourData, codeCol, colourFunc))
+        const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFuncGenerator(colourData, codeCol, colourFunc, threshold))
         const tooltipData = layer => '<table><tr><th>Name</th><td>' + layer.feature.properties[nameCol] + '</td></tr><tr><th>' + measureName + '</th><td>' + colourData[layer.feature.properties[codeCol]] + '</td></tr></table>'
         shapeLayer.bindTooltip(tooltipData, {"className": "foliumtooltip", "sticky": true});
         layersControl.addOverlay(shapeLayer, layerKey)
         return shapeLayer
     }
     /*
-     * TODO change centre co-ordinates
      * TODO better legend function.
      * TODO - maybe pass an array of intervals,
      * TODO - maybe add a categorical flag,
      * TODO - maybe use other colour scale method (limits/colours),
      * TODO - maybe add a breaks -> intervals decomposition func
+     * TODO - map_labels? (e.g. folium.TileLayer("CartoDB positron onlylabels", overlay=True))
+     * TODO - layer show/hide by default
+     * TODO - marker cluster/feature group
+     * TODO - use markerObj.col  // marker colour
      */
 
+    // python HTML entry point ¦functions
 </script>
 </body>
 </html>
