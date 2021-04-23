@@ -92,7 +92,7 @@ class Map:
         # TODO layer show/hide by default
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
-            colour_data=merged_data[var_col].to_dict(),
+            colour_data=merged_data.set_index("shape_codes")[var_col].to_dict(),
             api_base="https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?",
             query_params={"outFields": "LSOA11CD,LSOA11NM"},  # TODO where do I get this value from?
             colour_scale_id=colour_map_id,
@@ -329,8 +329,8 @@ class Map:
         """Writes the map and saves to a HTML file"""
         template = MapTemplate(Map.template.read_text(encoding="utf-8"))
         map_title = self.map.pop("map_title")
-        funcs = "\n" + "\n".join(self.map.values())
-        self.out_file.write_text(template.substitute(title=map_title, functions=funcs))
+        funcs = "\n" + "".join(self.map.values())
+        self.out_file.write_text(template.substitute(title=map_title, functions=funcs), encoding="utf-8")
 
     def show_map(self) -> None:
         """Show the file at self.out_file in the default browser."""
@@ -396,7 +396,6 @@ def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict
 def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) -> str:
     south_west, north_east = bounds
     return f"""
-    
     // Set map bounds
     setBounds({[list(south_west), list(north_east)]})
     """
@@ -404,7 +403,6 @@ def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) 
 
 def _output_colour_scale(unique_id: str, legend_caption: str, colours: list[str], domain: tuple[int, int], classes: list[int]) -> str:
     return f"""
-    
     // Create colour scale
     const colourScale{unique_id} = chroma.scale({colours}).domain({list(domain)}).classes({classes})
     createLegend("{legend_caption}", colourScale{unique_id})
@@ -415,7 +413,6 @@ def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: 
     # query params reference: https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
 
     return f"""
-
     // Add boundary shapes
     createShapeLayer(
         "{legend_key}",
@@ -427,18 +424,19 @@ def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: 
         "{code_col}",
         "{name_col}",
         "{measure_name}",
-    )"""
+    )
+    """
 
 
 def _output_marker_layer(legend_key: str, marker_data: list[dict[str, Union[float, str]]]) -> str:
     # marker_data is lists of dicts of lat, lon, colour, html
     return f"""
-    
     // Add location markers
     addMarkers(
         "{legend_key}",
         {marker_data},
-    )"""
+    )
+    """
 
 
 class MapTemplate(Template):
