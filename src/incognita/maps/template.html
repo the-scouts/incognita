@@ -35,14 +35,15 @@
 
     // Map init
     const map = L.map("map", {
-        center: [53.5, -1.49],
+        center: [55.943, -3.186],
         crs: L.CRS.EPSG3857,
         zoom: 6,
         zoomControl: true,
         preferCanvas: false,
         zoomSnap: 0.05,
         zoomDelta: 0.1,
-    }).fitBounds([[52.390423, -2.0208369999999998], [52.58815, -1.758441]])
+    })
+    const setBounds = bounds => map.fitBounds(bounds)
     const baseMap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
         attribution: "© <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://carto.com/attribution'>CARTO</a>",
         detectRetina: false,

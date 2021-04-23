@@ -448,6 +448,15 @@ def _map_opacity(properties: dict, column: str, threshold: float) -> float:
     return 1 / 3 if abs(area_score) >= threshold else 1 / 12
 
 
+def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) -> str:
+    south_west, north_east = bounds
+    return f"""
+    
+    // Set map bounds
+    setBounds({[list(south_west), list(north_east)]})
+    """
+
+
 def _output_colour_scale(unique_id: str, legend_key: str, colours: list[str], domain: tuple[int, int], classes: list[int]) -> str:
     return f"""
     
