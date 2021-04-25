@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from itertools import cycle
 from pathlib import Path
-import time
 from string import Template
+import time
 from typing import Any, Literal, Union
 import webbrowser
 
@@ -23,9 +23,10 @@ class Map:
     """This class enables easy plotting of maps with a shape file.
 
     Attributes:
-        map: holds the folium map object
+        map: holds the HTML output for the leaflet map template
 
     """
+
     template = Path(__file__).parent / "template.html"
 
     def __init__(self, map_name: str, map_title: str):
@@ -317,7 +318,7 @@ class Map:
                         "lat": round(row.geometry.y, 4),
                         "lon": round(row.geometry.x, 4),
                         "col": "green",
-                        "html": "".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data)
+                        "html": "".join(f'<p align="center">{row[marker_col]}</p>' for marker_col in marker_data),
                     }
                 )
         else:
@@ -409,7 +410,17 @@ def _output_colour_scale(unique_id: str, legend_caption: str, colours: list[str]
     """
 
 
-def _output_shape_layer(legend_key: str, colour_data: dict[str, int], api_base: str, query_params: dict[str, str], colour_scale_id, threshold: float, code_col, name_col, measure_name) -> str:
+def _output_shape_layer(
+    legend_key: str,
+    colour_data: dict[str, int],
+    api_base: str,
+    query_params: dict[str, str],
+    colour_scale_id,
+    threshold: float,
+    code_col: str,
+    name_col: str,
+    measure_name: str,
+) -> str:
     # query params reference: https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
 
     return f"""
