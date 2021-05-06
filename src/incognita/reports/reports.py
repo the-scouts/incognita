@@ -94,10 +94,14 @@ class Reports:
         district_ids = set(district_ids_by_region[district_id_column].dropna())
 
         # count of how many regions the district occupies:
-        count_regions_in_district = census_data.loc[
-            (census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)),
-            [district_id_column, region_type]
-        ].dropna().drop_duplicates().groupby(district_id_column).count().rename(columns={region_type: "count"})
+        count_regions_in_district = (
+            census_data.loc[(census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)), [district_id_column, region_type]]
+            .dropna()
+            .drop_duplicates()
+            .groupby(district_id_column)
+            .count()
+            .rename(columns={region_type: "count"})
+        )
         count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column).set_index([region_type, district_id_column])
 
         nested_dict = {}
@@ -196,12 +200,14 @@ class Reports:
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
             grouped_dist = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column, dropna=False)
             ons_regions_in_district = grouped_dist[district_id_column].first().map(district_numbers)
-            awards_per_district_per_regions = pd.DataFrame({
-                # QSAs achieved in district, divided by the number of regions the district is in
-                "QSA": grouped_dist["Queens_Scout_Awards"].sum() / ons_regions_in_district,
-                # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
-                "qsa_eligible": grouped_dist["Eligible4QSA"].sum() / ons_regions_in_district,
-            })
+            awards_per_district_per_regions = pd.DataFrame(
+                {
+                    # QSAs achieved in district, divided by the number of regions the district is in
+                    "QSA": grouped_dist["Queens_Scout_Awards"].sum() / ons_regions_in_district,
+                    # number of young people eligible to achieve the QSA in district, divided by the number of regions the district is in
+                    "qsa_eligible": grouped_dist["Eligible4QSA"].sum() / ons_regions_in_district,
+                }
+            )
 
             # Check that our pivot keeps the total membership constant
             yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
@@ -229,13 +235,16 @@ class Reports:
             qsa_prop = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
             qsa_prop[awards_regions_data["qsa_eligible"] == 0] = pd.NA
 
-            dataframes.append(pd.DataFrame({
-                award_name: award_total,
-                award_eligible: eligible_total,
-                f"%-{award_name}": award_prop,
-                "QSA": awards_regions_data["QSA"],
-                "%-QSA": qsa_prop,
-            }))
+            award_data = pd.DataFrame(
+                {
+                    award_name: award_total,
+                    award_eligible: eligible_total,
+                    f"%-{award_name}": award_prop,
+                    "QSA": awards_regions_data["QSA"],
+                    "%-QSA": qsa_prop,
+                }
+            )
+            dataframes.append(award_data)
 
         # TODO find a way to keep DUMMY geography coding
         output_data: pd.DataFrame = self.geography.boundary_codes.reset_index(drop=True).copy()
