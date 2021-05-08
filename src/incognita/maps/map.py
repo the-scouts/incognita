@@ -80,7 +80,13 @@ class Map:
             quantiles = (0, 20, 40, 60, 80, 100)
             scale_step_boundaries = [np.percentile(non_zero_choropleth_data, q) for q in quantiles]
         colour_map_id = "0"
-        self.map["colour_map"] = _output_colour_scale(colour_map_id, layer_name, colours, domain=(min(non_zero_choropleth_data), max(non_zero_choropleth_data)), classes=scale_step_boundaries)
+        self.map["colour_map"] = _output_colour_scale(
+            colour_map_id,
+            layer_name,
+            colours,
+            domain=(min(non_zero_choropleth_data), max(non_zero_choropleth_data)),
+            classes=scale_step_boundaries,
+        )
 
         logger.info(f"Colour scale boundary values {scale_step_boundaries}")
 
