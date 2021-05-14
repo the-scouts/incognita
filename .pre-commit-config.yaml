@@ -1,7 +1,7 @@
 repos:
     # Enforce code style
   - repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 21.5b1
     hooks:
       - id: black
         name: Enforce code style (Black)
@@ -17,7 +17,7 @@ repos:
 
     # Enforce import ordering
   - repo: https://github.com/PyCQA/isort
-    rev: 5.7.0
+    rev: 5.8.0
     hooks:
       - id: isort
         name: Enforce import ordering (isort)
