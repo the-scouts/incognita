@@ -19,6 +19,7 @@ boundaries = "data/Boundary shape files/"
 output = "Output/"
 
 [ons2019."Local Authority"]
+# https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2019-boundaries-uk-buc
 key = "oslaua"  # Local Authority Districts
 
 codes.path = "LA_UA names and codes UK as at 12_19.csv"
@@ -33,7 +34,13 @@ shapefile.name = "lad19nm"
 age_profile.path = "lad_by_age.csv"
 age_profile.key = "Code"
 
+api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Administrative_Boundaries/Local_Authority_Districts_December_2019_Boundaries_UK_BUC/MapServer/0/query?"
+api.query_params = '{"outFields": "lad19cd,lad19nm"}'
+api.codes_col = "lad19cd"
+api.names_col = "lad19nm"
+
 [ons2019."County (LA)"]
+# https://geoportal.statistics.gov.uk/datasets/counties-and-unitary-authorities-december-2019-boundaries-uk-bgc
 key = "oslaua"  # Counties
 
 codes.path = "LA_UA names and codes UK as at 12_19.csv"
@@ -45,7 +52,13 @@ shapefile.path = "Counties_and_Unitary_Authorities_December_2017_Generalised_Cli
 shapefile.key = "ctyua17cd"
 shapefile.name = "ctyua17nm"
 
+api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Administrative_Boundaries/Counties_and_Unitary_Authorities_December_2019_Boundaries_UK_BGC2/MapServer/0/query?"
+api.query_params = '{"outFields": "ctyua19cd,ctyua19nm"}'
+api.codes_col = "ctyua19cd"
+api.names_col = "ctyua19nm"
+
 [ons2019."Ward"]
+# https://geoportal.statistics.gov.uk/datasets/wards-december-2020-uk-bgc-v2
 key = "osward"  # Council Wards
 
 codes.path = "Ward names and codes UK as at 05_19_NSPD.csv"
@@ -60,7 +73,13 @@ shapefile.name = "WD19NM"
 age_profile.path = "osward_by_age_mid_2018_population_may_2019_wards.csv"
 age_profile.key = "Ward Code"
 
+api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Wards_December_2020_UK_BGC_V3/FeatureServer/0/query?"
+api.query_params = '{"outFields": "WD20CD,WD20NM"}'
+api.codes_col = "WD20CD"
+api.names_col = "WD20NM"
+
 [ons2019."Constituency"]
+# https://geoportal.statistics.gov.uk/datasets/westminster-parliamentary-constituencies-december-2019-boundaries-uk-bgc
 key = "pcon"  # Parliamentary Constituencies
 
 codes.path = "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv"
@@ -75,7 +94,13 @@ shapefile.name = "pcon17nm"
 age_profile.path = "pcon_by_age.csv"
 age_profile.key = "PCON11CD"
 
+api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Electoral_Boundaries/Westminster_Parliamentary_Constituencies_December_2019_Boundaries_UK_BGC/MapServer/0/query?"
+api.query_params = '{"outFields": "pcon19cd,pcon19nm"}'
+api.codes_col = "pcon19cd"
+api.names_col = "pcon19nm"
+
 [ons2019."LSOA"]
+# https://geoportal.statistics.gov.uk/datasets/lower-layer-super-output-areas-december-2011-boundaries-super-generalised-clipped-bsc-ew-v3
 key = "lsoa11"  # Lower Level Super Output Areas
 
 codes.path = "LSOA (2011) names and codes UK as at 12_12.csv"
@@ -93,6 +118,7 @@ api.codes_col = "LSOA11CD"
 api.names_col = "LSOA11NM"
 
 [ons2019."MSOA"]
+# https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-generalised-clipped-bgc-ew-v3
 key = "msoa11"  # Middle Layer Super Output Areas
 
 codes.path = "MSOA (2011) names and codes UK as at 12_12.csv"
@@ -103,7 +129,13 @@ codes.name = "MSOA11NM"
 shapefile.path = "Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales/Middle_Layer_Super_Output_Areas_December_2011_Full_Clipped_Boundaries_in_England_and_Wales.shp"
 shapefile.key = "msoa11cd"
 
+api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Middle_Layer_Super_Output_Areas_DEC_2011_EW_BGC_V3/FeatureServer/0/query?"
+api.query_params = '{"outFields": "MSOA11CD,MSOA11NM"}'
+api.codes_col = "MSOA11CD"
+api.names_col = "MSOA11NM"
+
 [ons2019."Intermediate Zone"]
+# https://spatialdata.gov.scot/geonetwork/srv/eng/catalog.search#/metadata/389787c0-697d-4824-9ca9-9ce8cb79d6f5
 key = "msoa11"  # Intermediate Zones (codepages identical to MSOA but different shapefiles)
 
 codes.path = "MSOA (2011) names and codes UK as at 12_12.csv"
@@ -113,6 +145,19 @@ codes.name = "MSOA11NM"
 
 shapefile.path = "SG_IntermediateZoneBdry_2011/SG_IntermediateZone_Bdry_2011.shp"
 shapefile.key = "InterZone"
+
+api.url = "https://maps.gov.scot/server/rest/services/ScotGov/StatisticalUnits/MapServer/6/query?"
+api.query_params = '{"outFields": "InterZone,Name"}'
+api.codes_col = "InterZone"
+api.names_col = "Name"
+
+[ons2019."Data Zone"]
+# https://spatialdata.gov.scot/geonetwork/srv/eng/catalog.search#/metadata/7d3e8709-98fa-4d71-867c-d5c8293823f2
+
+api.url = "https://maps.gov.scot/server/rest/services/ScotGov/StatisticalUnits/MapServer/2/query?"
+api.query_params = '{"outFields": "DataZone,Name"}'
+api.codes_col = "DataZone"
+api.names_col = "Name"
 
 [custom_boundaries."Scout District"]
 key = "D_ID"
