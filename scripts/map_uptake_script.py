@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # create_section_maps
     # for section_label in Reports.SECTION_AGES.keys():
     #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
-    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, scale_index=[0, 8, 20], scale_step_boundaries=[0, 3, 4, 6, 8, 11])
+    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, colour_bounds=[0, 3, 4, 6, 8, 11])
     #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), {"youth membership"}, single_section=section_label)
     #     section_map.save_map()
 

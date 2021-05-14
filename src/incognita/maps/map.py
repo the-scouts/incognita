@@ -47,8 +47,7 @@ class Map:
         layer_name: str,
         reports: Reports,
         show: bool = False,
-        scale_index: list[int] = None,
-        scale_step_boundaries: list[int] = None,
+        colour_bounds: list[int] = None,
         significance_threshold: float = 2.5,
         categorical: bool = False,
     ) -> None:
@@ -60,8 +59,7 @@ class Map:
             layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
             reports:
             show: If True, show the layer by default
-            scale_index: Allows a fixed value scale - colour indices
-            scale_step_boundaries: Fixed scale step boundary indices
+            colour_bounds: Colour breaks to create a fixed legend
             significance_threshold: If an area's value is significant enough to be displayed
             categorical: If the data are categorical
 
@@ -88,19 +86,19 @@ class Map:
                 legend_categories=categories,
             )
         else:
-            if scale_step_boundaries is None:
+            if colour_bounds is None:
                 quantiles = (20, 40, 60, 80, 100)
-                scale_step_boundaries = np.unique(np.percentile(non_zero_choropleth_data, quantiles, interpolation="nearest")).tolist()
+                colour_bounds = np.unique(np.percentile(non_zero_choropleth_data, quantiles, interpolation="nearest")).tolist()
 
             self.map["colour_map"] = _output_colour_scale_ranges(
                 colour_map_id,
                 layer_name,
                 colours,
-                classes=scale_step_boundaries,
-                legend_ranges=[(scale_step_boundaries[i], scale_step_boundaries[i+1]) for i in range(len(scale_step_boundaries)-1)],
+                classes=colour_bounds,
+                legend_ranges=[(colour_bounds[i], colour_bounds[i+1]) for i in range(len(colour_bounds)-1)],
             )
 
-            logger.info(f"Colour scale boundary values {scale_step_boundaries}")
+            logger.info(f"Colour scale boundary values {colour_bounds}")
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
 
