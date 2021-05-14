@@ -1,0 +1,9 @@
+# core
+pandas
+numpy
+geopandas>=0.8
+shapely
+pyarrow
+pygeos
+toml
+pydantic
