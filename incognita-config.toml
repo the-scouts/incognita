@@ -151,13 +151,13 @@ api.query_params = '{"outFields": "InterZone,Name"}'
 api.codes_col = "InterZone"
 api.names_col = "Name"
 
-[ons2019."Data Zone"]
-# https://spatialdata.gov.scot/geonetwork/srv/eng/catalog.search#/metadata/7d3e8709-98fa-4d71-867c-d5c8293823f2
-
-api.url = "https://maps.gov.scot/server/rest/services/ScotGov/StatisticalUnits/MapServer/2/query?"
-api.query_params = '{"outFields": "DataZone,Name"}'
-api.codes_col = "DataZone"
-api.names_col = "Name"
+#[ons2019."Data Zone"]
+## https://spatialdata.gov.scot/geonetwork/srv/eng/catalog.search#/metadata/7d3e8709-98fa-4d71-867c-d5c8293823f2
+#
+#api.url = "https://maps.gov.scot/server/rest/services/ScotGov/StatisticalUnits/MapServer/2/query?"
+#api.query_params = '{"outFields": "DataZone,Name"}'
+#api.codes_col = "DataZone"
+#api.names_col = "Name"
 
 [custom_boundaries."Scout District"]
 key = "D_ID"

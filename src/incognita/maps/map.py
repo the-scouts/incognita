@@ -90,12 +90,13 @@ class Map:
                 quantiles = (20, 40, 60, 80, 100)
                 colour_bounds = np.unique(np.percentile(non_zero_choropleth_data, quantiles, interpolation="nearest")).tolist()
 
+            num_ranges = len(colour_bounds) - 1
             self.map["colour_map"] = _output_colour_scale_ranges(
                 colour_map_id,
                 layer_name,
                 colours,
                 classes=colour_bounds,
-                legend_ranges=[(colour_bounds[i], colour_bounds[i+1]) for i in range(len(colour_bounds)-1)],
+                legend_ranges=[(colour_bounds[i], colour_bounds[i + 1]) for i in range(num_ranges)],
             )
 
             logger.info(f"Colour scale boundary values {colour_bounds}")
