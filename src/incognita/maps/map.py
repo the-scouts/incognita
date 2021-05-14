@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from itertools import cycle
 from pathlib import Path
 from string import Template
@@ -108,7 +107,7 @@ class Map:
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
             colour_data=choropleth_data.to_dict(),
             api_base=reports.geography.metadata.api.url,
-            query_params=json.loads(reports.geography.metadata.api.query_params),
+            query_params=reports.geography.metadata.api.query_params,
             colour_scale_id=colour_map_id,
             threshold=significance_threshold,
             code_col=reports.geography.metadata.api.codes_col,
