@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from itertools import cycle
 from pathlib import Path
 from string import Template
@@ -106,12 +107,12 @@ class Map:
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
             colour_data=choropleth_data.to_dict(),
-            api_base="https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?",
-            query_params={"outFields": "LSOA11CD,LSOA11NM"},  # TODO where do I get this value from?
+            api_base=reports.geography.metadata.api.url,
+            query_params=json.loads(reports.geography.metadata.api.query_params),
             colour_scale_id=colour_map_id,
             threshold=significance_threshold,
-            code_col="LSOA11CD",  # TODO where do I get this value from?
-            name_col="LSOA11NM",  # TODO where do I get this value from?
+            code_col=reports.geography.metadata.api.codes_col,
+            name_col=reports.geography.metadata.api.names_col,
             measure_name=tooltip,
         )
 

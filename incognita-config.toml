@@ -87,6 +87,11 @@ shapefile.path = "Lower_Layer_Super_Output_Areas_December_2011_Boundaries_EW_BSC
 shapefile.key = "LSOA11CD"
 shapefile.name = "LSOA11NM"
 
+api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?"
+api.query_params = '{"outFields": "LSOA11CD,LSOA11NM"}'
+api.codes_col = "LSOA11CD"
+api.names_col = "LSOA11NM"
+
 [ons2019."MSOA"]
 key = "msoa11"  # Middle Layer Super Output Areas
 

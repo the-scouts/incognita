@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pydantic
 import pydantic.validators
 import toml
 
 from incognita.data.ons_pd import Boundary
-from incognita.data.ons_pd import BoundaryAgeProfile
-from incognita.data.ons_pd import BoundaryCodes
-from incognita.data.ons_pd import BoundaryShapeFile
 from incognita.utility import root
 
 if TYPE_CHECKING:

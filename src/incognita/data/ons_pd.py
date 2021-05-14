@@ -31,11 +31,19 @@ class BoundaryAgeProfile(pydantic.BaseModel):
     pivot_key: Optional[str] = None
 
 
+class BoundaryApi(pydantic.BaseModel):
+    url: str
+    query_params: str
+    codes_col: str
+    names_col: str
+
+
 class Boundary(pydantic.BaseModel):
     key: str  # Column name in the ONS postcode directory file
     codes: BoundaryCodes
     shapefile: Optional[BoundaryShapeFile] = None
     age_profile: Optional[BoundaryAgeProfile] = None
+    api: Optional[BoundaryApi] = None
 
 
 class ONSPostcodeDirectory(pydantic.BaseModel):
