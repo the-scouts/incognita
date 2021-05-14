@@ -50,6 +50,7 @@ class Map:
         scale_index: list[int] = None,
         scale_step_boundaries: list[int] = None,
         significance_threshold: float = 2.5,
+        categorical: bool = False,
     ) -> None:
         """Creates a 2D colouring with geometry specified by the boundary
 
@@ -62,6 +63,7 @@ class Map:
             scale_index: Allows a fixed value scale - colour indices
             scale_step_boundaries: Fixed scale step boundary indices
             significance_threshold: If an area's value is significant enough to be displayed
+            categorical: If the data are categorical
 
         """
         if var_col not in reports.data.columns:
@@ -76,19 +78,30 @@ class Map:
         logger.info(f"Setting choropleth column to {var_col} (displayed: {tooltip})")
 
         non_zero_choropleth_data = choropleth_data[choropleth_data != 0].dropna().sort_values()
-        if scale_step_boundaries is None:
-            quantiles = (0, 20, 40, 60, 80, 100)
-            scale_step_boundaries = [np.percentile(non_zero_choropleth_data, q) for q in quantiles]
         colour_map_id = "0"
-        self.map["colour_map"] = _output_colour_scale(
-            colour_map_id,
-            layer_name,
-            colours,
-            domain=(min(non_zero_choropleth_data), max(non_zero_choropleth_data)),
-            classes=scale_step_boundaries,
-        )
+        if categorical:
+            categories = [*non_zero_choropleth_data.drop_duplicates()]
+            self.map["colour_map"] = _output_colour_scale_categorical(
+                colour_map_id,
+                layer_name,
+                colours,
+                classes=categories,
+                legend_categories=categories,
+            )
+        else:
+            if scale_step_boundaries is None:
+                quantiles = (20, 40, 60, 80, 100)
+                scale_step_boundaries = np.unique(np.percentile(non_zero_choropleth_data, quantiles, interpolation="nearest")).tolist()
 
-        logger.info(f"Colour scale boundary values {scale_step_boundaries}")
+            self.map["colour_map"] = _output_colour_scale_ranges(
+                colour_map_id,
+                layer_name,
+                colours,
+                classes=scale_step_boundaries,
+                legend_ranges=[(scale_step_boundaries[i], scale_step_boundaries[i+1]) for i in range(len(scale_step_boundaries)-1)],
+            )
+
+            logger.info(f"Colour scale boundary values {scale_step_boundaries}")
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
         merged_data = geo_data.merge(choropleth_data, how="left", left_on="shape_codes", right_index=True).drop_duplicates()
@@ -408,11 +421,31 @@ def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) 
     """
 
 
-def _output_colour_scale(unique_id: str, legend_caption: str, colours: list[str], domain: tuple[int, int], classes: list[int]) -> str:
+def _output_colour_scale_categorical(
+    unique_id: str,
+    legend_caption: str,
+    colours: list[str],
+    classes: list[int],
+    legend_categories: list[int],
+) -> str:
     return f"""
     // Create colour scale
-    const colourScale{unique_id} = chroma.scale({colours}).domain({list(domain)}).classes({classes})
-    createLegend("{legend_caption}", colourScale{unique_id})
+    const colourScale{unique_id} = chroma.scale({colours}).classes({classes})
+    createLegend("{legend_caption}", {legend_categories}, colourScale{unique_id}, true)
+    """
+
+
+def _output_colour_scale_ranges(
+    unique_id: str,
+    legend_caption: str,
+    colours: list[str],
+    classes: list[int],
+    legend_ranges: list[tuple[int, int]],
+) -> str:
+    return f"""
+    // Create colour scale
+    const colourScale{unique_id} = chroma.scale({colours}).classes({classes})
+    createLegend("{legend_caption}", {[list(t) for t in legend_ranges]}, colourScale{unique_id}, false)
     """
 
 

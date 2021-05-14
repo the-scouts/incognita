@@ -55,23 +55,47 @@
     const layersControl = L.control.layers({"Open Street Map": baseMap}, {}, {sortLayers: true, hideSingleBase: true, collapsed: false}).addTo(map)
 
     // Legend init
-    const renderLegend = (title, colourScale, out) => {
-        let rules = "", labels = "<h4>" + title + "</h4>"
-        const breaks = colourScale.classes(), steps = breaks.length
-        for (let i = 0; i < steps; i++) {  // requires sorting small to large
-            const curr = breaks[i]
-            const next = breaks[i+1] || breaks[breaks.length-1] + 1 //plus step
-
-            labels += '<div id="leg-' + curr + '">' + curr + '–' + (next - 1) + '</div>' //minus step
+    const genLegendLabelsCategorical = (categories, labels, rules, colourScale) => {
+        for (const curr of categories) {
+            labels += '<div id="leg-' + curr + '">' + curr + '</div>'
             rules += '#leg-' + curr + ':before {background: ' + colourScale(curr).hex() + ';}'
         }
-        out.innerHTML = labels
-        document.querySelector('head').appendChild(document.createElement('style')).innerText = rules
-        return out
+        return [labels, rules]
     }
-    const createLegend = (title, colourScale) => {
+    const genLegendLabelsRanges = (ranges, labels, rules, colourScale) => {
+        const [finalStart, finalEnd] = ranges[ranges.length-1]
+        for (const [start, end] of ranges) {
+            const startCol = colourScale(start).hex()
+            if (start === end) {
+                labels += '<div id="leg-' + start + '">' + start + '</div>'
+            } else {
+                // The final element should include the end
+                const notLastItem = finalStart !== start || finalEnd !== end
+                const relation = notLastItem ? ' &le; &#119894; &lt; ' : ' &le; &#119894; &le; '
+                // Add the legend label
+                labels += '<div id="leg-' + start + '">' + start + relation + end + '</div>'
+                // only check colour equality if the start and end values are different
+                if (startCol !== colourScale(end-0.01).hex()) console.warn(`Range colours do not match! Start: ${start}, ${startCol}; End: ${end}, ${colourScale(end-0.01).hex()}`)
+            }
+            rules += '#leg-' + start + ':before {background: ' + startCol + ';}'
+        }
+        return [labels, rules]
+    }
+    const renderLegend = (title, breaks, colourScale, outEl, categorical) => {
+        // breaks is an array of tuples (start, end) if categorical is true, otherwise scalars
+        let rules = "", labels = "<h4>" + title + "</h4>"
+        if (categorical) {
+            [labels, rules] = genLegendLabelsCategorical(breaks, labels, rules, colourScale)
+        } else {
+            [labels, rules] = genLegendLabelsRanges(breaks, labels, rules, colourScale)
+        }
+        outEl.innerHTML = labels
+        document.querySelector('head').appendChild(document.createElement('style')).innerText = rules
+        return outEl
+    }
+    const createLegend = (title, breaks, colourScale, categorical) => {
         const legend = L.control({position: 'topright'})
-        legend.onAdd = _map => renderLegend(title, colourScale, L.DomUtil.create('div', 'info legend'))
+        legend.onAdd = _map => renderLegend(title, breaks, colourScale, L.DomUtil.create('div', 'info legend'), categorical)
         return legend.addTo(map)
     }
 
@@ -132,15 +156,10 @@
         return shapeLayer
     }
     /*
-     * TODO better legend function.
-     * TODO - maybe pass an array of intervals,
-     * TODO - maybe add a categorical flag,
-     * TODO - maybe use other colour scale method (limits/colours),
-     * TODO - maybe add a breaks -> intervals decomposition func
      * TODO - map_labels? (e.g. folium.TileLayer("CartoDB positron onlylabels", overlay=True))
      * TODO - layer show/hide by default
      * TODO - marker cluster/feature group
-     * TODO - use markerObj.col  // marker colour
+     * TODO - use markerObj.col // marker colour
      */
 
     // python HTML entry point ¦functions
