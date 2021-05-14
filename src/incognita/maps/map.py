@@ -72,7 +72,6 @@ class Map:
 
         colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
         choropleth_data = reports.data[["codes", var_col]].set_index("codes")[var_col]  # contains shapefile paths, and labels for region codes and names
-        geo_data = _load_boundary(reports)
 
         # Set value col properties to use for a particular boundary
         logger.info(f"Setting choropleth column to {var_col} (displayed: {tooltip})")
@@ -104,15 +103,11 @@ class Map:
             logger.info(f"Colour scale boundary values {scale_step_boundaries}")
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
-        merged_data = geo_data.merge(choropleth_data, how="left", left_on="shape_codes", right_index=True).drop_duplicates()
-        if len(merged_data.index) == 0:
-            logger.error("Data unsuccessfully merged resulting in zero records")
-            raise RuntimeError("Data unsuccessfully merged resulting in zero records")
 
         # TODO layer show/hide by default
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
-            colour_data=merged_data.set_index("shape_codes")[var_col].to_dict(),
+            colour_data=choropleth_data.to_dict(),
             api_base="https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Lower_Layer_Super_Output_Areas_DEC_2011_EW_BSC_V3/FeatureServer/0/query?",
             query_params={"outFields": "LSOA11CD,LSOA11NM"},  # TODO where do I get this value from?
             colour_scale_id=colour_map_id,
