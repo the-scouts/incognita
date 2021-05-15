@@ -15,10 +15,10 @@ from incognita.data import scout_census
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
+from incognita.logger import set_up_logger
 from incognita.preprocessing import census_merge_data
 from incognita.utility import config
 from incognita.utility import utility
-from incognita.logger import set_up_logger
 
 if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory
@@ -103,6 +103,14 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "clean_postcode", "Young_Leader_Unit"]
     data[cols_categorical] = data[cols_categorical].astype("category")
 
+    # Fix ONS errors (https://github.com/mysociety/mapit/issues/341)
+    data["osward"] = data["osward"].replace("E05006336", "E05012387")
+
+    # Tidy categories
+    for field, dtype in data.dtypes.items():
+        if str(dtype) == "category":
+            data[field] = data[field].cat.remove_unused_categories()
+
     return data
 
 
@@ -117,7 +125,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
     """
     raw_extract_path = config.SETTINGS.census_extract.original
-    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
+    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields-new"
     error_output_path = config.SETTINGS.folders.output / "error_file.csv"
 
     valid_postcode_label = scout_census.column_labels.VALID_POSTCODE

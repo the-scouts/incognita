@@ -279,7 +279,7 @@ def try_fix_invalid_postcodes(census_data: pd.DataFrame, merge_test_column: pd.S
     logger.info("Fill invalid section postcodes with valid section postcodes from 2019")
     section_records, valid_postcode_lookup = _create_helper_tables(census_data, section_types_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
     fisp_args = section_id_label, 2, valid_postcode_lookup, year_label, clean_postcode_label
-    census_data = _run_fixer(census_data,  section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
+    census_data = _run_fixer(census_data, section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
     del section_records, valid_postcode_lookup, fisp_args
 
     logger.info("Fill invalid group-section postcodes with valid postcodes from same group")
