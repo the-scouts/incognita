@@ -69,8 +69,7 @@ class ScoutData:
         # record a class-wide start time
         self.start_time = time.time()
 
-        now = time.localtime()
-        logger.info(f"Starting at {now.tm_hour}:{now.tm_min}:{now.tm_sec}")
+        logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
 
         logger.info("Loading Scout Census data")
         # Loads Scout Census Data from disk. We assume no custom path has been
