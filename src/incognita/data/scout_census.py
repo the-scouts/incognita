@@ -3,9 +3,6 @@ from typing import Optional
 import pydantic
 
 
-# in 2021 Census but not in column_labels:
-# ['eastings', 'northings', 'IMD', 'Yls', 'Leaders', 'AssistantLeaders', 'SectAssistants', 'OtherAdults', 'ScoutsOfTheWorldAward', 'Eligible4SOWA']
-
 class ColumnLabelsID(pydantic.BaseModel):
     OBJECT: str = "Object_ID"
     COMPASS: str = "compass"
@@ -131,6 +128,8 @@ class ColumnLabels(pydantic.BaseModel):
     sections: ColumnLabelsSections = ColumnLabelsSections()
 
 
+# in 2021 Census but not in column_labels:
+# ['eastings', 'northings', 'IMD', 'Yls', 'Leaders', 'AssistantLeaders', 'SectAssistants', 'OtherAdults', 'ScoutsOfTheWorldAward', 'Eligible4SOWA']
 column_labels = ColumnLabels()  # holds strings of all census csv column headings, structured to help access
 DEFAULT_VALUE = "error"  # holds value for NaN values
 UNIT_LEVEL_GROUP = "Group"  # The value in column_labels.sections.<level> that denote a group
