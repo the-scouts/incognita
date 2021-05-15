@@ -10,7 +10,7 @@ from incognita.geographies.geography import Geography
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import utility
-from incognita.utility.utility import time_function
+from incognita.utility.timing import time_function
 
 if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory

@@ -11,7 +11,7 @@ from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import root
 from incognita.utility import deciles
-from incognita.utility.utility import time_function
+from incognita.utility.timing import time_function
 
 ons_postcode_directory_stub = ons_pd.ONSPostcodeDirectory(
     fields=set(),
