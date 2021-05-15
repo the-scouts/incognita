@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import pydantic
 import pydantic.validators
 import toml
 
-from incognita.data.ons_pd import Boundary
 from incognita.utility import root
 
 if TYPE_CHECKING:
@@ -70,6 +70,47 @@ class FolderPaths(pydantic.BaseModel):
     national_statistical: ProjectDirectoryPath  # Folder for national statistical data (age profiles etc)
     boundaries: ProjectDirectoryPath  # Folder with all shapefiles
     output: ProjectDirectoryPath  # Folder for generated files
+
+
+class BoundaryCodes(pydantic.BaseModel):
+    path: Path
+    key: str
+    key_type: str  # TODO literal dtypes
+    name: str
+
+
+class BoundaryShapeFile(pydantic.BaseModel):
+    path: Path
+    key: str
+    name: Optional[str]
+
+
+class BoundaryAgeProfile(pydantic.BaseModel):
+    path: Path
+    key: str
+    pivot_key: Optional[str] = None
+
+
+class BoundaryApi(pydantic.BaseModel):
+    url: str
+    query_params: dict[str, str]
+    codes_col: str
+    names_col: str
+
+    @pydantic.validator("query_params", pre=True)
+    def str_to_json(cls, v: str, values: dict[str, object]) -> dict[str, str]:
+        try:
+            return json.loads(v)
+        except Exception:
+            raise ValueError("De-serialising query_params failed")
+
+
+class Boundary(pydantic.BaseModel):
+    key: str  # Column name in the ONS postcode directory file
+    codes: BoundaryCodes
+    shapefile: Optional[BoundaryShapeFile] = None
+    age_profile: Optional[BoundaryAgeProfile] = None
+    api: Optional[BoundaryApi] = None
 
 
 class ConfigModel(pydantic.BaseModel):
