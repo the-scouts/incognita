@@ -6,7 +6,7 @@ import pandas as pd
 
 from incognita.data import scout_census
 from incognita.logger import logger
-from incognita.utility import utility
+from incognita.utility import report_io
 
 if TYPE_CHECKING:
     from incognita.data.scout_data import ScoutData
@@ -20,7 +20,7 @@ class HistorySummary:
         logger.info("Beginning group_history_summary")
         report = self._history_summary(years, "Group ID", scout_census.column_labels.id.GROUP, unit_type="Group")
         if report_name:
-            utility.save_report(report, report_name)
+            report_io.save_report(report, report_name)
         return report
 
     def section_history_summary(self, years: list, report_name: str = None) -> pd.DataFrame:
@@ -28,7 +28,7 @@ class HistorySummary:
         logger.info("Beginning section_history_summary")
         report = self._history_summary(years, "compass ID", "compass")
         if report_name:
-            utility.save_report(report, report_name)
+            report_io.save_report(report, report_name)
         return report
 
     def _history_summary(self, years: list, id_name: str, census_col: str, unit_type: str = None) -> pd.DataFrame:
@@ -449,5 +449,5 @@ class HistorySummary:
 
         output_data.reset_index(drop=True, inplace=True)
         if report_name:
-            utility.save_report(output_data, report_name)
+            report_io.save_report(output_data, report_name)
         return output_data

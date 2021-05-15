@@ -9,7 +9,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
 from incognita.utility import config
-from incognita.utility import utility
+from incognita.utility import report_io
 from incognita.utility.timing import time_function
 
 if TYPE_CHECKING:
@@ -262,7 +262,7 @@ class Reports:
         self.boundary_report = output_data
 
         if report_name:
-            utility.save_report(output_data, report_name)
+            report_io.save_report(output_data, report_name)
 
         return output_data
 
@@ -345,7 +345,7 @@ class Reports:
         # TODO check edge cases - 0 population and 0 or more scouts
 
         if report_name:
-            utility.save_report(uptake_report, report_name)
+            report_io.save_report(uptake_report, report_name)
 
         self.boundary_report = uptake_report
         return uptake_report
