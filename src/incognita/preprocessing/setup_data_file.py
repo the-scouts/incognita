@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from incognita.data import scout_census
-from incognita.data.ons_pd_may_20 import ons_postcode_directory_may_20
+from incognita.data.ons_pd import ons_postcode_directory_may_20
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.preprocessing import census_merge_data
