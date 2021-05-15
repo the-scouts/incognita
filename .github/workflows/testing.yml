@@ -60,7 +60,7 @@ jobs:
             ~/conda_pkgs_dir
             /opt/hostedtoolcache/Mambaforge
           key:
-            ${{ runner.os }}-mambaforge-${{ hashFiles('environment.yml') }}
+            ${{ runner.os }}-mambaforge-${{ hashFiles('environment-test.yml') }}
           restore-keys: |
             ${{ runner.os }}-mambaforge-
 
@@ -68,7 +68,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@master
         with:
           activate-environment: incognita
-          environment-file: environment.yml
+          environment-file: environment-test.yml
           channel-priority: strict
           # Mamba:
           miniforge-variant: Mambaforge

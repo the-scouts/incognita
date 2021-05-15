@@ -1,8 +1,5 @@
-from pathlib import Path
 from typing import Optional
 
-import pandas as pd
-from pyarrow import feather
 import pydantic
 
 
@@ -141,52 +138,3 @@ SECTIONS_DISTRICT: set[str] = {name for name, model in column_labels.sections if
 # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
 TYPES_GROUP: set[str] = {model.type for name, model in column_labels.sections if model.level == "Group"}
 TYPES_DISTRICT: set[str] = {model.type for name, model in column_labels.sections if model.level == "District"}
-
-
-class ScoutCensus:
-    """Holds and accesses census data from a given file.
-
-    Data is read from passed path, and imported with specified data types.
-    Attributes are added to the class to aid accessing data in a structured way.
-    All column labels from the Census report are set in column_labels and can be
-        changed to reflect the input census file.
-
-    Args:
-        census_file_path: path to input file with Census data.
-
-    """
-
-    def __init__(self, census_file_path: Path, load_data: bool = True):
-        if not load_data:
-            self.data = pd.DataFrame()
-            return
-
-        # fmt: off
-        cols_bool = ["postcode_is_valid"]
-        cols_int_16 = [
-            "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Beavers_total", "Cubs_m", "Cubs_total",
-            "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total", "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c",
-            "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults", "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards",
-            "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver",
-            "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond",
-            "Eligible4QSA", "ScoutsOfTheWorldAward", "Eligible4SOWA", "imd_decile"
-        ]
-        cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
-        cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "clean_postcode", "Young_Leader_Unit"]
-        # fmt: on
-
-        # TODO add yp total columns, clean postcode/valid postcode, Asst leaders, SOWA/SOWA eligible, ONS PD fields
-        data_values_sections = (
-            {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
-        )
-        if census_file_path.suffix == ".csv":
-            self.data = pd.read_csv(census_file_path, dtype=data_values_sections, encoding="utf-8")
-        elif census_file_path.suffix == ".feather":
-            self.data = feather.read_feather(census_file_path)
-            self.data[cols_bool] = self.data[cols_bool].astype(bool)
-            self.data[cols_int_16] = self.data[cols_int_16].astype("Int16")
-            self.data[cols_int_32] = self.data[cols_int_32].astype("Int32")
-            self.data[cols_categorical] = self.data[cols_categorical].astype("category")
-            # ['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'lat', 'long'] not dtyped
-        else:
-            raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")

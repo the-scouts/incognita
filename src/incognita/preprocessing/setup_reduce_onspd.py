@@ -5,7 +5,8 @@ from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.utility import config
-from incognita.utility import utility
+from incognita.utility import constants
+from incognita.utility import deciles
 
 if __name__ == "__main__":
     set_up_logger()
@@ -22,7 +23,7 @@ if __name__ == "__main__":
     logger.info("DEBUG - copied original data")
 
     # Add IMD Decile
-    data["imd_decile"] = utility.calc_imd_decile(data["imd"], data["ctry"], ons_postcode_directory_may_19).astype("UInt8")
+    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ons_postcode_directory_may_19).astype("UInt8")
     logger.info("IMD Deciles added")
 
     # # TODO Needed?:
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     reduced_data_with_geo = gpd.GeoDataFrame(
         reduced_data_with_coords,
         geometry=gpd.points_from_xy(reduced_data_with_coords.long, reduced_data_with_coords.lat),
-        crs=utility.WGS_84,
+        crs=constants.WGS_84,
     ).drop(columns=["lat", "long"])
     del reduced_data_with_coords
     reduced_data_with_geo.to_feather(config.SETTINGS.ons_pd.minified)

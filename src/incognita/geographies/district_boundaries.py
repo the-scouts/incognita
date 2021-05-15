@@ -7,7 +7,7 @@ import shapely.ops
 from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
-from incognita.utility import utility
+from incognita.utility import constants
 
 
 class DistrictBoundaries:
@@ -38,11 +38,11 @@ class DistrictBoundaries:
         all_locations.drop_duplicates(subset=["lat", "long"], inplace=True)
 
         # Uses the lat and long co-ordinates from above to create a GeoDataFrame
-        all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat), crs=utility.WGS_84)
+        all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat), crs=constants.WGS_84)
 
         # Converts the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        all_points = all_points.to_crs(epsg=utility.BNG)
+        all_points = all_points.to_crs(epsg=constants.BNG)
         all_points.reset_index(inplace=True)
 
         logger.info(f"Found {len(all_points.index)} different Section points")
@@ -71,7 +71,7 @@ class DistrictBoundaries:
 
         # Create the GeoDataFrame that will form the GeoJSON
         output_columns = ["id", "name"]
-        output_gpd = gpd.GeoDataFrame(columns=output_columns, crs=utility.BNG)
+        output_gpd = gpd.GeoDataFrame(columns=output_columns, crs=constants.BNG)
         district_nu = 0
         for count, district in districts.iterrows():
             if str(district["D_ID"]) != "nan":
@@ -98,7 +98,7 @@ class DistrictBoundaries:
                 output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
 
         # Convert co-ordinates back to WGS84, which uses latitude and longitude
-        output_gpd = output_gpd.to_crs(epsg=utility.WGS_84)
+        output_gpd = output_gpd.to_crs(epsg=constants.WGS_84)
         output_gpd.reset_index(drop=True, inplace=True)
 
         logger.debug(f"output gpd\n{output_gpd}")

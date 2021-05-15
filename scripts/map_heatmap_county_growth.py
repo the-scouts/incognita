@@ -9,7 +9,7 @@ This script has no command line options.
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
-from incognita.utility import utility
+from incognita.utility import report_io
 
 if __name__ == "__main__":
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         / cty_reports.data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1)
         - 1
     ) * 100
-    utility.save_report(cty_reports.data, f"{location_name} - Counties with change")
+    report_io.save_report(cty_reports.data, f"{location_name} - Counties with change")
 
     # Create map object
     mapper = Map(map_name=f"{location_name} uptake map")

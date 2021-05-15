@@ -5,53 +5,38 @@ import time
 
 import geopandas as gpd
 import pandas as pd
+from pyarrow import feather
 
-from incognita.data import scout_census
+from incognita.data.scout_census import column_labels
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.logger import logger
 from incognita.utility import config
-from incognita.utility import utility
+from incognita.utility import filter
+from incognita.utility import constants
 
 
 class ScoutData:
     """Provides access to manipulate and process data."""
 
-    @property
-    def filterable_columns(self) -> set[str]:
-        """Returns ID and name columns of the dataset"""
-        id_cols = scout_census.column_labels.id.__dict__.values()
-        name_cols = scout_census.column_labels.name.__dict__.values()
-        return {*id_cols, *name_cols}
-
-    # TODO: Add column name properties (e.g. scout_census.column_labels.VALID_POSTCODE
-
-    def __init__(self, merged_csv: bool = True, census_path: Path = None, load_census_data: bool = True):
+    def __init__(self, merged_csv: bool = True, load_census_data: bool = True):
         # record a class-wide start time
         self.start_time = time.time()
+        logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
 
-        now = time.localtime()
-        logger.info(f"Starting at {now.tm_hour}:{now.tm_min}:{now.tm_sec}")
-
+        # Loads Scout Census Data from disk.
         logger.info("Loading Scout Census data")
-        # Loads Scout Census Data from a path to a .csv file that contains Scout Census data
-        # We assume no custom path has been passed, but allow for one to be used
-        census_path = config.SETTINGS.census_extract.merged if census_path is None else census_path
-        self.scout_census: scout_census.ScoutCensus = scout_census.ScoutCensus(census_path, load_data=load_census_data)
-        self.census_data: pd.DataFrame = self.scout_census.data
-        self.points_data: gpd.GeoDataFrame = gpd.GeoDataFrame()
+        self.census_data = feather.read_feather(config.SETTINGS.census_extract.merged) if load_census_data else pd.DataFrame()
         logger.info(f"Loading Scout Census data finished, {time.time() - self.start_time:.2f} seconds elapsed.")
+        self.points_data = gpd.GeoDataFrame()
 
-        if merged_csv:
-            logger.info("Loading ONS data")
-            start_time = time.time()
+        # Check if the data has been merged with the ONS postcode directory
+        if merged_csv and column_labels.VALID_POSTCODE not in self.census_data.columns:
+            raise ValueError(f"The ScoutCensus file has no ONS data, because it doesn't have a {column_labels.VALID_POSTCODE} column")
+        self.ons_pd = ons_postcode_directory_may_19
+        logger.info(f"Loaded {self.ons_pd.PUBLICATION_DATE} ONS data!")
 
-            # Check if the data has been merged with the ONS postcode directory
-            if scout_census.column_labels.VALID_POSTCODE in self.census_data.columns:
-                self.ons_pd = ons_postcode_directory_may_19
-            else:
-                raise Exception(f"The ScoutCensus file has no ONS data, because it doesn't have a {scout_census.column_labels.VALID_POSTCODE} column")
-
-            logger.info(f"Loading {self.ons_pd.PUBLICATION_DATE} ONS data finished, {time.time() - start_time:.2f} seconds elapsed.")
+        # Filterable columns are the ID and name columns of the dataset
+        self.filterable_columns: set[str] = {*column_labels.id.__dict__.values(), *column_labels.name.__dict__.values()}
 
     def filter_records(self, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
@@ -63,7 +48,7 @@ class ScoutData:
             exclusion_analysis:
 
         """
-        self.census_data = utility.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
+        self.census_data = filter.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:
@@ -78,7 +63,7 @@ class ScoutData:
 
         if self.points_data.empty:
             idx = pd.Series(self.census_data.index, name="object_index")
-            self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.census_data.long, self.census_data.lat), crs=utility.WGS_84)
+            self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.census_data.long, self.census_data.lat), crs=constants.WGS_84)
 
         if path is not None:
             all_shapes = gpd.read_file(path)
@@ -86,7 +71,7 @@ class ScoutData:
             all_shapes = gdf
         else:
             raise ValueError("A path to a shapefile or a GeoDataFrame must be passed")
-        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(epsg=utility.WGS_84)
+        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(epsg=constants.WGS_84)
 
         spatial_merged = gpd.sjoin(self.points_data, shapes, how="left", op="within").set_index("object_index")
         merged = self.census_data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)

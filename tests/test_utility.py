@@ -9,12 +9,12 @@ import toml
 from incognita.data import ons_pd
 from incognita.logger import logger
 from incognita.utility import config
+from incognita.utility import deciles
 from incognita.utility import root
-from incognita.utility import utility
-from incognita.utility.utility import time_function
+from incognita.utility.timing import time_function
 
 ons_postcode_directory_stub = ons_pd.ONSPostcodeDirectory(
-    fields=[],
+    fields=set(),
     index_column="",
     data_types={},
     PUBLICATION_DATE="",
@@ -32,7 +32,7 @@ def test_calc_imd_decile():
     data = {"row_1": [1, "E92000001", 32844], "row_2": [2, "W92000004", 1]}
     frame = pd.DataFrame.from_dict(data, orient="index", columns=["id", "ctry", "imd"])
 
-    imd_decile_data: pd.Series = utility.calc_imd_decile(frame["imd"], frame["ctry"], ons_postcode_directory_stub)
+    imd_decile_data: pd.Series = deciles.calc_imd_decile(frame["imd"], frame["ctry"], ons_postcode_directory_stub)
     predicted_result = pd.Series(data=[10, 1], index=["row_1", "row_2"])
 
     assert isinstance(imd_decile_data, pd.Series)
