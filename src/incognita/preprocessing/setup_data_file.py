@@ -126,7 +126,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
     """
     raw_extract_path = config.SETTINGS.census_extract.original
-    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields-new1"
+    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields-new"
     error_output_path = config.SETTINGS.folders.output / "error_file.csv"
 
     valid_postcode_label = scout_census.column_labels.VALID_POSTCODE

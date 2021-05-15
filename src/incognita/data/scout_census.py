@@ -138,4 +138,3 @@ SECTIONS_DISTRICT: set[str] = {name for name, model in column_labels.sections if
 # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
 TYPES_GROUP: set[str] = {model.type for name, model in column_labels.sections if model.level == "Group"}
 TYPES_DISTRICT: set[str] = {model.type for name, model in column_labels.sections if model.level == "District"}
-
