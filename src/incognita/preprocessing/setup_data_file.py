@@ -18,7 +18,7 @@ from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.preprocessing import census_merge_data
 from incognita.utility import config
-from incognita.utility import utility
+from incognita.utility import deciles
 
 if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory
@@ -96,7 +96,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     # fmt: on
 
     # Add IMD decile column
-    data["imd_decile"] = utility.calc_imd_decile(data["imd"], data["ctry"], ons_pd).astype("UInt8")
+    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ons_pd).astype("UInt8")
 
     # Set correct types
     data[cols_bool] = data[cols_bool].astype(bool)
