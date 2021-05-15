@@ -33,7 +33,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     """
     ons_fields_data_types = {
         "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
-        "int": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
+        "numeric": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
     }
 
     logger.debug("Initialising merge object")

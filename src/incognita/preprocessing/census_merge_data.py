@@ -107,7 +107,7 @@ def fill_unmerged_rows(census_data: pd.DataFrame, row_has_merged: str, fields_da
     """
     for field in fields_data_types["categorical"]:
         census_data.loc[census_data[row_has_merged] == 0, field] = scout_census.DEFAULT_VALUE
-    for field in fields_data_types["int"]:
+    for field in fields_data_types["numeric"]:
         census_data.loc[census_data[row_has_merged] == 0, field] = 0
 
     return census_data
