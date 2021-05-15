@@ -3,6 +3,9 @@ from typing import Optional
 import pydantic
 
 
+# in 2021 Census but not in column_labels:
+# ['eastings', 'northings', 'IMD', 'Yls', 'Leaders', 'AssistantLeaders', 'SectAssistants', 'OtherAdults', 'ScoutsOfTheWorldAward', 'Eligible4SOWA']
+
 class ColumnLabelsID(pydantic.BaseModel):
     OBJECT: str = "Object_ID"
     COMPASS: str = "compass"
