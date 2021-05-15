@@ -76,7 +76,6 @@ class ConfigModel(pydantic.BaseModel):
     census_extract: CensusPaths
     ons_pd: ONSPostcodeDirectoryPaths
     folders: FolderPaths
-    ons2019: dict[str, Boundary]
     ons2020: dict[str, Boundary]
     custom_boundaries: dict[str, Boundary]
 
@@ -87,7 +86,7 @@ def _create_settings(toml_string: dict) -> ConfigModel:
     for boundary in settings.custom_boundaries.values():
         if boundary.shapefile is not None and boundary.shapefile.path is not None:
             boundary.shapefile.path = settings.folders.boundaries / boundary.shapefile.path
-    for boundary in settings.ons2019.values():
+    for boundary in settings.ons2020.values():
         boundary.codes.path = settings.folders.ons_pd_names_codes / boundary.codes.path
         if boundary.shapefile is not None and boundary.shapefile.path is not None:
             boundary.shapefile.path = settings.folders.boundaries / boundary.shapefile.path

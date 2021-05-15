@@ -8,7 +8,7 @@ import pandas as pd
 from pyarrow import feather
 
 from incognita.data.scout_census import column_labels
-from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
+from incognita.data.ons_pd_may_20 import ons_postcode_directory_may_20
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import filter
@@ -32,7 +32,7 @@ class ScoutData:
         # Check if the data has been merged with the ONS postcode directory
         if merged_csv and column_labels.VALID_POSTCODE not in self.census_data.columns:
             raise ValueError(f"The ScoutCensus file has no ONS data, because it doesn't have a {column_labels.VALID_POSTCODE} column")
-        self.ons_pd = ons_postcode_directory_may_19
+        self.ons_pd = ons_postcode_directory_may_20
         logger.info(f"Loaded {self.ons_pd.PUBLICATION_DATE} ONS data!")
 
         # Filterable columns are the ID and name columns of the dataset
