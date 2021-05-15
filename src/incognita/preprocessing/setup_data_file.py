@@ -13,7 +13,7 @@ from incognita.data import scout_census
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
-from incognita.preprocessing.census_merge_data import CensusMergeData
+from incognita.preprocessing import census_merge_data
 from incognita.utility import config
 from incognita.utility import utility
 
@@ -37,10 +37,9 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     }
 
     logger.debug("Initialising merge object")
-    merge = CensusMergeData()
 
     logger.info("Cleaning the postcodes")
-    merge.clean_and_verify_postcode(data, scout_census.column_labels.POSTCODE)
+    census_merge_data.clean_and_verify_postcode(data, scout_census.column_labels.POSTCODE)
 
     logger.info(f"Loading ONS postcode data.")
     ons_pd_data = pd.read_csv(
@@ -54,17 +53,17 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     logger.info("Adding ONS postcode directory data to Census and outputting")
 
     # initially merge just Country column to test what postcodes can match
-    data = merge.merge_data(data, ons_pd_data["ctry"], "clean_postcode")
+    data = census_merge_data.merge_data(data, ons_pd_data["ctry"], "clean_postcode")
 
     # attempt to fix invalid postcodes
-    data = merge.try_fix_invalid_postcodes(data, ons_pd_data["ctry"])
+    data = census_merge_data.try_fix_invalid_postcodes(data, ons_pd_data["ctry"])
 
     # fully merge the data
-    data = merge.merge_data(data, ons_pd_data, "clean_postcode")
+    data = census_merge_data.merge_data(data, ons_pd_data, "clean_postcode")
 
     # fill unmerged rows with default values
     logger.info("filling unmerged rows")
-    data = merge.fill_unmerged_rows(data, scout_census.column_labels.VALID_POSTCODE, ons_fields_data_types)
+    data = census_merge_data.fill_unmerged_rows(data, scout_census.column_labels.VALID_POSTCODE, ons_fields_data_types)
 
     # Filter to useful columns
     # fmt: off
@@ -125,9 +124,10 @@ if __name__ == "__main__":
 
     # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
     scout_data.census_data[scout_census.column_labels.name.ITEM] = scout_data.census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")
+    # TODO can we remove this?
 
     # merge the census extract and ONS postcode directory, and save the data to file
-    data = merge_ons_postcode_directory(scout_data.census_data, ons_postcode_directory_may_19)
-    save_merged_data(data, ons_postcode_directory_may_19.PUBLICATION_DATE)
+    merged_data = merge_ons_postcode_directory(scout_data.census_data, ons_postcode_directory_may_19)
+    save_merged_data(merged_data, ons_postcode_directory_may_19.PUBLICATION_DATE)
 
     scout_data.close()
