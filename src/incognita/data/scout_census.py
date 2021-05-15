@@ -135,9 +135,9 @@ DEFAULT_VALUE = "error"  # holds value for NaN values
 UNIT_LEVEL_GROUP = "Group"  # The value in column_labels.sections.<level> that denote a group
 UNIT_LEVEL_DISTRICT = "District"  # The value in column_labels.sections.<level> that denote a district
 
-SECTIONS_GROUP: set[str] = {name for name, model in column_labels.sections if model.level == "Group"}
-SECTIONS_DISTRICT: set[str] = {name for name, model in column_labels.sections if model.level == "District"}
+SECTIONS_GROUP: set[str] = {"Beavers", "Cubs", "Scouts"}
+SECTIONS_DISTRICT: set[str] = {"Explorers", "Network"}
 
 # TODO: good collective name for Colonies, Packs, Troops, Units etc. Currently type.
-TYPES_GROUP: set[str] = {model.type for name, model in column_labels.sections if model.level == "Group"}
-TYPES_DISTRICT: set[str] = {model.type for name, model in column_labels.sections if model.level == "District"}
+TYPES_GROUP: set[str] = {"Colony", "Pack", "Troop"}
+TYPES_DISTRICT: set[str] = {"Network", "Unit"}
