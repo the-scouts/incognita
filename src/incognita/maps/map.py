@@ -288,7 +288,7 @@ class Map:
             filtered_data = scout_data.census_data
             section_types = {getattr(scout_census.column_labels.sections, single_section).type}
         else:
-            filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
+            filtered_data = scout_data.census_data.loc[scout_data.census_data["Census_ID"] == scout_data.census_data["Census_ID"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
         self.add_meeting_places_to_map(filtered_data, colour_key, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)

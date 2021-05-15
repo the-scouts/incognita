@@ -144,7 +144,7 @@ def clean_and_verify_postcode(census_data: pd.DataFrame, postcode_column: str) -
     census_data.insert(valid_postcode_index, valid_postcode_label, np.NaN)
 
 
-def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: int, valid_postcode_lookup, year_label, clean_postcode_label):
+def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: int, valid_postcode_lookup, census_id_label, clean_postcode_label):
     """Gets all records with ID from given column and index level, then clears the indexing
     Returns the first row's postcode. As the index is sorted, this will return the earliest correct year.
     TODO change to use modal result instead of first (If section has no valid postcodes, use most common
@@ -168,7 +168,7 @@ def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: 
 
         try:
             # get the first clean postcode from the year of the record or later
-            future_valid_postcode = valid_postcodes.query(f"{year_label} >= {row_object[year_label]}").reset_index(drop=True).iloc[0][clean_postcode_label]
+            future_valid_postcode = valid_postcodes.query(f"{census_id_label} >= {row_object[census_id_label]}").reset_index(drop=True).iloc[0][clean_postcode_label]
 
             # checks that the variable contains a postcode value
             if future_valid_postcode:
@@ -214,7 +214,7 @@ def _run_fixer(
     merge_test_column: pd.Series,
     fisp_args: TYPES_FISP_ARGS,
 ) -> pd.DataFrame:
-    # Index level: 0=District; 1=Group; 2=Section; 3=Year
+    # Index level: 0=District; 1=Group; 2=Section; 3=Census_ID
 
     valid_postcodes_start = data[valid_postcode_label].sum()
 
@@ -243,12 +243,12 @@ def _run_postcode_fix_step(
     district_id_label = scout_census.column_labels.id.DISTRICT
     clean_postcode_label = "clean_postcode"
     valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
-    year_label = scout_census.column_labels.YEAR
+    census_id_label = scout_census.column_labels.CENSUS_ID
 
     # Columns to return to the .apply function to reduce memory usage
     # fmt: off
     fields_for_postcode_lookup = [
-        valid_postcode_label, clean_postcode_label, year_label,
+        valid_postcode_label, clean_postcode_label, census_id_label,
         # Add to to items below if a new column is used in the fix process
         section_id_label,
         group_id_label,
@@ -258,7 +258,7 @@ def _run_postcode_fix_step(
 
     logger.info(f"Fill invalid {invalid_type} postcodes with valid section postcodes from {fill_from}")
     section_records, valid_postcode_lookup = _create_helper_tables(census_data, entity_type_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
-    fisp_args: TYPES_FISP_ARGS = column_label, index_level, valid_postcode_lookup, year_label, clean_postcode_label
+    fisp_args: TYPES_FISP_ARGS = column_label, index_level, valid_postcode_lookup, census_id_label, clean_postcode_label
     census_data = _run_fixer(census_data, section_records, valid_postcode_label, merge_test_column, fisp_args)
     return census_data
 
@@ -290,7 +290,7 @@ def try_fix_invalid_postcodes(census_data: pd.DataFrame, merge_test_column: pd.S
     group_id_label = scout_census.column_labels.id.GROUP
     district_id_label = scout_census.column_labels.id.DISTRICT
     clean_postcode_label = "clean_postcode"
-    year_label = scout_census.column_labels.YEAR
+    census_id_label = scout_census.column_labels.CENSUS_ID
 
     # Lists of entity types to match against in constructing section records tables
     group_section_types_list = scout_census.TYPES_GROUP
@@ -299,7 +299,7 @@ def try_fix_invalid_postcodes(census_data: pd.DataFrame, merge_test_column: pd.S
     pre_2017_types_list = {"Group", "District"}
 
     # Columns to use in constructing the MultiIndex. Larger groups go first towards smaller
-    index_cols = [district_id_label, group_id_label, section_id_label, year_label]
+    index_cols = [district_id_label, group_id_label, section_id_label, census_id_label]
 
     # Sets a MultiIndex on the data table to enable fast searching and querying for data
     census_data = census_data.set_index(index_cols, drop=False)

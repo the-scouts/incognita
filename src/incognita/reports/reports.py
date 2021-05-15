@@ -139,11 +139,11 @@ class Reports:
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
         logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
 
-        years = sorted(set(self.scout_data.census_data["Year"].dropna()))
-        if len(years) > 1:
+        census_dates = sorted(set(self.scout_data.census_data["Census Date"].dropna()))
+        if len(census_dates) > 1:
             if not historical:
-                raise ValueError(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
-            logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
+                raise ValueError(f"Historical option not selected, but multiple censuses selected ({census_dates[0]} - {census_dates[-1]})")
+            logger.info(f"Historical analysis from {census_dates[0]} to {census_dates[-1]}")
 
         sections_model = scout_census.column_labels.sections
 
@@ -181,7 +181,7 @@ class Reports:
                 metric_cols += ["Waiting List"]
             if opt_adult_numbers:
                 metric_cols += ["Adults"]
-            agg = self.scout_data.census_data.groupby([geog_name, "Year"], dropna=False)[metric_cols].sum().unstack().sort_index()
+            agg = self.scout_data.census_data.groupby([geog_name, "Census_ID"], dropna=False)[metric_cols].sum().unstack().sort_index()
             agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
@@ -328,19 +328,19 @@ class Reports:
             uptake_report = self.boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
-        years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values()
+        census_ids = self.scout_data.census_data["Census_ID"].drop_duplicates().dropna().sort_values()
 
         # add uptake data
-        for year in years:
+        for census_id in census_ids:
             # clip here as unexpectedly large values throw off the scale bars.
             # TODO normalise unexpectedly large values so that we don't need to clip
             for section in Reports.SECTION_AGES.keys():
-                uptake_section = 100 * uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
+                uptake_section = 100 * uptake_report[f"{section}-{census_id}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
-                uptake_report[f"%-{section}-{year}"] = uptake_section.clip(upper=max_value)
-            uptake_all = 100 * uptake_report[f"All-{year}"] / uptake_report[f"Pop_All"]
+                uptake_report[f"%-{section}-{census_id}"] = uptake_section.clip(upper=max_value)
+            uptake_all = 100 * uptake_report[f"All-{census_id}"] / uptake_report[f"Pop_All"]
             max_value = uptake_all.quantile(0.975)
-            uptake_report[f"%-All-{year}"] = uptake_all.clip(upper=max_value)
+            uptake_report[f"%-All-{census_id}"] = uptake_all.clip(upper=max_value)
             # TODO explain 97.5th percentile clip
         # TODO check edge cases - 0 population and 0 or more scouts
 

@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     # setup data
     scout_data = ScoutData()
-    scout_data.filter_records("Year", {2020})
+    scout_data.filter_records("Census_ID", {20})
     scout_data.filter_records("X_name", countries)
     scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})
     scout_data.filter_records("ctry", country_codes)

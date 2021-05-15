@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from incognita.data import scout_census
-from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
+from incognita.data.ons_pd_may_20 import ons_postcode_directory_may_20
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.preprocessing import census_merge_data
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 # fmt: off
 cols_bool = ["postcode_is_valid"]
 cols_int_16 = [
-    "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Beavers_total", "Cubs_m", "Cubs_total",
+    "Census_ID", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Beavers_total", "Cubs_m", "Cubs_total",
     "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total", "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c",
     "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults", "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards",
     "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver",
@@ -62,7 +62,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
         config.SETTINGS.ons_pd.full,
         index_col=ons_pd.index_column,
         dtype=ons_pd.data_types,
-        usecols=[*ons_pd.fields],
+        usecols=[f for f in ons_pd.fields if f != "imd_decile"],  # imd_decile isn't defined in the raw file
         encoding="utf-8",
     )
 
@@ -85,7 +85,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     # fmt: off
     data = data[[
         "Object_ID", "compass", "type", "name", "G_ID", "G_name", "D_ID", "D_name", "C_ID", "C_name", "R_ID", "R_name", "X_ID", "X_name",
-        "postcode", "clean_postcode", "postcode_is_valid", "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Young_Leader_Unit",
+        "postcode", "clean_postcode", "postcode_is_valid", "Census_ID", "Census Date", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Young_Leader_Unit",
         "Beavers_f", "Beavers_m", "Beavers_total", "Cubs_f", "Cubs_m", "Cubs_total", "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total",
         "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults",
         "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards",
@@ -103,9 +103,10 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
     data[cols_int_16] = data[cols_int_16].astype("Int16")
     data[cols_int_32] = data[cols_int_32].astype("Int32")
     data[cols_categorical] = data[cols_categorical].astype("category")
+    census_data["Census Date"] = pd.to_datetime(census_data["Census Date"], format="%d/%m/%Y").astype(str)  # ISO format
 
-    # Fix ONS errors (https://github.com/mysociety/mapit/issues/341)
-    data["osward"] = data["osward"].replace("E05006336", "E05012387")
+    # # Fix ONS errors (https://github.com/mysociety/mapit/issues/341)
+    # data["osward"] = data["osward"].replace("E05006336", "E05012387")
 
     # Tidy categories
     for field, dtype in data.dtypes.items():
@@ -126,7 +127,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
     """
     raw_extract_path = config.SETTINGS.census_extract.original
-    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields-new"
+    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields"
     error_output_path = config.SETTINGS.folders.output / "error_file.csv"
 
     valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
@@ -135,7 +136,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
     compass_id_label = scout_census.column_labels.id.COMPASS
 
     # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
-    error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "Year"]
+    error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "Census Date"]
     data.loc[data[valid_postcode_label] == 0, error_output_fields].to_csv(error_output_path, index=False, encoding="utf-8-sig")
 
     # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
@@ -163,7 +164,7 @@ if __name__ == "__main__":
     # TODO can we remove this?
 
     # merge the census extract and ONS postcode directory, and save the data to file
-    merged_data = merge_ons_postcode_directory(census_data, ons_postcode_directory_may_19)
-    save_merged_data(merged_data, ons_postcode_directory_may_19.PUBLICATION_DATE)
+    merged_data = merge_ons_postcode_directory(census_data, ons_postcode_directory_may_20)
+    save_merged_data(merged_data, ons_postcode_directory_may_20.PUBLICATION_DATE)
 
     logger.info(f"Script finished, {time.time() - start_time:.2f} seconds elapsed.")

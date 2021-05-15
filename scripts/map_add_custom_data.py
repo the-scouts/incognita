@@ -6,10 +6,10 @@ from incognita.utility import config
 if __name__ == "__main__":
     county_name = "Central Yorkshire"
     la_code = "E08000035"  # Leeds LA code
-    year = 2020
+    census_id = 20
 
     scout_data = ScoutData()
-    scout_data.filter_records("Year", {year})
+    scout_data.filter_records("Census_ID", {census_id})
     scout_data.filter_records("oslaua", {la_code})
     scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     mapper = Map(map_name="Leeds")
 
     # Plot
-    mapper.add_areas(f"Beavers-{year}", f"Beavers {year}", "# Beavers", reports, show=True)
+    mapper.add_areas(f"Beavers-{census_id}", f"Beavers {census_id}", "# Beavers", reports, show=True)
     mapper.add_custom_data(
         config.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
         "Primary Schools",

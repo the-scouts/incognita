@@ -1,16 +1,16 @@
 [census_extract]
-original = "data/Scout Census Data/Census 2020 Extract (1).csv"
-merged = "data/Scout Census Data/Census 2020 Extract (1) with May 2019 fields-new.feather"
+original = "data/Scout Census Data/Census 2021-01 Extract (1).csv"
+merged = "data/Scout Census Data/Census 2021-01 Extract (1) with May 2020 fields.feather"
 
 [ons_pd]
-full = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK.csv"
-reduced = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK reduced counties.feather"
-minified = "data/ONSPD_MAY_2019_UK/Data/ONSPD_MAY_2019_UK-minified-old.feather"
-reduced_nystest = "data/ons_pd_with_nys2.csv"
+full = "data/ONSPD_MAY_2020_UK/Data/ONSPD_MAY_2020_UK.csv"
+reduced = "data/ONSPD_MAY_2020_UK/Data/ONSPD_MAY_2020_UK - reduced.feather"
+minified = "data/ONSPD_MAY_2020_UK/Data/ONSPD_MAY_2020_UK - minified.feather"
+#reduced_nystest = "data/ons_pd_with_nys2.csv"
 
 [folders]
 # Folder within the ONS Postcode Directory archive holding names and codes files
-ons_pd_names_codes = "data/ONSPD_MAY_2019_UK/Documents/"
+ons_pd_names_codes = "data/ONSPD_MAY_2020_UK/Documents/"
 # Folder for national statistical data (age profiles etc)
 national_statistical = "data/National Statistical data/"
 # Folder with all shapefiles
@@ -18,68 +18,68 @@ boundaries = "data/Boundary shape files/"
 # Folder for generated files
 output = "Output/"
 
-[ons2019."Local Authority"]
-# https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2019-boundaries-uk-buc
+[ons2020."Local Authority"]
+# https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2020-uk-buc
 key = "oslaua"  # Local Authority Districts
 
-codes.path = "LA_UA names and codes UK as at 12_19.csv"
-codes.key = "LAD19CD"
+codes.path = "LA_UA names and codes UK as at 04_20.csv"
+codes.key = "LAD20CD"
 codes.key_type = "string"
-codes.name = "LAD19NM"
+codes.name = "LAD20NM"
 
-shapefile.path = "Local_Authority_Districts__December_2019__Boundaries_UK_BUC/Local_Authority_Districts__December_2019__Boundaries_UK_BUC.shp"
-shapefile.key = "lad19cd"
-shapefile.name = "lad19nm"
+shapefile.path = "Local_Authority_Districts_(December_2020)_UK_BUC/Local_Authority_Districts_(December_2020)_UK_BUC.shp"
+shapefile.key = "LAD20CD"
+shapefile.name = "LAD20NM"
 
 age_profile.path = "lad_by_age.csv"
 age_profile.key = "Code"
 
-api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Administrative_Boundaries/Local_Authority_Districts_December_2019_Boundaries_UK_BUC/MapServer/0/query?"
-api.query_params = '{"outFields": "lad19cd,lad19nm"}'
-api.codes_col = "lad19cd"
-api.names_col = "lad19nm"
+api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_December_2020_UK_BUC/FeatureServer/0/query?"
+api.query_params = '{"outFields": "LAD20CD,LAD20NM"}'
+api.codes_col = "LAD20CD"
+api.names_col = "LAD20NM"
 
-[ons2019."County (LA)"]
-# https://geoportal.statistics.gov.uk/datasets/counties-and-unitary-authorities-december-2019-boundaries-uk-bgc
+[ons2020."County (LA)"]
+# https://geoportal.statistics.gov.uk/datasets/counties-and-unitary-authorities-december-2020-uk-buc
 key = "oslaua"  # Counties
 
-codes.path = "LA_UA names and codes UK as at 12_19.csv"
-codes.key = "LAD19CD"
+codes.path = "LA_UA names and codes UK as at 04_20.csv"
+codes.key = "LAD20CD"
 codes.key_type = "string"
-codes.name = "LAD19NM"
+codes.name = "LAD20NM"
 
-shapefile.path = "Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK/Counties_and_Unitary_Authorities_December_2017_Generalised_Clipped_Boundaries_in_UK.shp"
-shapefile.key = "ctyua17cd"
-shapefile.name = "ctyua17nm"
+shapefile.path = "Counties_and_Unitary_Authorities_(December_2020)_UK_BUC/Counties_and_Unitary_Authorities_(December_2020)_UK_BUC.shp"
+shapefile.key = "CTYUA20CD"
+shapefile.name = "CTYUA20NM"
 
-api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Administrative_Boundaries/Counties_and_Unitary_Authorities_December_2019_Boundaries_UK_BGC2/MapServer/0/query?"
-api.query_params = '{"outFields": "ctyua19cd,ctyua19nm"}'
-api.codes_col = "ctyua19cd"
-api.names_col = "ctyua19nm"
+api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Counties_and_Unitary_Authorities_December_2020_UK_BUC_V2/FeatureServer/0/query?"
+api.query_params = '{"outFields": "CTYUA20CD,CTYUA20NM"}'
+api.codes_col = "CTYUA20CD"
+api.names_col = "CTYUA20NM"
 
-[ons2019."Ward"]
-# https://geoportal.statistics.gov.uk/datasets/wards-december-2020-uk-bgc-v2
+[ons2020."Ward"]
+# https://geoportal.statistics.gov.uk/datasets/wards-december-2020-uk-bsc-v2
 key = "osward"  # Council Wards
 
-codes.path = "Ward names and codes UK as at 05_19_NSPD.csv"
-codes.key = "WD19CD"
+codes.path = "Ward names and codes UK as at 04_20.csv"
+codes.key = "WD20CD"
 codes.key_type = "string"
-codes.name = "WD19NM"
+codes.name = "WD20NM"
 
-shapefile.path = "Wards_December_2019_Boundaries_UK_BGC/Wards_December_2019_Boundaries_UK_BGC.shp"
-shapefile.key = "WD19CD"
-shapefile.name = "WD19NM"
+shapefile.path = "Wards_(December_2020)_UK_BSC_V2/Wards_(December_2020)_UK_BSC_V2.shp"
+shapefile.key = "WD20CD"
+shapefile.name = "WD20NM"
 
 age_profile.path = "osward_by_age_mid_2018_population_may_2019_wards.csv"
 age_profile.key = "Ward Code"
 
-api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Wards_December_2020_UK_BGC_V3/FeatureServer/0/query?"
+api.url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Wards_December_2020_UK_BSC_V3/FeatureServer/0/query?"
 api.query_params = '{"outFields": "WD20CD,WD20NM"}'
 api.codes_col = "WD20CD"
 api.names_col = "WD20NM"
 
-[ons2019."Constituency"]
-# https://geoportal.statistics.gov.uk/datasets/westminster-parliamentary-constituencies-december-2019-boundaries-uk-bgc
+[ons2020."Constituency"]
+# https://geoportal.statistics.gov.uk/datasets/westminster-parliamentary-constituencies-december-2019-boundaries-uk-buc
 key = "pcon"  # Parliamentary Constituencies
 
 codes.path = "Westminster Parliamentary Constituency names and codes UK as at 12_14.csv"
@@ -87,19 +87,19 @@ codes.key = "PCON14CD"
 codes.key_type = "string"
 codes.name = "PCON14NM"
 
-shapefile.path = "Westminster_PCON_Dec_2017_Generalised_Clipped_UK/Westminster_Parliamentary_Constituencies_December_2017_Generalised_Clipped_Boundaries_in_the_UK.shp"
-shapefile.key = "pcon17cd"
-shapefile.name = "pcon17nm"
+shapefile.path = "Westminster_Parliamentary_Constituencies_(December_2019)_Boundaries_UK_BUC/Westminster_Parliamentary_Constituencies_(December_2019)_Boundaries_UK_BUC.shp"
+shapefile.key = "pcon19cd"
+shapefile.name = "pcon19nm"
 
 age_profile.path = "pcon_by_age.csv"
 age_profile.key = "PCON11CD"
 
-api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Electoral_Boundaries/Westminster_Parliamentary_Constituencies_December_2019_Boundaries_UK_BGC/MapServer/0/query?"
+api.url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Electoral_Boundaries/Westminster_Parliamentary_Constituencies_December_2019_Boundaries_UK_BUC/MapServer/0/query?"
 api.query_params = '{"outFields": "pcon19cd,pcon19nm"}'
 api.codes_col = "pcon19cd"
 api.names_col = "pcon19nm"
 
-[ons2019."LSOA"]
+[ons2020."LSOA"]
 # https://geoportal.statistics.gov.uk/datasets/lower-layer-super-output-areas-december-2011-boundaries-super-generalised-clipped-bsc-ew-v3
 key = "lsoa11"  # Lower Level Super Output Areas
 
@@ -117,7 +117,7 @@ api.query_params = '{"outFields": "LSOA11CD,LSOA11NM"}'
 api.codes_col = "LSOA11CD"
 api.names_col = "LSOA11NM"
 
-[ons2019."MSOA"]
+[ons2020."MSOA"]
 # https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-generalised-clipped-bgc-ew-v3
 key = "msoa11"  # Middle Layer Super Output Areas
 
@@ -134,7 +134,7 @@ api.query_params = '{"outFields": "MSOA11CD,MSOA11NM"}'
 api.codes_col = "MSOA11CD"
 api.names_col = "MSOA11NM"
 
-[ons2019."Intermediate Zone"]
+[ons2020."Intermediate Zone"]
 # https://spatialdata.gov.scot/geonetwork/srv/eng/catalog.search#/metadata/389787c0-697d-4824-9ca9-9ce8cb79d6f5
 key = "msoa11"  # Intermediate Zones (codepages identical to MSOA but different shapefiles)
 
@@ -151,7 +151,7 @@ api.query_params = '{"outFields": "InterZone,Name"}'
 api.codes_col = "InterZone"
 api.names_col = "Name"
 
-#[ons2019."Data Zone"]
+#[ons2020."Data Zone"]
 ## https://spatialdata.gov.scot/geonetwork/srv/eng/catalog.search#/metadata/7d3e8709-98fa-4d71-867c-d5c8293823f2
 #
 #api.url = "https://maps.gov.scot/server/rest/services/ScotGov/StatisticalUnits/MapServer/2/query?"

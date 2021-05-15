@@ -121,12 +121,15 @@ class ColumnLabels(pydantic.BaseModel):
     UNIT_TYPE: str = "type"  # Colony, Group, ASU, Region etc.
     POSTCODE: str = "postcode"  # Postcode field
     VALID_POSTCODE: str = "postcode_is_valid"
-    YEAR: str = "Year"
+    CENSUS_ID: str = "Census_ID"
+    DATE: str = "Census Date"
     id: ColumnLabelsID = ColumnLabelsID()
     name: ColumnLabelsName = ColumnLabelsName()
     sections: ColumnLabelsSections = ColumnLabelsSections()
 
 
+# in 2021 Census but not in column_labels:
+# ['eastings', 'northings', 'IMD', 'Yls', 'Leaders', 'AssistantLeaders', 'SectAssistants', 'OtherAdults', 'ScoutsOfTheWorldAward', 'Eligible4SOWA']
 column_labels = ColumnLabels()  # holds strings of all census csv column headings, structured to help access
 DEFAULT_VALUE = "error"  # holds value for NaN values
 UNIT_LEVEL_GROUP = "Group"  # The value in column_labels.sections.<level> that denote a group
