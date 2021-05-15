@@ -328,19 +328,19 @@ class Reports:
             uptake_report = self.boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
-        years = self.scout_data.census_data["Year"].drop_duplicates().dropna().sort_values()
+        census_ids = self.scout_data.census_data["Census_ID"].drop_duplicates().dropna().sort_values()
 
         # add uptake data
-        for year in years:
+        for census_id in census_ids:
             # clip here as unexpectedly large values throw off the scale bars.
             # TODO normalise unexpectedly large values so that we don't need to clip
             for section in Reports.SECTION_AGES.keys():
-                uptake_section = 100 * uptake_report[f"{section}-{year}"] / uptake_report[f"Pop_{section}"]
+                uptake_section = 100 * uptake_report[f"{section}-{census_id}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
-                uptake_report[f"%-{section}-{year}"] = uptake_section.clip(upper=max_value)
-            uptake_all = 100 * uptake_report[f"All-{year}"] / uptake_report[f"Pop_All"]
+                uptake_report[f"%-{section}-{census_id}"] = uptake_section.clip(upper=max_value)
+            uptake_all = 100 * uptake_report[f"All-{census_id}"] / uptake_report[f"Pop_All"]
             max_value = uptake_all.quantile(0.975)
-            uptake_report[f"%-All-{year}"] = uptake_all.clip(upper=max_value)
+            uptake_report[f"%-All-{census_id}"] = uptake_all.clip(upper=max_value)
             # TODO explain 97.5th percentile clip
         # TODO check edge cases - 0 population and 0 or more scouts
 
