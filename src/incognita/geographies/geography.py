@@ -12,7 +12,7 @@ from incognita.data.ons_pd import Boundary
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import root
-from incognita.utility import utility
+from incognita.utility import constants
 
 if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory
@@ -144,12 +144,12 @@ class Geography:
         data_with_points = gpd.GeoDataFrame(
             scout_data.census_data[[field, boundary]],
             geometry=gpd.points_from_xy(scout_data.census_data.long, scout_data.census_data.lat),
-            crs=utility.WGS_84,
+            crs=constants.WGS_84,
         )
 
         # Pivots the co-ordinate reference system into OS36 which uses
         # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-        data_with_points = data_with_points.to_crs(epsg=utility.BNG)
+        data_with_points = data_with_points.to_crs(epsg=constants.BNG)
         # TODO work out way to avoid co-ordinate pivot (i.e. convert 3km into GPS co-ordinates)
 
         logger.info(f"Filters for records that satisfy {field} in {value_list}")

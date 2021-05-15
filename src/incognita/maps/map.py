@@ -16,7 +16,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.reports.reports import Reports
 from incognita.utility import config
-from incognita.utility import utility
+from incognita.utility import constants
 
 
 class Map:
@@ -163,7 +163,7 @@ class Map:
         section_names = sections["name"].astype(str)
 
         if "youth membership" in marker_data:
-            section_type = sections[scout_census.column_labels.UNIT_TYPE].map(utility.section_types)
+            section_type = sections[scout_census.column_labels.UNIT_TYPE].map(constants.section_types)
             yp_total_cols = [section_model.total for section_name, section_model in scout_census.column_labels.sections]
             yp_totals = sections[yp_total_cols].sum(axis=1).astype(int).astype(str)  # Each row only has values for one section type
             sections["sect_overview"] = section_names + " : " + yp_totals + " " + section_type
@@ -314,14 +314,14 @@ class Map:
             logger.debug(f"Loading ONS postcode data.")
             ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
             custom_data = pd.merge(custom_data, ons_pd_data, how="left", left_on=location_cols, right_index=True, sort=False)
-            location_cols = {"crs": utility.WGS_84, "x": "long", "y": "lat"}
+            location_cols = {"crs": constants.WGS_84, "x": "long", "y": "lat"}
 
         # Create geo data frame with points generated from lat/long or OS
         custom_data = gpd.GeoDataFrame(custom_data, geometry=gpd.points_from_xy(x=custom_data[location_cols["x"]], y=custom_data[location_cols["y"]]), crs=location_cols["crs"])
 
         # Convert the 'Co-ordinate reference system' (crs) to WGS_84 (i.e. lat/long) if not already
-        if location_cols["crs"] != utility.WGS_84:
-            custom_data = custom_data.to_crs(epsg=utility.WGS_84)
+        if location_cols["crs"] != constants.WGS_84:
+            custom_data = custom_data.to_crs(epsg=constants.WGS_84)
 
         if layer_name in self.map._children:  # NoQA
             raise ValueError("Layer already used!")
@@ -387,7 +387,7 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the codes column of the map_data")
     all_codes = set(reports.data["codes"])
     logger.debug(f"All codes list: {all_codes}")
-    geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=utility.WGS_84)
+    geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=constants.WGS_84)
     logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
     return geo_data
 

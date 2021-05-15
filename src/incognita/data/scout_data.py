@@ -12,7 +12,7 @@ from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import filter
-from incognita.utility import utility
+from incognita.utility import constants
 
 
 def _load_census_data(census_file_path: Path) -> pd.DataFrame:
@@ -89,7 +89,7 @@ class ScoutData:
 
         if self.points_data.empty:
             idx = pd.Series(self.census_data.index, name="object_index")
-            self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.census_data.long, self.census_data.lat), crs=utility.WGS_84)
+            self.points_data = gpd.GeoDataFrame(idx, geometry=gpd.points_from_xy(self.census_data.long, self.census_data.lat), crs=constants.WGS_84)
 
         if path is not None:
             all_shapes = gpd.read_file(path)
@@ -97,7 +97,7 @@ class ScoutData:
             all_shapes = gdf
         else:
             raise ValueError("A path to a shapefile or a GeoDataFrame must be passed")
-        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(epsg=utility.WGS_84)
+        shapes = all_shapes[[shapes_key, "geometry"]].to_crs(epsg=constants.WGS_84)
 
         spatial_merged = gpd.sjoin(self.points_data, shapes, how="left", op="within").set_index("object_index")
         merged = self.census_data.merge(spatial_merged[[shapes_key]], how="left", left_index=True, right_index=True)

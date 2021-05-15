@@ -6,7 +6,7 @@ from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.utility import config
 from incognita.utility import deciles
-from incognita.utility import utility
+from incognita.utility import constants
 
 if __name__ == "__main__":
     set_up_logger()
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     reduced_data_with_geo = gpd.GeoDataFrame(
         reduced_data_with_coords,
         geometry=gpd.points_from_xy(reduced_data_with_coords.long, reduced_data_with_coords.lat),
-        crs=utility.WGS_84,
+        crs=constants.WGS_84,
     ).drop(columns=["lat", "long"])
     del reduced_data_with_coords
     reduced_data_with_geo.to_feather(config.SETTINGS.ons_pd.minified)
