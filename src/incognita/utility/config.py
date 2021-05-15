@@ -67,6 +67,7 @@ class ConfigModel(pydantic.BaseModel):
     ons_pd: ONSPostcodeDirectoryPaths
     folders: FolderPaths
     ons2019: dict[str, Boundary]
+    ons2020: dict[str, Boundary]
     custom_boundaries: dict[str, Boundary]
 
 
