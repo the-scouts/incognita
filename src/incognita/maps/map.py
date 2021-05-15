@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from itertools import cycle
+import itertools
 from pathlib import Path
 from string import Template
 import time
@@ -394,9 +394,11 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
 
 def _colour_mapping(series: pd.Series) -> dict[Union[int, str], str]:
     # fmt: off
-    colours = cycle((
-        "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
-        "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
+    colours = itertools.cycle((
+        "lightblue", "lightgreen", "salmon",
+        "cadetblue", "green", "orange", "red", "pink", "purple", "blue",
+        "darkred", "darkpurple", "darkblue", "darkgreen",
+        "lightgray",
     ))
     # fmt: on
     categories = set(series.array.to_numpy())  # quickest
