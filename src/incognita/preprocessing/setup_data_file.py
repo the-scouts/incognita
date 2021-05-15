@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 from incognita.data import scout_census
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.data.scout_data import ScoutData
@@ -19,8 +21,6 @@ from incognita.utility import utility
 from incognita.logger import set_up_logger
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
 
