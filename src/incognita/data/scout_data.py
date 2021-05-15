@@ -13,8 +13,6 @@ from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import utility
 
-pd.options.display.width = pd.options.display.max_columns = 5000
-
 
 def _load_census_data(census_file_path: Path) -> pd.DataFrame:
     """Loads census data from a given file.
@@ -26,11 +24,7 @@ def _load_census_data(census_file_path: Path) -> pd.DataFrame:
 
     if census_file_path.suffix != ".feather":
         raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
-    start_time = time.time()
-    logger.info("Loading Scout Census data")
-    census_data = feather.read_feather(census_file_path)
-    logger.info(f"Loading Scout Census data finished, {time.time() - start_time:.2f} seconds elapsed.")
-    return census_data
+    return feather.read_feather(census_file_path)
 
 
 class ScoutData:
@@ -52,7 +46,9 @@ class ScoutData:
 
         # Loads Scout Census Data from disk. We assume no custom path has been
         # passed, but allow for one to by passing a custom `census_path` value.
+        logger.info("Loading Scout Census data")
         self.census_data = _load_census_data(census_path) if load_census_data else pd.DataFrame()
+        logger.info(f"Loading Scout Census data finished, {time.time() - self.start_time:.2f} seconds elapsed.")
         self.points_data = gpd.GeoDataFrame()
 
         if merged_csv:
