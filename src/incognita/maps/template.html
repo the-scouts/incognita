@@ -132,8 +132,9 @@
         const createFetch = filterParam => fetch(apiBase + new URLSearchParams({...queryParams, ...filterParam}).toString()).then(response => response.json())
         return chunkArr(Object.keys(colourData), 50).map(arrToFilterParam).map(createFetch)
     }
-    const loadShapesToLayer = (colourData, apiBase, codeCol, queryParams, styleFunc) => {
+    const loadShapesToLayer = (colourData, apiBase, codeCol, queryParams, styleFunc, show) => {
         const layer = L.geoJSON(null, {style: styleFunc}).addTo(map)
+        if (!show) layer.remove()  // hide layer if show is False
         requestGeoJsonFromAPI(colourData, apiBase, codeCol, queryParams).map(apiRequest => apiRequest.then(geoJson => layer.addData(geoJson)))
         return layer
     }
@@ -147,10 +148,11 @@
             return {...defaults, fillColor: colourFunc(val), fillOpacity: 1 / 3}
         }
     }
-    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourScale, threshold, codeCol, nameCol, measureName) => {
+    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourScale, threshold, codeCol, nameCol, measureName, show) => {
         const queryParamsAll = {...queryParams, outSR: "4326", f: "geojson", geometryPrecision: "5"}
         const colourFunc = val => colourScale(val).hex()
-        const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFuncGenerator(colourData, codeCol, colourFunc, threshold))
+        const styleFunc = styleFuncGenerator(colourData, codeCol, colourFunc, threshold)
+        const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFunc, show)
         const tooltipData = layer => '<table><tr><th>Name</th><td>' + layer.feature.properties[nameCol] + '</td></tr><tr><th>' + measureName + '</th><td>' + colourData[layer.feature.properties[codeCol]] + '</td></tr></table>'
         shapeLayer.bindTooltip(tooltipData, {"className": "foliumtooltip", "sticky": true});
         layersControl.addOverlay(shapeLayer, layerKey)
@@ -158,7 +160,6 @@
     }
     /*
      * TODO - map_labels? (e.g. folium.TileLayer("CartoDB positron onlylabels", overlay=True))
-     * TODO - layer show/hide by default
      * TODO - marker cluster/feature group
      * TODO - use markerObj.col // marker colour
      */
