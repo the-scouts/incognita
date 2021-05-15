@@ -139,11 +139,11 @@ class Reports:
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
         logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
 
-        years = sorted(set(self.scout_data.census_data["Year"].dropna()))
-        if len(years) > 1:
+        census_dates = sorted(set(self.scout_data.census_data["Census Date"].dropna()))
+        if len(census_dates) > 1:
             if not historical:
-                raise ValueError(f"Historical option not selected, but multiple years of data selected ({years[0]} - {years[-1]})")
-            logger.info(f"Historical analysis from {years[0]} to {years[-1]}")
+                raise ValueError(f"Historical option not selected, but multiple censuses selected ({census_dates[0]} - {census_dates[-1]})")
+            logger.info(f"Historical analysis from {census_dates[0]} to {census_dates[-1]}")
 
         sections_model = scout_census.column_labels.sections
 
@@ -181,7 +181,7 @@ class Reports:
                 metric_cols += ["Waiting List"]
             if opt_adult_numbers:
                 metric_cols += ["Adults"]
-            agg = self.scout_data.census_data.groupby([geog_name, "Year"], dropna=False)[metric_cols].sum().unstack().sort_index()
+            agg = self.scout_data.census_data.groupby([geog_name, "Census_ID"], dropna=False)[metric_cols].sum().unstack().sort_index()
             agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
