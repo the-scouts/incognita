@@ -13,6 +13,8 @@ import pandas as pd
 from incognita.data import scout_census
 from incognita.logger import logger
 
+TYPES_FISP_ARGS = tuple[str, int, pd.DataFrame, str, str]
+
 
 def merge_data(census_data: pd.DataFrame, data_to_merge: Union[pd.DataFrame, pd.Series], census_index_column: str) -> pd.DataFrame:
     """Merge census data and input data on key and index.
@@ -136,6 +138,83 @@ def clean_and_verify_postcode(census_data: pd.DataFrame, postcode_column: str) -
     census_data.insert(valid_postcode_index, valid_postcode_label, np.NaN)
 
 
+def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: int, valid_postcode_lookup, year_label, clean_postcode_label):
+    """Gets all records with ID from given column and index level, then clears the indexing
+    Returns the first row's postcode. As the index is sorted, this will return the earliest correct year.
+    TODO change to use modal result instead of first (If section has no valid postcodes, use most common
+        (modal) postcode from sections in group in that year, then try successive years)
+
+    Args:
+      row_object:
+      column_label: Label to index for
+      index_level: Level of the multiindex to use
+
+    Returns:
+        Updated row_object
+
+    """
+    try:
+        # get all rows from the lookup with the same ID in the passed column
+        valid_postcodes = valid_postcode_lookup.xs(row_object[column_label], level=index_level)
+
+        # sets a dummy value to avoid errors
+        future_valid_postcode = None
+
+        try:
+            # get the first clean postcode from the year of the record or later
+            future_valid_postcode = valid_postcodes.query(f"{year_label} >= {row_object[year_label]}").reset_index(drop=True).iloc[0][clean_postcode_label]
+
+            # checks that the variable contains a postcode value
+            if future_valid_postcode:
+                row_object[clean_postcode_label] = future_valid_postcode
+        except IndexError:
+            pass
+
+        # if setting a postcode from the year of the record or after fails, try using all records
+        if not future_valid_postcode:
+            valid_postcode = valid_postcodes.reset_index(drop=True).iloc[0][clean_postcode_label]
+
+            # checks that the variable contains a postcode value
+            if valid_postcode:
+                row_object[clean_postcode_label] = valid_postcode
+
+    except KeyError:
+        pass
+
+    return row_object
+
+
+def _create_helper_tables(data: pd.DataFrame, entity_type_list: set[str], entity_type_label, fields_for_postcode_lookup, valid_postcode_label) -> (pd.DataFrame, pd.DataFrame):
+    # Filters records by type and returns a subset of columns to reduce memory usage
+    records_filtered_fields = data.loc[data[entity_type_label].isin(entity_type_list), fields_for_postcode_lookup]
+
+    # Creates loookup of all valid postcodes from filtered records, and
+    # fully sorts the index to increase performance
+    lookup = records_filtered_fields.loc[records_filtered_fields[valid_postcode_label] == 1].sort_index(level=[0, 1, 2, 3])
+
+    return records_filtered_fields, lookup
+
+
+def _run_fixer(data: pd.DataFrame, records: pd.DataFrame, valid_postcode_label: str, merge_test_column_label: str, merge_test_column: pd.Series, fisp_args: TYPES_FISP_ARGS) -> pd.DataFrame:
+    # Index level: 0=District; 1=Group; 2=Section; 3=Year
+
+    valid_postcodes_start = data[valid_postcode_label].sum()
+
+    # Returns a column with updated postcodes
+    # TODO remove .apply(*)
+    changed_records = records.loc[records[valid_postcode_label] == 0].apply(_fill_invalid_section_postcodes, args=fisp_args, axis=1)
+
+    # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
+    data.update(changed_records)
+
+    # Delete the Country column from the passed data as having this would prevent merging
+    # Pass only the merge test column as a quick way to test that the postcode has merged
+    data = merge_data(data.drop(merge_test_column_label, axis=1), merge_test_column, "clean_postcode")
+    logger.info(f"change in valid postcodes is: {data[valid_postcode_label].sum() - valid_postcodes_start}")
+
+    return data
+
+
 def try_fix_invalid_postcodes(census_data: pd.DataFrame, merge_test_column: pd.Series) -> pd.DataFrame:
     """Uses various methods attempting to provide every record with a valid postcode
 
@@ -191,100 +270,31 @@ def try_fix_invalid_postcodes(census_data: pd.DataFrame, merge_test_column: pd.S
     # Sets a MultiIndex on the data table to enable fast searching and querying for data
     census_data = census_data.set_index(index_cols, drop=False)
 
-    def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: int):
-        """Gets all records with ID from given column and index level, then clears the indexing
-        Returns the first row's postcode. As the index is sorted, this will return the earliest correct year.
-        TODO change to use modal result instead of first (If section has no valid postcodes, use most common
-            (modal) postcode from sections in group in that year, then try successive years)
-
-        Args:
-          row_object:
-          column_label: Label to index for
-          index_level: Level of the multiindex to use
-
-        Returns:
-            Updated row_object
-
-        """
-        try:
-            # get all rows from the lookup with the same ID in the passed column
-            valid_postcodes = valid_postcode_lookup.xs(row_object[column_label], level=index_level)
-
-            # sets a dummy value to avoid errors
-            future_valid_postcode = None
-
-            try:
-                # get the first clean postcode from the year of the record or later
-                future_valid_postcode = valid_postcodes.query(f"{year_label} >= {row_object[year_label]}").reset_index(drop=True).iloc[0][clean_postcode_label]
-
-                # checks that the variable contains a postcode value
-                if future_valid_postcode:
-                    row_object[clean_postcode_label] = future_valid_postcode
-            except IndexError:
-                pass
-
-            # if setting a postcode from the year of the record or after fails, try using all records
-            if not future_valid_postcode:
-                valid_postcode = valid_postcodes.reset_index(drop=True).iloc[0][clean_postcode_label]
-
-                # checks that the variable contains a postcode value
-                if valid_postcode:
-                    row_object[clean_postcode_label] = valid_postcode
-
-        except KeyError:
-            pass
-
-        return row_object
-
-    def _create_helper_tables(data: pd.DataFrame, entity_type_list: set[str]) -> (pd.DataFrame, pd.DataFrame):
-        # Filters records by type and returns a subset of columns to reduce memory usage
-        records_filtered_fields = data.loc[data[entity_type_label].isin(entity_type_list), fields_for_postcode_lookup]
-
-        # Creates loookup of all valid postcodes from filtered records, and
-        # fully sorts the index to increase performance
-        lookup = records_filtered_fields.loc[records_filtered_fields[valid_postcode_label] == 1].sort_index(level=[0, 1, 2, 3])
-
-        return records_filtered_fields, lookup
-
-    def _run_fixer(data: pd.DataFrame, column_label: str, index_level: int, records: pd.DataFrame) -> pd.DataFrame:
-        # Index level: 0=District; 1=Group; 2=Section; 3=Year
-
-        valid_postcodes_start = data[valid_postcode_label].sum()
-
-        # Returns a column with updated postcodes
-        changed_records = records.loc[records[valid_postcode_label] == 0].apply(_fill_invalid_section_postcodes, column_label=column_label, index_level=index_level, axis=1)
-
-        # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
-        data.update(changed_records)
-
-        # Delete the Country column from the passed data as having this would prevent merging
-        # Pass only the merge test column as a quick way to test that the postcode has merged
-        data = merge_data(data.drop(merge_test_column_label, axis=1), merge_test_column, "clean_postcode")
-        logger.info(f"change in valid postcodes is: {data[valid_postcode_label].sum() - valid_postcodes_start}")
-
-        return data
-
     logger.info("Fill invalid section postcodes with valid section postcodes from 2019")
-    section_records, valid_postcode_lookup = _create_helper_tables(census_data, section_types_list)
-    census_data = _run_fixer(census_data, section_id_label, 2, section_records)
-    section_records, valid_postcode_lookup = None, None
+    section_records, valid_postcode_lookup = _create_helper_tables(census_data, section_types_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
+    fisp_args = section_id_label, 2, valid_postcode_lookup, year_label, clean_postcode_label
+    census_data = _run_fixer(census_data,  section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
+    del section_records, valid_postcode_lookup, fisp_args
 
     logger.info("Fill invalid group-section postcodes with valid postcodes from same group")
-    group_section_records, valid_postcode_lookup = _create_helper_tables(census_data, group_section_types_list)
-    census_data = _run_fixer(census_data, group_id_label, 1, group_section_records)
-    group_section_records, valid_postcode_lookup = None, None
+    group_section_records, valid_postcode_lookup = _create_helper_tables(census_data, group_section_types_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
+    fisp_args = group_id_label, 1, valid_postcode_lookup, year_label, clean_postcode_label
+    census_data = _run_fixer(census_data, group_section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
+    del group_section_records, valid_postcode_lookup, fisp_args
 
     logger.info("Fill invalid district-section postcodes with valid postcodes from same district")
-    district_section_records, valid_postcode_lookup = _create_helper_tables(census_data, district_section_types_list)
-    census_data = _run_fixer(census_data, district_id_label, 0, district_section_records)
-    district_section_records, valid_postcode_lookup = None, None
+    district_section_records, valid_postcode_lookup = _create_helper_tables(census_data, district_section_types_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
+    fisp_args = district_id_label, 0, valid_postcode_lookup, year_label, clean_postcode_label
+    census_data = _run_fixer(census_data, district_section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
+    del district_section_records, valid_postcode_lookup, fisp_args
 
     logger.info("Fill invalid pre 2017 postcodes with valid postcodes from same entity")
-    pre_2017_section_records, valid_postcode_lookup = _create_helper_tables(census_data, pre_2017_types_list)
-    census_data = _run_fixer(census_data, section_id_label, 2, pre_2017_section_records)
-    pre_2017_section_records, valid_postcode_lookup = None, None
+    pre_2017_section_records, valid_postcode_lookup = _create_helper_tables(census_data, pre_2017_types_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
+    fisp_args = section_id_label, 2, valid_postcode_lookup, year_label, clean_postcode_label
+    census_data = _run_fixer(census_data, pre_2017_section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
+    del pre_2017_section_records, valid_postcode_lookup, fisp_args
 
-    # Undoes the changes made in this method by removing the MultiIndex and
+    # Undo the changes made in this method by removing the MultiIndex and
     # removing the merge test column
     census_data = census_data.reset_index(drop=True).drop(merge_test_column_label, axis=1)
     return census_data
