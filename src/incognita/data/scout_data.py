@@ -36,7 +36,7 @@ class ScoutData:
         logger.info(f"Loaded {self.ons_pd.PUBLICATION_DATE} ONS data!")
 
         # Filterable columns are the ID and name columns of the dataset
-        self.filterable_columns: set[str] = set(column_labels.id.__dict__.values() + column_labels.name.__dict__.values())
+        self.filterable_columns: set[str] = {*column_labels.id.__dict__.values(), *column_labels.name.__dict__.values()}
 
     def filter_records(self, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
