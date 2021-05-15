@@ -7,8 +7,6 @@ dependencies:
   - pip
 
   # Core requirements
-  - folium
-  - branca
   - dash
   - geopandas>=0.8
   - numpy

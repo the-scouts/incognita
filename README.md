@@ -50,11 +50,14 @@ This project is written and tested in Python 3.9, and depends on:
 - [geopandas](https://github.com/geopandas/geopandas),
   [pandas](https://github.com/pandas-dev/pandas) - for (geospatial) data
   transformation and arrangement
-- [folium](https://github.com/python-visualization/folium) - for rendering to
-  [Leaflet.js](https://github.com/Leaflet/Leaflet) maps
-- [shapely](https://github.com/Toblerity/Shapely) - for manipulation and
+- [shapely](https://github.com/Toblerity/Shapely), 
+  [pygeos](https://github.com/pygeos/pygeos) - for manipulation and
   analysis of geometric objects
 - [dash](https://github.com/plotly/dash) - for simple web-apps
+
+JavaScript dependencies are:
+- [Leaflet.js](https://github.com/Leaflet/Leaflet) - for slippy maps
+- [chroma.js](https://github.com/gka/chroma.js) - for choropleth colour scales
 
 ## Getting Started:
 You will need to obtain the latest version of the ONS Postcode Directory. Note

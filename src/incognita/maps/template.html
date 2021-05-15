@@ -13,9 +13,9 @@
     <style>
         html, body {width: 100%; height: 100%; margin: 0; padding: 0;}
         #map {position: relative; top: 0; bottom: 0; right: 0; left: 0; width: 100.0%; height: 100.0%;}
-        .foliumtooltip table {margin: auto;}
-        .foliumtooltip tr {text-align: left;}
-        .foliumtooltip th {padding: 2px 8px 2px 2px;}
+        .layer-tooltip table {margin: auto;}
+        .layer-tooltip tr {text-align: left;}
+        .layer-tooltip th {padding: 2px 8px 2px 2px;}
         .legend { text-align: left; color: #555; padding: 6px 8px; font: 14px/18px Arial, Helvetica, sans-serif; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; }
         .legend h4 { margin: 0 0 5px; color: #777; }
         .legend div{width: 100%; height: 18px; display: flex; align-items: center; justify-content: left; opacity: 0.7;}
@@ -25,7 +25,7 @@
     </style>
 </head>
 <body>
-<div class="folium-map" id="map"></div>
+<div id="map"></div>
 <script>
     // Libraries
     const L = window.L, chroma = window.chroma
@@ -159,7 +159,7 @@
         const styleFunc = styleFuncGenerator(colourData, codeCol, colourFunc, threshold)
         const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFunc, show)
         const tooltipData = layer => '<table><tr><th>Name</th><td>' + layer.feature.properties[nameCol] + '</td></tr><tr><th>' + measureName + '</th><td>' + colourData[layer.feature.properties[codeCol]] + '</td></tr></table>'
-        shapeLayer.bindTooltip(tooltipData, {"className": "foliumtooltip", "sticky": true});
+        shapeLayer.bindTooltip(tooltipData, {"className": "layer-tooltip", "sticky": true});
         layersControl.addOverlay(shapeLayer, layerKey)
         return shapeLayer
     }
