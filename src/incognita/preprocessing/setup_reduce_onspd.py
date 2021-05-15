@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
+from incognita.data.ons_pd_may_20 import ons_postcode_directory_may_20
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.utility import config
@@ -13,23 +13,18 @@ if __name__ == "__main__":
 
     logger.info("Starting")
     to_keep = ("oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "imd", "imd_decile")  # 'lat', 'long', 'nys_districts', 'pcd'
-    fields = [f for f in to_keep if f in ons_postcode_directory_may_19.fields]
+    fields = [f for f in to_keep if f in ons_postcode_directory_may_20.fields]
 
     # Load Full ONS Postcode Directory
-    data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ons_postcode_directory_may_19.data_types, encoding="utf-8")
+    data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ons_postcode_directory_may_20.data_types, encoding="utf-8")
     logger.info("Loaded data")
 
     orig = data.copy()
     logger.info("DEBUG - copied original data")
 
     # Add IMD Decile
-    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ons_postcode_directory_may_19).astype("UInt8")
+    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ons_postcode_directory_may_20).astype("UInt8")
     logger.info("IMD Deciles added")
-
-    # # TODO Needed?:
-    # for field, dtype in data.dtypes.items():
-    #     if dtype == "category":
-    #         data[field] = data[field].cat.add_categories([scout_census.DEFAULT_VALUE])
 
     # Save minified full ONS Postcode Directory
     reduced_data_with_coords = data[fields + ["lat", "long"]].copy()
@@ -46,11 +41,11 @@ if __name__ == "__main__":
     logger.info("Minified data saved")
 
     # Get needed columns and delete duplicate rows
-    reduced_data = data[fields].drop_duplicates()
+    reduced_data = data[fields].drop_duplicates().reset_index(drop=True)
     del data
     logger.info("Reduced data")
 
     logger.info("Saving data")
     reduced_data.to_csv(config.SETTINGS.ons_pd.reduced.with_suffix(".csv"), index=False, encoding="utf-8-sig")
-    reduced_data.to_feather(config.SETTINGS.ons_pd.reduced.with_suffix(".feather"), index=False, encoding="utf-8-sig")
+    reduced_data.to_feather(config.SETTINGS.ons_pd.reduced.with_suffix(".feather"))
     logger.info("Done")
