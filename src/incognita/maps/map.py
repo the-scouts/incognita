@@ -103,7 +103,6 @@ class Map:
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
 
-        # TODO layer show/hide by default
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
             colour_data=choropleth_data.to_dict(),
