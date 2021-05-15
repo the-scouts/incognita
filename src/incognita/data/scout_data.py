@@ -15,21 +15,6 @@ from incognita.utility import utility
 
 pd.options.display.width = pd.options.display.max_columns = 5000
 
-# TODO add yp total columns, clean postcode/valid postcode, Asst leaders, SOWA/SOWA eligible, ONS PD fields
-# fmt: off
-cols_bool = ["postcode_is_valid"]
-cols_int_16 = [
-    "Year", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Beavers_f", "Beavers_m", "Cubs_f", "Beavers_total", "Cubs_m", "Cubs_total",
-    "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total", "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c",
-    "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults", "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards",
-    "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards", "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver",
-    "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "Queens_Scout_Awards", "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond",
-    "Eligible4QSA", "ScoutsOfTheWorldAward", "Eligible4SOWA", "imd_decile"
-]
-cols_int_32 = ["Object_ID", "G_ID", "D_ID", "C_ID", "R_ID", "X_ID", "imd"]
-cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "postcode", "clean_postcode", "Young_Leader_Unit"]
-# fmt: on
-
 
 def _load_census_data(census_file_path: Path) -> pd.DataFrame:
     """Loads census data from a given file.
@@ -38,19 +23,14 @@ def _load_census_data(census_file_path: Path) -> pd.DataFrame:
         census_file_path: path to input file with Census data.
 
     """
-    if census_file_path.suffix == ".csv":
-        dtypes = {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
-        return pd.read_csv(census_file_path, dtype=dtypes, encoding="utf-8")
-    elif census_file_path.suffix == ".feather":
-        data = feather.read_feather(census_file_path)
-        data[cols_bool] = data[cols_bool].astype(bool)
-        data[cols_int_16] = data[cols_int_16].astype("Int16")
-        data[cols_int_32] = data[cols_int_32].astype("Int32")
-        data[cols_categorical] = data[cols_categorical].astype("category")
-        return data
-        # ['oscty', 'oslaua', 'osward', 'ctry', 'rgn', 'pcon', 'lsoa11', 'msoa11', 'lat', 'long'] not dtyped
-    else:
+
+    if census_file_path.suffix != ".feather":
         raise ValueError(f"Unknown census extract file extension ({census_file_path.suffix})!\n Should be CSV or Feather.")
+    start_time = time.time()
+    logger.info("Loading Scout Census data")
+    census_data = feather.read_feather(census_file_path)
+    logger.info(f"Loading Scout Census data finished, {time.time() - start_time:.2f} seconds elapsed.")
+    return census_data
 
 
 class ScoutData:
@@ -68,15 +48,12 @@ class ScoutData:
     def __init__(self, merged_csv: bool = True, census_path: Path = config.SETTINGS.census_extract.merged, load_census_data: bool = True):
         # record a class-wide start time
         self.start_time = time.time()
-
         logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
 
-        logger.info("Loading Scout Census data")
         # Loads Scout Census Data from disk. We assume no custom path has been
         # passed, but allow for one to by passing a custom `census_path` value.
         self.census_data = _load_census_data(census_path) if load_census_data else pd.DataFrame()
         self.points_data = gpd.GeoDataFrame()
-        logger.info(f"Loading Scout Census data finished, {time.time() - self.start_time:.2f} seconds elapsed.")
 
         if merged_csv:
             logger.info("Loading ONS data")
