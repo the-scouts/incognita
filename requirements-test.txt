@@ -1,0 +1,9 @@
+-r requirements-run.txt
+
+# testing
+pytest
+hypothesis
+
+# coverage
+pytest-cov
+codecov

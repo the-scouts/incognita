@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <title>¦title</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" crossorigin
+          integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" crossorigin
+            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="></script>
+    <script src="https://unpkg.com/chroma-js@2.1.1/chroma.js" crossorigin
+            integrity="sha384-xzaQlYD05ozhFIXK2yscYX9CWc63752GtR5iEE7e2b2wZvE7QlBEa7WEGOdz5uKB"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <style>
+        html, body {width: 100%; height: 100%; margin: 0; padding: 0;}
+        #map {position: relative; top: 0; bottom: 0; right: 0; left: 0; width: 100.0%; height: 100.0%;}
+        .foliumtooltip table {margin: auto;}
+        .foliumtooltip tr {text-align: left;}
+        .foliumtooltip th {padding: 2px 8px 2px 2px;}
+        .legend { text-align: left; color: #555; padding: 6px 8px; font: 14px/18px Arial, Helvetica, sans-serif; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; }
+        .legend h4 { margin: 0 0 5px; color: #777; }
+        .legend div{width: 100%; height: 18px; display: flex; align-items: center; justify-content: left; opacity: 0.7;}
+        .legend div:before{content: ""; display: inline-block; width: 16px; height: 16px; margin-right: 5px}
+        .leaflet-data-marker svg {width: 30px; height: 40px}
+        .leaflet-data-marker svg {fill: lightblue;}
+        .leaflet-popup-content-wrapper p {text-align: center}
+    </style>
+</head>
+<body>
+<div class="folium-map" id="map"></div>
+<script>
+    // Libraries
+    const L = window.L, chroma = window.chroma
+
+    // Map init
+    const map = L.map("map", {
+        center: [55.943, -3.186],
+        crs: L.CRS.EPSG3857,
+        zoom: 6,
+        zoomControl: true,
+        preferCanvas: false,
+        zoomSnap: 0.05,
+        zoomDelta: 0.1,
+    })
+    const setBounds = bounds => map.fitBounds(bounds)
+    const baseMap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+        attribution: "© <a href='https://openstreetmap.org'>OpenStreetMap</a>, <a href='https://carto.com/attribution'>CARTO</a>",
+        detectRetina: false,
+        maxNativeZoom: 18,
+        maxZoom: 18,
+        minZoom: 0,
+        noWrap: false,
+        opacity: 1,
+        subdomains: "abc",
+        tms: false,
+    }).addTo(map);
+    const layersControl = L.control.layers({"Open Street Map": baseMap}, {}, {sortLayers: true, hideSingleBase: true, collapsed: false}).addTo(map)
+
+    // Legend init
+    const genLegendLabelsCategorical = (categories, labels, rules, colourScale) => {
+        for (const curr of categories) {
+            labels += '<div id="leg-' + curr + '">' + curr + '</div>'
+            rules += '#leg-' + curr + ':before {background: ' + colourScale(curr).hex() + ';}'
+        }
+        return [labels, rules]
+    }
+    const genLegendLabelsRanges = (ranges, labels, rules, colourScale) => {
+        const [finalStart, finalEnd] = ranges[ranges.length-1]
+        for (const [start, end] of ranges) {
+            const startCol = colourScale(start).hex()
+            if (start === end) {
+                labels += '<div id="leg-' + start + '">' + start + '</div>'
+            } else {
+                // The final element should include the end
+                const notLastItem = finalStart !== start || finalEnd !== end
+                const relation = notLastItem ? ' &le; &#119894; &lt; ' : ' &le; &#119894; &le; '
+                // Add the legend label
+                labels += '<div id="leg-' + start + '">' + start + relation + end + '</div>'
+                // only check colour equality if the start and end values are different
+                if (startCol !== colourScale(end-0.01).hex()) console.warn(`Range colours do not match! Start: ${start}, ${startCol}; End: ${end}, ${colourScale(end-0.01).hex()}`)
+            }
+            rules += '#leg-' + start + ':before {background: ' + startCol + ';}'
+        }
+        return [labels, rules]
+    }
+    const renderLegend = (title, breaks, colourScale, outEl, categorical) => {
+        // breaks is an array of tuples (start, end) if categorical is true, otherwise scalars
+        let rules = "", labels = "<h4>" + title + "</h4>"
+        if (categorical) {
+            [labels, rules] = genLegendLabelsCategorical(breaks, labels, rules, colourScale)
+        } else {
+            [labels, rules] = genLegendLabelsRanges(breaks, labels, rules, colourScale)
+        }
+        outEl.innerHTML = labels
+        document.querySelector('head').appendChild(document.createElement('style')).innerText = rules
+        return outEl
+    }
+    const createLegend = (title, breaks, colourScale, categorical) => {
+        const legend = L.control({position: 'topright'})
+        legend.onAdd = _map => renderLegend(title, breaks, colourScale, L.DomUtil.create('div', 'info legend'), categorical)
+        return legend.addTo(map)
+    }
+
+    // Markers init
+    const iconSettings = {
+        className: "leaflet-data-marker",
+        html: '<svg><path stroke="#FFF" stroke-width="1" stroke-miterlimit="10" d="m14.095833,1.55c-6.846875,0 -12.545833,5.691 -12.545833,11.866c0,2.778 1.629167,6.308 2.80625,8.746l9.69375,17.872l9.647916,-17.872c1.177083,-2.438 2.852083,-5.791 2.852083,-8.746c0,-6.175 -5.607291,-11.866 -12.454166,-11.866zm0,7.155c2.691667,0.017 4.873958,2.122 4.873958,4.71s-2.182292,4.663 -4.873958,4.679c-2.691667,-0.017 -4.873958,-2.09 -4.873958,-4.679c0,-2.588 2.182292,-4.693 4.873958,-4.71z"/></svg>',
+        iconAnchor: [15, 38], // 40-1-1 to account for stroke width
+        iconSize: [30, 40],
+        popupAnchor: [0, -28],
+    }
+    const addMarkers = (layerKey, markerData) => {
+        const markerLayer = L.featureGroup().addTo(map)
+        for (const markerObj of markerData) {
+            L.marker([markerObj.lat, markerObj.lon])
+                .addTo(markerLayer)
+                .setIcon(L.divIcon(iconSettings))
+                .bindPopup(markerObj.html, {"maxWidth": 2650})
+        }
+        layersControl.addOverlay(markerLayer, layerKey)
+        return markerLayer
+    }
+
+    // Boundaries init
+    const chunkArr = (arr, chunkSize = 50) => {
+        let i = 0, groups = []
+        const arr_len = arr.length
+        while (i < arr_len) groups.push(arr.slice(i, i += chunkSize))
+        return groups
+    }
+    const requestGeoJsonFromAPI = (colourData, apiBase, codeCol, queryParams) => {
+        const arrToFilterParam = arr => ({where: `${codeCol} IN ('${arr.join("','")}')`})
+        const createFetch = filterParam => fetch(apiBase + new URLSearchParams({...queryParams, ...filterParam}).toString()).then(response => response.json())
+        return chunkArr(Object.keys(colourData), 50).map(arrToFilterParam).map(createFetch)
+    }
+    const loadShapesToLayer = (colourData, apiBase, codeCol, queryParams, styleFunc) => {
+        const layer = L.geoJSON(null, {style: styleFunc}).addTo(map)
+        requestGeoJsonFromAPI(colourData, apiBase, codeCol, queryParams).map(apiRequest => apiRequest.then(geoJson => layer.addData(geoJson)))
+        return layer
+    }
+    const styleFuncGenerator = (colourData, codeCol, colourFunc, threshold) => {
+        const defaults = {"color": "black", "weight": 0.1}
+        return feature => {
+            const id = feature.properties[codeCol]
+            const val = colourData[id]
+            if (val === undefined) return {...defaults, fillColor: "#ccc", fillOpacity: 1}
+            if (Math.abs(val) < threshold) return {...defaults, fillColor: "#fb3", fillOpacity: 1 / 12}
+            return {...defaults, fillColor: colourFunc(val), fillOpacity: 1 / 3}
+        }
+    }
+    const createShapeLayer = (layerKey, colourData, apiBase, queryParams, colourScale, threshold, codeCol, nameCol, measureName) => {
+        const queryParamsAll = {...queryParams, outSR: "4326", f: "geojson", geometryPrecision: "5"}
+        const colourFunc = val => colourScale(val).hex()
+        const shapeLayer = loadShapesToLayer(colourData, apiBase, codeCol, queryParamsAll, styleFuncGenerator(colourData, codeCol, colourFunc, threshold))
+        const tooltipData = layer => '<table><tr><th>Name</th><td>' + layer.feature.properties[nameCol] + '</td></tr><tr><th>' + measureName + '</th><td>' + colourData[layer.feature.properties[codeCol]] + '</td></tr></table>'
+        shapeLayer.bindTooltip(tooltipData, {"className": "foliumtooltip", "sticky": true});
+        layersControl.addOverlay(shapeLayer, layerKey)
+        return shapeLayer
+    }
+    /*
+     * TODO - map_labels? (e.g. folium.TileLayer("CartoDB positron onlylabels", overlay=True))
+     * TODO - layer show/hide by default
+     * TODO - marker cluster/feature group
+     * TODO - use markerObj.col // marker colour
+     */
+
+    // python HTML entry point ¦functions
+</script>
+</body>
+</html>

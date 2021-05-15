@@ -1,15 +1,7 @@
-# core
-pandas
-numpy
-folium
-branca
-geopandas>=0.8
-shapely
+-r requirements-test.txt
+
+# serve
 dash
-pyarrow
-pygeos
-toml
-pydantic
 
 # testing
 pytest

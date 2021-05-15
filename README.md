@@ -88,6 +88,10 @@ Census extract.
  * Latest 
    [ONS Postcode Directory](https://geoportal.statistics.gov.uk/search?collection=Dataset&sort=-modified&tags=ons%20postcode%20directory)
 
+### API endpoints:
+To find API endpoints, find a geography from the below resources and click on
+the `API Explorer` tab.
+``
 ### Shapefiles:
 #### Administrative/Electoral Geographies:
 _Use the same boundary resolution for each of the following (BFE, BFC, BGC, BUC)_

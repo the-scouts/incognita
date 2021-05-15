@@ -27,6 +27,7 @@ dependencies:
   - black
   - isort
   - ipython
+  - pre-commit
 
 #  # Requirements not on conda:
 #  - pip:

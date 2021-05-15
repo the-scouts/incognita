@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Optional, Union
 
@@ -31,11 +32,26 @@ class BoundaryAgeProfile(pydantic.BaseModel):
     pivot_key: Optional[str] = None
 
 
+class BoundaryApi(pydantic.BaseModel):
+    url: str
+    query_params: dict[str, str]
+    codes_col: str
+    names_col: str
+
+    @pydantic.validator("query_params", pre=True)
+    def str_to_json(cls, v: str, values: dict[str, object]) -> dict[str, str]:
+        try:
+            return json.loads(v)
+        except Exception:
+            raise ValueError("De-serialising query_params failed")
+
+
 class Boundary(pydantic.BaseModel):
     key: str  # Column name in the ONS postcode directory file
     codes: BoundaryCodes
     shapefile: Optional[BoundaryShapeFile] = None
     age_profile: Optional[BoundaryAgeProfile] = None
+    api: Optional[BoundaryApi] = None
 
 
 class ONSPostcodeDirectory(pydantic.BaseModel):
