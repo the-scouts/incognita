@@ -168,17 +168,15 @@ def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: 
 
         try:
             # get the first clean postcode from the year of the record or later
-            future_valid_postcode = valid_postcodes.query(f"{census_id_label} >= {row_object[census_id_label]}").reset_index(drop=True).iloc[0][clean_postcode_label]
-
-            # checks that the variable contains a postcode value
-            if future_valid_postcode:
-                row_object[clean_postcode_label] = future_valid_postcode
+            future_valid_postcode = valid_postcodes.loc[valid_postcodes["Census_ID"] >= row_object[census_id_label], clean_postcode_label].array[0]
         except IndexError:
             pass
-
+        # checks that the variable contains a postcode value
+        if future_valid_postcode:
+            row_object[clean_postcode_label] = future_valid_postcode
         # if setting a postcode from the year of the record or after fails, try using all records
-        if not future_valid_postcode:
-            valid_postcode = valid_postcodes.reset_index(drop=True).iloc[0][clean_postcode_label]
+        else:
+            valid_postcode = valid_postcodes[clean_postcode_label].array[0]
 
             # checks that the variable contains a postcode value
             if valid_postcode:
