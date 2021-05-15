@@ -1,0 +1,21 @@
+name: incognita
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.9
+
+  # Core requirements
+  - geopandas>=0.8
+  - numpy
+  - pandas
+  - shapely
+  - pyarrow
+  - pygeos
+  - toml
+  - pydantic
+
+  # Testing
+  - pytest
+  - hypothesis
+
