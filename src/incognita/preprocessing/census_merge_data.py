@@ -163,14 +163,13 @@ def _fill_invalid_section_postcodes(row_object, column_label: str, index_level: 
         # get all rows from the lookup with the same ID in the passed column
         valid_postcodes = valid_postcode_lookup.xs(row_object[column_label], level=index_level)
 
-        # sets a dummy value to avoid errors
-        future_valid_postcode = None
-
         try:
             # get the first clean postcode from the year of the record or later
             future_valid_postcode = valid_postcodes.loc[valid_postcodes["Census_ID"] >= row_object[census_id_label], clean_postcode_label].array[0]
         except IndexError:
-            pass
+            # sets a dummy value to avoid errors
+            future_valid_postcode = None
+
         # checks that the variable contains a postcode value
         if future_valid_postcode:
             row_object[clean_postcode_label] = future_valid_postcode
@@ -215,10 +214,30 @@ def _run_fixer(
     # Index level: 0=District; 1=Group; 2=Section; 3=Census_ID
 
     valid_postcodes_start = data[valid_postcode_label].sum()
+    label, level, valid_postcode_lookup, census_id_label, clean_postcode_label = fisp_args
+    invalid_postcodes_mask = (records[valid_postcode_label] == 0).to_numpy()
+    invalid_postcodes = records.reset_index(drop=True).loc[invalid_postcodes_mask, [label, census_id_label]]
+    vpl_groupby = valid_postcode_lookup[[census_id_label, clean_postcode_label]].groupby(level=level)
+
+    for record in invalid_postcodes.itertuples():
+        try:
+            valid_postcodes = vpl_groupby.get_group(record[1])
+        except KeyError:
+            continue
+        try:
+            future_valid_postcode = valid_postcodes.loc[valid_postcodes[census_id_label] >= record.Census_ID, clean_postcode_label].array[0]
+            records[clean_postcode_label].array[record.Index] = future_valid_postcode
+        except IndexError:
+            valid_postcode = valid_postcodes[clean_postcode_label].array[0]
+
+            # checks that the variable contains a postcode value
+            if valid_postcode:
+                records[clean_postcode_label].array[record.Index] = valid_postcode
 
     # Returns a column with updated postcodes
     # TODO remove .apply(*)
-    changed_records = records.loc[records[valid_postcode_label] == 0].apply(_fill_invalid_section_postcodes, args=fisp_args, axis=1)
+    # changed_records = records.loc[records[valid_postcode_label] == 0].apply(_fill_invalid_section_postcodes, args=fisp_args, axis=1)
+    changed_records = records[invalid_postcodes_mask]
 
     # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
     data.update(changed_records)
