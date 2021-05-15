@@ -16,6 +16,7 @@ from incognita.logger import logger
 from incognita.preprocessing import census_merge_data
 from incognita.utility import config
 from incognita.utility import utility
+from incognita.logger import set_up_logger
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -135,6 +136,9 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
 
 if __name__ == "__main__":
+    # Turn on logging
+    set_up_logger()
+
     # load raw census extract
     scout_data = ScoutData(merged_csv=False, census_path=config.SETTINGS.census_extract.original)
 
