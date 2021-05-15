@@ -40,6 +40,19 @@ def merge_data(census_data: pd.DataFrame, data_to_merge: Union[pd.DataFrame, pd.
     return census_data
 
 
+def _pad_to_seven(single_postcode):  # r'(.*?(?=.{3}$))(.{3}$)' (potential regex)
+    """Pad postcode strings
+
+    If length of postcode is 6 or 5 then insert 1 or 2 spaces.
+    6 first as more common to speed up execution
+    """
+    if single_postcode == single_postcode:  # filters out NaNs
+        length = len(single_postcode)
+        if length == 6 or length == 5:
+            single_postcode = single_postcode[:-3] + " " * (7 - length) + single_postcode[-3:]
+    return single_postcode
+
+
 def _postcode_cleaner(postcode: pd.Series) -> pd.Series:
     """Cleans postcode to ONS postcode directory format.
 
@@ -53,15 +66,6 @@ def _postcode_cleaner(postcode: pd.Series) -> pd.Series:
 
     # Regular expression to remove whitespace, non-alphanumeric (keep shifted numbers)
     regex_clean = re.compile(r'[\s+]|[^a-zA-Z\d!"£$%^&*()]')
-
-    # If length of postcode is 6 or 5 then insert 1 or 2 spaces.
-    # 6 first as more common to speed up execution
-    def _pad_to_seven(single_postcode):  # r'(.*?(?=.{3}$))(.{3}$)' (potential regex)
-        if single_postcode == single_postcode:  # filters out NaNs
-            length = len(single_postcode)
-            if length == 6 or length == 5:
-                single_postcode = single_postcode[:-3] + " " * (7 - length) + single_postcode[-3:]
-        return single_postcode
 
     # Remove any whitespace and most non-alphanumeric chars
     # Convert input to uppercase (ONS Postcode Directory uses upper case)
