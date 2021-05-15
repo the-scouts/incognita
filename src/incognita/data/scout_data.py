@@ -32,12 +32,7 @@ cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_
 
 
 def _load_census_data(census_file_path: Path) -> pd.DataFrame:
-    """Holds and accesses census data from a given file.
-
-    Data is read from passed path, and imported with specified data types.
-    Attributes are added to the class to aid accessing data in a structured way.
-    All column labels from the Census report are set in column_labels and can be
-        changed to reflect the input census file.
+    """Loads census data from a given file.
 
     Args:
         census_file_path: path to input file with Census data.
