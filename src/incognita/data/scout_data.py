@@ -11,6 +11,7 @@ from incognita.data import scout_census
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.logger import logger
 from incognita.utility import config
+from incognita.utility import filter
 from incognita.utility import utility
 
 
@@ -73,7 +74,7 @@ class ScoutData:
             exclusion_analysis:
 
         """
-        self.census_data = utility.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
+        self.census_data = filter.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:
