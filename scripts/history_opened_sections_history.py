@@ -2,10 +2,10 @@ from incognita.data.scout_data import ScoutData
 from incognita.reports.history_summary import HistorySummary
 
 if __name__ == "__main__":
-    years = {2015, 2016, 2017, 2018, 2019, 2020}
+    census_ids = {15, 16, 17, 18, 19, 20}
 
     scout_data = ScoutData()
-    scout_data.filter_records("Year", years)
+    scout_data.filter_records("Census_ID", census_ids)
     scout_data.filter_records("X_name", {"England", "Scotland", "Wales", "Northern Ireland"})
 
     # If filtering on IMD, remove NA values
@@ -13,5 +13,5 @@ if __name__ == "__main__":
     # scout_data.filter_records("imd_decile", [1, 2, 3])
 
     section_history = HistorySummary(scout_data)
-    section_history.new_section_history_summary(sorted(years), report_name="opened_section_data")
+    section_history.new_section_history_summary(sorted(census_ids), report_name="opened_section_data")
     scout_data.close()

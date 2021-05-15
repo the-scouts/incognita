@@ -4,10 +4,10 @@ from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     county_name = "Birmingham"
-    year = 2020
+    census_id = 21
 
     scout_data = ScoutData()
-    scout_data.filter_records("Year", {year})  # 2016, 2017, 2018, 2019, 2020
+    scout_data.filter_records("Census_ID", {census_id})  # 16, 17, 18, 19, 20
     scout_data.filter_records("C_name", {county_name})  # "Shropshire", "West Mercia"
     scout_data.filter_records("postcode_is_valid", {1})
 

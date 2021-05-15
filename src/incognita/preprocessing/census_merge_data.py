@@ -214,7 +214,7 @@ def _run_fixer(
     merge_test_column: pd.Series,
     fisp_args: TYPES_FISP_ARGS,
 ) -> pd.DataFrame:
-    # Index level: 0=District; 1=Group; 2=Section; 3=Year
+    # Index level: 0=District; 1=Group; 2=Section; 3=Census_ID
 
     valid_postcodes_start = data[valid_postcode_label].sum()
 

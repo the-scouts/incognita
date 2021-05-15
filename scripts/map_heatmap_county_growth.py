@@ -44,11 +44,11 @@ if __name__ == "__main__":
         "Wales",
     }
     location_name = "Wales"
-    years = {2019, 2020}
+    census_ids = {19, 20}
 
     # setup data
     scout_data = ScoutData()
-    scout_data.filter_records("Year", years)
+    scout_data.filter_records("Census_ID", census_ids)
     scout_data.filter_records("X_name", country_names)
     # scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
     scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})

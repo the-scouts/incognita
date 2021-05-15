@@ -12,11 +12,11 @@ from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
-    year = 2020
+    census_id = 20
 
     scout_data = ScoutData()
-    # scout_data.filter_records("postcode_is_valid", {1})
-    scout_data.filter_records("Year", {year})
+    scout_data.filter_records("postcode_is_valid", {1})
+    scout_data.filter_records("Census_ID", {census_id})
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
     scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
 

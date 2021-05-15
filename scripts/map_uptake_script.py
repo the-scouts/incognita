@@ -11,11 +11,11 @@ from incognita.reports.reports import Reports
 
 if __name__ == "__main__":
     county_name = "North Yorkshire"
-    year = 2020
+    census_id = 20
 
     # setup data
     scout_data = ScoutData()
-    scout_data.filter_records("Year", {year})
+    scout_data.filter_records("Census_ID", {census_id})
     scout_data.filter_records("X_name", {"England", "Scotland", "Wales", "Northern Ireland"})
     scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
     scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})
@@ -56,19 +56,19 @@ if __name__ == "__main__":
     mapper = Map(map_name=f"{county_name} uptake map")
 
     # # Create 6 to 17 map - Westminster Constituencies
-    # mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (PCon)", pcon_reports, show=True)
+    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (PCon)", pcon_reports, show=True)
     #
     # # Create 6 to 17 map - IMD deciles
     # mapper.add_areas("imd_decile", "IMD", "IMD Decile", imd_reports)
     #
     # # Create 6 to 17 map - Local Authorities
-    # mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (LAs)", lad_reports)
+    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (LAs)", lad_reports)
     #
     # # Create 6 to 17 map - Wards
-    # mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (Wards)", wards_reports)
+    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (Wards)", wards_reports)
 
     # Create 6 to 17 map - Wards
-    mapper.add_areas(f"%-All-{year}", "% 6-17 Uptake", "% 6-17 Uptake (Districts)", nys_reports, show=True)
+    mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (Districts)", nys_reports, show=True)
 
     # Plot sections
     sections_in_county = scout_data.census_data["C_name"] == county_name
