@@ -11,8 +11,8 @@ from incognita.data import scout_census
 from incognita.data.ons_pd import Boundary
 from incognita.logger import logger
 from incognita.utility import config
-from incognita.utility import root
 from incognita.utility import constants
+from incognita.utility import root
 
 if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory

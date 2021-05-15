@@ -5,8 +5,8 @@ from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.utility import config
-from incognita.utility import deciles
 from incognita.utility import constants
+from incognita.utility import deciles
 
 if __name__ == "__main__":
     set_up_logger()

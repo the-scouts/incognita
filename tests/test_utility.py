@@ -9,8 +9,8 @@ import toml
 from incognita.data import ons_pd
 from incognita.logger import logger
 from incognita.utility import config
-from incognita.utility import root
 from incognita.utility import deciles
+from incognita.utility import root
 from incognita.utility.timing import time_function
 
 ons_postcode_directory_stub = ons_pd.ONSPostcodeDirectory(
