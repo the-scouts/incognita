@@ -7,13 +7,13 @@ This script has no command line options.
 """
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from incognita.data import scout_census
 from incognita.data.ons_pd_may_19 import ons_postcode_directory_may_19
-from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.preprocessing import census_merge_data
@@ -126,7 +126,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
     """
     raw_extract_path = config.SETTINGS.census_extract.original
-    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields-new"
+    output_path = raw_extract_path.parent / f"{raw_extract_path.stem} with {ons_pd_publication_date} fields-new1"
     error_output_path = config.SETTINGS.folders.output / "error_file.csv"
 
     valid_postcode_label = scout_census.column_labels.VALID_POSTCODE
@@ -147,22 +147,23 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 if __name__ == "__main__":
     # Turn on logging
     set_up_logger()
+    logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
+    start_time = time.time()
 
     # load raw census extract
-    scout_data = ScoutData(merged_csv=False, load_census_data=False)
     dtypes = {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
-    scout_data.census_data = pd.read_csv(config.SETTINGS.census_extract.original, dtype=dtypes, encoding="utf-8")
+    census_data = pd.read_csv(config.SETTINGS.census_extract.original, dtype=dtypes, encoding="utf-8")
 
     # combine all youth membership columns into a single total
     for section_name, section_model in scout_census.column_labels.sections:
-        scout_data.census_data[f"{section_name}_total"] = scout_data.census_data[section_model.youth_cols].sum(axis=1).astype("Int16")
+        census_data[f"{section_name}_total"] = census_data[section_model.youth_cols].sum(axis=1).astype("Int16")
 
     # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
-    scout_data.census_data[scout_census.column_labels.name.ITEM] = scout_data.census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")
+    census_data[scout_census.column_labels.name.ITEM] = census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")
     # TODO can we remove this?
 
     # merge the census extract and ONS postcode directory, and save the data to file
-    merged_data = merge_ons_postcode_directory(scout_data.census_data, ons_postcode_directory_may_19)
+    merged_data = merge_ons_postcode_directory(census_data, ons_postcode_directory_may_19)
     save_merged_data(merged_data, ons_postcode_directory_may_19.PUBLICATION_DATE)
 
-    scout_data.close()
+    logger.info(f"Script finished, {time.time() - start_time:.2f} seconds elapsed.")
