@@ -114,6 +114,7 @@ class Map:
             code_col=reports.geography.metadata.api.codes_col,
             name_col=reports.geography.metadata.api.names_col,
             measure_name=tooltip,
+            show=show,
         )
 
     def add_meeting_places_to_map(
@@ -453,6 +454,7 @@ def _output_shape_layer(
     code_col: str,
     name_col: str,
     measure_name: str,
+    show: bool,
 ) -> str:
     # query params reference: https://developers.arcgis.com/rest/services-reference/query-feature-service-layer-.htm#GUID-62EE7495-8688-4BD0-B433-89F7E4476673
 
@@ -468,6 +470,7 @@ def _output_shape_layer(
         "{code_col}",
         "{name_col}",
         "{measure_name}",
+        {"true" if show else "false"},
     )
     """
 
