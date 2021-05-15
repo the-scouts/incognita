@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     mapper = Map(map_name="uk_by_la_map")
     mapper.add_areas(f"All-{year}", "Under 18s", "Scouts aged under 18", reports, show=True)
-    mapper.add_sections_to_map(scout_data, mapper.district_colour_mapping(scout_data), {"youth membership"}, cluster_markers=True)
+    mapper.add_sections_to_map(scout_data, "D_ID", {"youth membership"}, cluster_markers=True)
 
     # Save the map and display
     mapper.save_map()

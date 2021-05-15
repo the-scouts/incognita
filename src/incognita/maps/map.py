@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from itertools import cycle
+import itertools
 from pathlib import Path
 from string import Template
 import time
@@ -120,7 +120,7 @@ class Map:
     def add_meeting_places_to_map(
         self,
         sections: pd.DataFrame,
-        colour: Union[str, dict],
+        colour_key: str,
         marker_data: set[str],
         layer_name: str = "Sections",
         cluster_markers: bool = False,
@@ -133,7 +133,7 @@ class Map:
 
         Args:
             sections: Census records relating to Sections with lat and long Columns
-            colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+            colour_key: Determines marker colour. If a column in `sections`, categorical colours. Otherwise, must be a CSS colour name.
             marker_data: Set of strings which determines content for popup, including:
                 - youth membership
                 - awards
@@ -178,7 +178,11 @@ class Map:
             eligible = sections[award_eligible_cols].sum(axis=1).astype(int).astype(str)
             sections["awards_info"] = section_names + " : " + awards + " Top Awards out of " + eligible + " eligible"
 
-        sections["marker_colour"] = sections[colour["census_column"]].map(colour["mapping"]) if isinstance(colour, dict) else colour
+        if colour_key in sections.columns:
+            sections["marker_colour"] = sections[colour_key].map(_colour_mapping(sections[colour_key]))
+        else:
+            sections["marker_colour"] = colour_key
+
         if coloured_region_key and coloured_region is not None:
             # Areas outside the region_of_colour have markers coloured grey
             sections.loc[~sections[coloured_region_key].isin(coloured_region), "marker_colour"] = "gray"
@@ -251,7 +255,7 @@ class Map:
     def add_sections_to_map(
         self,
         scout_data: ScoutData,
-        colour: Union[str, dict],
+        colour_key: str,
         marker_data: set[str],
         single_section: str = None,
         layer: str = "Sections",
@@ -270,7 +274,7 @@ class Map:
 
         Args:
             scout_data:
-            colour: Colour for markers. If str all the same colour, if dict, must have keys that are District IDs
+            colour_key: Determines marker colour. If a column in `sections`, categorical colours. Otherwise, must be a CSS colour name.
             marker_data: List of strings which determines content for popup, including:
                 - youth membership
                 - awards
@@ -288,7 +292,7 @@ class Map:
             filtered_data = scout_data.census_data.loc[scout_data.census_data["Year"] == scout_data.census_data["Year"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
-        self.add_meeting_places_to_map(filtered_data, colour, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
+        self.add_meeting_places_to_map(filtered_data, colour_key, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
 
     def add_custom_data(self, csv_file_path: Path, layer_name: str, location_cols: Union[Literal["Postcodes"], dict], marker_data: list = None) -> None:
         """Function to add custom data as markers on map
@@ -351,14 +355,6 @@ class Map:
         """Show the file at self.out_file in the default browser."""
         webbrowser.open(self.out_file.as_uri())
 
-    @staticmethod
-    def district_colour_mapping(scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
-        return _generic_colour_mapping(scout_data, scout_census.column_labels.id.DISTRICT)
-
-    @staticmethod
-    def county_colour_mapping(scout_data: ScoutData) -> dict[str, Union[str, dict[int, str]]]:
-        return _generic_colour_mapping(scout_data, scout_census.column_labels.id.COUNTY)
-
 
 def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     """Loads a given boundary from a Reports object.
@@ -396,16 +392,17 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     return geo_data
 
 
-def _generic_colour_mapping(scout_data: ScoutData, grouping_column: str) -> dict[str, Union[str, dict[int, str]]]:
+def _colour_mapping(series: pd.Series) -> dict[Union[int, str], str]:
     # fmt: off
-    colours = cycle((
-        "cadetblue", "lightblue", "blue", "beige", "red", "darkgreen", "lightgreen", "purple",
-        "lightgray", "orange", "pink", "darkblue", "darkpurple", "darkred", "green", "lightred",
+    colours = itertools.cycle((
+        "lightblue", "lightgreen", "salmon",
+        "cadetblue", "green", "orange", "red", "pink", "purple", "blue",
+        "darkred", "darkpurple", "darkblue", "darkgreen",
+        "lightgray",
     ))
     # fmt: on
-    grouping_ids = scout_data.census_data[grouping_column].drop_duplicates()
-    mapping = {grouping_id: next(colours) for grouping_id in grouping_ids}
-    return {"census_column": grouping_column, "mapping": mapping}
+    categories = set(series.array.to_numpy())  # quickest
+    return {category_id: next(colours) for category_id in categories}
 
 
 def _output_fit_bounds(bounds: tuple[tuple[float, float], tuple[float, float]]) -> str:

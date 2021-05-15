@@ -83,7 +83,7 @@ if __name__ == "__main__":
     # )
     mapper.add_meeting_places_to_map(
         scout_data.census_data.loc[sections_in_county],
-        mapper.district_colour_mapping(scout_data),
+        "D_ID",
         {"youth membership"},
         "Your Sections",
         coloured_region={county_name},

@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # Plot sections
     mapper.add_meeting_places_to_map(
         sections=scout_data.census_data,
-        colour=mapper.district_colour_mapping(scout_data),
+        colour="D_ID",
         marker_data={"youth membership"},
         cluster_markers=True,
         coloured_region=countries,
