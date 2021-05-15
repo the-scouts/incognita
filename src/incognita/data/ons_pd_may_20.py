@@ -20,8 +20,8 @@ ons_postcode_directory_may_20 = ONSPostcodeDirectory(
         "imd_decile": "UInt8",  # should be uint8 but not atm because the NaN thing
     },  # Int capitalised as this ignores NaNs
     PUBLICATION_DATE="May 2020",
-    IMD_MAX={"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890},
-    COUNTRY_CODES={
+    IMD_MAX={"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890},  # User Guide p. 45
+    COUNTRY_CODES={  # User Guide p. 34
         "E92000001": "England",
         "W92000004": "Wales",
         "S92000003": "Scotland",
