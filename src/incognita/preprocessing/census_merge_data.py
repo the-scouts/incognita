@@ -300,6 +300,10 @@ def try_fix_invalid_postcodes(census_data: pd.DataFrame, merge_test_column: pd.S
     census_data = _run_fixer(census_data, pre_2017_section_records, valid_postcode_label, merge_test_column_label, merge_test_column, fisp_args)
     del pre_2017_section_records, valid_postcode_lookup, fisp_args
 
+    # normalise missing data
+    census_data = census_data.copy()  # otherwise SettingWithCopyWarning
+    census_data[clean_postcode_label][census_data[clean_postcode_label].isin({"", "NA", pd.NA, np.NaN})] = float("NaN")
+
     # Undo the changes made in this method by removing the MultiIndex and
     # removing the merge test column
     census_data = census_data.reset_index(drop=True).drop(merge_test_column_label, axis=1)
