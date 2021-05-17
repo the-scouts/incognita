@@ -77,7 +77,7 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
 
     # fill unmerged rows with default values
     logger.info("filling unmerged rows")
-    data = census_merge_data.fill_unmerged_rows(data, scout_census.column_labels.VALID_POSTCODE, ons_fields_data_types)
+    data = census_merge_data.fill_unmerged_rows(data, ons_fields_data_types)
 
     # Filter to useful columns
     # fmt: off
@@ -135,7 +135,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 
     # The errors file contains all the postcodes that failed to be looked up in the ONS Postcode Directory
     error_output_fields = [postcode_merge_column, original_postcode_label, compass_id_label, "type", "name", "G_name", "D_name", "C_name", "R_name", "X_name", "Census Date"]
-    data.loc[data[valid_postcode_label] == 0, error_output_fields].to_csv(error_output_path, index=False, encoding="utf-8-sig")
+    data.loc[~data[valid_postcode_label], error_output_fields].to_csv(error_output_path, index=False, encoding="utf-8-sig")
 
     # Write the new data to a csv file (utf-8-sig only to force excel to use UTF-8)
     logger.info("Writing merged data")
@@ -150,7 +150,8 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 # sort MultiIndex and always use first element 39.85s (perf3)
 # fully remove loop 40.46s (perf4)
 # simplify update logic 33.34s (perf5)
-# speed up valid postcode detection 33.34s (perf6)
+# speed up valid postcode detection 30.21s (perf6)
+# speed up valid postcode detection 29.97s (perf6)
 if __name__ == "__main__":
     # Turn on logging
     set_up_logger()
