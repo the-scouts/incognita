@@ -2,9 +2,6 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pygeos.constructive
-import shapely.geos
-import shapely.geometry
-import shapely.ops
 
 from incognita.data import scout_census
 from incognita.logger import logger
@@ -71,19 +68,15 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
         all_points["buffer_distance"] = all_points.apply(lambda row: _buffer_distance(row, all_points), axis=1)
         new_number = sum(all_points["buffer_distance"] == 0)
         logger.info(f"On next pass {new_number} missing buffer distance")
-        logger.debug(f"The following points do not have buffer distances defined:\n{all_points.loc[all_points['buffer_distance'] == 0]}")
+        logger.debug(f"The following points do not have buffer distances defined:\n{all_points.index[all_points['buffer_distance'] == 0]}")
 
     # Create the GeoDataFrame that will form the GeoJSON
-    output_columns = ["id", "name"]
-    output_frames = []
+    output_data = []
     district_nu = 0
     for district in districts.itertuples():
-        if str(district.D_ID) != "nan":
+        if pd.notna(district.D_ID):
             district_nu += 1
-            data = {
-                "id": [district.D_ID],
-                "name": [district.D_name],
-            }
+
             logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district.D_name}")
 
             district_points = all_points.loc[all_points["D_ID"] == district.D_ID]
@@ -91,20 +84,21 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
             # For each of the points in the district, produces a polygon to
             # represent the buffered point from the buffer distances
             # calculated above
-            buffered_points = district_points.apply(lambda row: row["geometry"].buffer(row["buffer_distance"]), axis=1)
+            buffered_points = gpd.GeoSeries([row.geometry.buffer(row.buffer_distance) for row in district_points.itertuples()])
 
             # Unifies the polygons created from each point in the District
             # into one polygon for the District.
-            district_polygon = shapely.ops.unary_union(buffered_points)
-            district_polygon2 = buffered_points.unary_union()
-
-            data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon], crs=constants.BNG)
-            output_frames.append(data_df)
+            district_polygon = buffered_points.geometry.array.unary_union()
+            data = {
+                "id": district.D_ID,
+                "name": district.D_name,
+                "geometry": district_polygon,
+            }
+            output_data.append(data)
 
     # Convert co-ordinates back to WGS84, which uses latitude and longitude
-    output_gpd = pd.concat(output_frames)
-    output_gpd = output_gpd.to_crs(epsg=constants.WGS_84)
-    output_gpd.reset_index(drop=True, inplace=True)
+    # output_gpd = pd.concat(output_frames)
+    output_gpd = gpd.GeoDataFrame(output_data, crs=constants.BNG).to_crs(epsg=constants.WGS_84)
 
     logger.debug(f"output gpd\n{output_gpd}")
     output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors="coerce")
@@ -135,10 +129,9 @@ def _buffer_distance(point_details: pd.Series, all_points: gpd.GeoDataFrame) -> 
     points_of_interest = all_points.loc[point_details["indexes_of_interest"]]
 
     for nearby_point in nearest_points:
+        nearby_point_details = points_of_interest.loc[nearby_point["Index"], ["buffer_distance", "nearest_points"]]
 
-        nearby_point_details = points_of_interest.loc[nearby_point["Index"], :]
-
-        buffer = nearby_point_details["buffer_distance"].array[0]
+        buffer = nearby_point_details["buffer_distance"]
         if buffer != 0:
             new_distance = nearby_point["Distance"] - buffer
             if distance == 0:
@@ -149,27 +142,24 @@ def _buffer_distance(point_details: pd.Series, all_points: gpd.GeoDataFrame) -> 
             if (distance == 0) or (distance > (nearby_point["Distance"] / 2)):
                 # Decide if these two points are a 'pair'.
                 # I.e. if the restricting factor is just their mutual closeness
-                nearest_to_nearby = nearby_point_details["nearest_points"].array[0]
-
-                nearest_to_nearby_indexes = [p["Index"][0] for p in nearest_to_nearby]
-
-                nearest_to_nearby_details = points_of_interest.loc[nearest_to_nearby_indexes, :]
-
+                nearest_to_nearby = nearby_point_details["nearest_points"]
+                nearest_to_nearby_indexes = [p["Index"] for p in nearest_to_nearby]
+                nearest_to_nearby_details = all_points.loc[nearest_to_nearby_indexes, :]
                 unset_nearby = nearest_to_nearby_details.loc[nearest_to_nearby_details["buffer_distance"] == 0]
 
                 if not unset_nearby.empty:
-                    closest_unset = [p for p in nearest_to_nearby if p["Index"][0] in unset_nearby.index][0]
+                    closest_buffer_unset = next(p for p in nearest_to_nearby if p["Index"] in unset_nearby.index)
 
                     # Closer points with defined buffers
-                    closer_set = [p for p in nearest_to_nearby if p["Distance"] < closest_unset["Distance"]]
+                    closer_buffer_set = [p for p in nearest_to_nearby if p["Distance"] < closest_buffer_unset["Distance"]]
 
-                    if closer_set:
-                        buffers = nearest_to_nearby_details.loc[[p["Index"][0] for p in closer_set], :]["buffer_distance"]
+                    if closer_buffer_set:
+                        buffers = nearest_to_nearby_details.loc[[p["Index"] for p in closer_buffer_set], "buffer_distance"]
 
                         if (not buffers.empty) and (max(buffers) > nearby_point["Distance"] / 2):
                             return 0  # not valid
 
-                    if points_of_interest.loc[closest_unset["Index"], :]["index"].array[0] == point_details["index"]:
+                    if points_of_interest.loc[closest_buffer_unset["Index"]].name == point_details.name:
                         # The closest unset point to this near point we are considering is the original point
                         distance = nearby_point["Distance"] / 2
                     else:
@@ -190,17 +180,7 @@ def _nearest_other_points(row: pd.Series, all_points: gpd.GeoDataFrame, distance
         Sorted list of dictionaries containing points and distances
 
     """
-    # point = row["geometry"]
-
-    # other_data = all_points.loc[all_points["D_ID"] != row["D_ID"]]
-    # multi_point_geos = pygeos.creation.multipoints(other_data.geometry.array.data)
-    # # geos -> shapely conversion from geopandas._vectorised._pygeos_to_shapely
-    # other_points = shapely.geometry.base.geom_factory(shapely.geos.lgeos.GEOSGeom_clone(multi_point_geos._ptr))
-    #
     # # TODO use pygeos 0.10 nearest(*) func (not released 2021-05-17)
-    # nearest_points = shapely.ops.nearest_points(point, other_points)
-    # nearest_other_point = nearest_points[1]  # [0] refers to self
-    # distance = point.distance(nearest_other_point) * 2
 
     other_indicies = all_points.index[all_points["D_ID"] != row["D_ID"]]
     distance_row = distances[row.name]
