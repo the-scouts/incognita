@@ -39,26 +39,42 @@ cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_
 # fmt: on
 
 
-def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirectory) -> pd.DataFrame:
-    """Merges census extract data with ONS data
+def process_census_extract() -> None:
+    census_data = load_census_data()
+    ons_pd_data = load_postcode_directory(ons_postcode_directory_may_20)
 
-    Args:
-        data: Census data
-        ons_pd: A reference to an ONS Postcode Directory model instance
+    # merge the census extract and ONS postcode directory
+    merged_data = merge_ons_postcode_directory(census_data, ons_pd_data)
 
-    """
-    ons_fields_data_types = {
-        "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
-        "numeric": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
-    }
+    # Add IMD deciles
+    merged_data = create_imd_deciles(merged_data, ons_postcode_directory_may_20)
 
-    logger.debug("Initialising merge object")
+    # Set data types
+    merged_data = coerce_data_types(merged_data)
 
-    logger.info("Cleaning the postcodes")
-    census_merge_data.clean_and_verify_postcode(data, scout_census.column_labels.POSTCODE)
+    # Save the processed extract
+    save_merged_data(merged_data, ons_postcode_directory_may_20.PUBLICATION_DATE)
 
+
+def load_census_data() -> pd.DataFrame:
+    # load raw census extract
+    dtypes = {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
+    census_data = pd.read_csv(config.SETTINGS.census_extract.original, dtype=dtypes, encoding="utf-8")
+
+    # combine all youth membership columns into a single total
+    for section_name, section_model in scout_census.column_labels.sections:
+        census_data[f"{section_name}_total"] = census_data[section_model.youth_cols].sum(axis=1).astype("Int16")
+
+    # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
+    # TODO can we remove this?
+    census_data[scout_census.column_labels.name.ITEM] = census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")
+
+    return census_data
+
+
+def load_postcode_directory(ons_pd: ONSPostcodeDirectory) -> pd.DataFrame:
     logger.info(f"Loading ONS postcode data.")
-    ons_pd_data = pd.read_csv(
+    return pd.read_csv(
         config.SETTINGS.ons_pd.full,
         index_col=ons_pd.index_column,
         dtype=ons_pd.data_types,
@@ -66,42 +82,49 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
         encoding="utf-8",
     )
 
-    logger.info("Adding ONS postcode directory data to Census and outputting")
 
-    # attempt to fix invalid postcodes
-    data = census_merge_data.try_fix_invalid_postcodes(data, ons_pd_data.index)
+def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd_data: pd.DataFrame) -> pd.DataFrame:
+    """Merges census extract data with ONS data
 
-    # fully merge the data
-    logger.info("Merging data")
-    data = pd.merge(data, ons_pd_data, how="left", left_on="clean_postcode", right_index=True, sort=False)
+    Args:
+        data: Census data
+        ons_pd_data: ONS Postcode Directory data
 
-    # fill unmerged rows with default values
-    logger.info("filling unmerged rows")
-    data = census_merge_data.fill_unmerged_rows(data, ons_fields_data_types)
+    """
+    ons_fields_data_types = {
+        "categorical": ["lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "ctry", "rgn"],
+        "numeric": ["oseast1m", "osnrth1m", "lat", "long", "imd"],
+    }
+
+    data = census_merge_data.merge_with_postcode_directory(data, ons_pd_data, ons_fields_data_types)
 
     # Filter to useful columns
     # fmt: off
-    data = data[[
-        "Object_ID", "compass", "type", "name", "G_ID", "G_name", "D_ID", "D_name", "C_ID", "C_name", "R_ID", "R_name", "X_ID", "X_name",
-        "postcode", "clean_postcode", "postcode_is_valid", "Census_ID", "Census Date", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Young_Leader_Unit",
-        "Beavers_f", "Beavers_m", "Beavers_total", "Cubs_f", "Cubs_m", "Cubs_total", "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total",
-        "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults",
-        "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards",
-        "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "ScoutsOfTheWorldAward", "Queens_Scout_Awards",
-        "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA", "Eligible4SOWA",
-        "oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "lat", "long", "imd"
-    ]]
+    cols_to_discard = {
+        "eastings", "northings", "IMD",
+        "Beavers_SelfIdentify", "Beavers_PreferNoToSay", "Cubs_SelfIdentify", "Cubs_PreferNoToSay", "Scouts_SelfIdentify", "Scouts_PreferNoToSay",
+        "Explorers_SelfIdentify", "Explorers_PreferNoToSay", "Network_SelfIdentify", "Network_PreferNoToSay",
+        "oseast1m", "osnrth1m"
+    }
     # fmt: on
+    data = data[[col for col in data.columns if col not in cols_to_discard]]
 
-    # Add IMD decile column
-    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ons_pd).astype("UInt8")
+    return data
 
+
+def create_imd_deciles(census_data: pd.DataFrame, ons_pd: ONSPostcodeDirectory):
+    """Add IMD decile column"""
+    census_data["imd_decile"] = deciles.calc_imd_decile(census_data["imd"], census_data["ctry"], ons_pd).astype("UInt8")
+    return census_data
+
+
+def coerce_data_types(data: pd.DataFrame) -> pd.DataFrame:
     # Set correct types
     data[cols_bool] = data[cols_bool].astype(bool)
     data[cols_int_16] = data[cols_int_16].astype("Int16")
     data[cols_int_32] = data[cols_int_32].astype("Int32")
     data[cols_categorical] = data[cols_categorical].astype("category")
-    census_data["Census Date"] = pd.to_datetime(census_data["Census Date"], format="%d/%m/%Y").astype(str)  # ISO format
+    data["Census Date"] = pd.to_datetime(data["Census Date"], format="%d/%m/%Y").astype(str)  # ISO format
 
     # # Fix ONS errors (https://github.com/mysociety/mapit/issues/341)
     # data["osward"] = data["osward"].replace("E05006336", "E05012387")
@@ -151,27 +174,14 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 # fully remove loop 40.46s (perf4)
 # simplify update logic 33.34s (perf5)
 # speed up valid postcode detection 30.21s (perf6)
-# speed up valid postcode detection 29.97s (perf6)
+# speed up valid postcode detection 29.97s (perf7)
+# refactoring 28.77s (perf8)
 if __name__ == "__main__":
     # Turn on logging
     set_up_logger()
     logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
     start_time = time.time()
 
-    # load raw census extract
-    dtypes = {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
-    census_data = pd.read_csv(config.SETTINGS.census_extract.original, dtype=dtypes, encoding="utf-8")
-
-    # combine all youth membership columns into a single total
-    for section_name, section_model in scout_census.column_labels.sections:
-        census_data[f"{section_name}_total"] = census_data[section_model.youth_cols].sum(axis=1).astype("Int16")
-
-    # backticks (`) break folium's output as it uses ES2015 template literals in the output file.
-    census_data[scout_census.column_labels.name.ITEM] = census_data[scout_census.column_labels.name.ITEM].str.replace("`", "")
-    # TODO can we remove this?
-
-    # merge the census extract and ONS postcode directory, and save the data to file
-    merged_data = merge_ons_postcode_directory(census_data, ons_postcode_directory_may_20)
-    save_merged_data(merged_data, ons_postcode_directory_may_20.PUBLICATION_DATE)
+    process_census_extract()
 
     logger.info(f"Script finished, {time.time() - start_time:.2f} seconds elapsed.")
