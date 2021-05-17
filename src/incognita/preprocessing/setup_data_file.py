@@ -150,6 +150,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 # apply to loop: 59.7s (perf1)
 # only update postcode col 64.75s (perf2)
 # sort MultiIndex and always use first element 39.85s (perf3)
+# fully remove loop 40.46s (perf4)
 if __name__ == "__main__":
     # Turn on logging
     set_up_logger()

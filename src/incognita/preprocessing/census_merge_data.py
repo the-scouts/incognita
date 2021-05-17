@@ -199,24 +199,23 @@ def _run_fixer(
 
     valid_postcodes_start = data[valid_postcode_label].sum()
     invalid_postcodes_mask = (records[valid_postcode_label] == 0).to_numpy()
-    invalid_postcodes = records.reset_index(drop=True).loc[invalid_postcodes_mask, [column_label, census_id_label]]
-    vpl_groupby = valid_postcode_lookup[clean_postcode_label].sort_index(ascending=(True, True, True, False)).groupby(level=index_level)
+    invalid_postcodes = records.loc[invalid_postcodes_mask, column_label]
 
-    for record in invalid_postcodes.itertuples():
-        try:
-            # Get all clean postcodes from the lookup table with the same ID as
-            # the passed index level. As the census IDs are sorted high -> low,
-            # the first item will be the newest possible clean postcode.
-            valid_postcode = vpl_groupby.get_group(record[1]).array[0]
-            if valid_postcode:
-                records[clean_postcode_label].array[record.Index] = valid_postcode
-        except (KeyError, IndexError):
-            continue
+    # Get all clean postcodes from the lookup table with the same ID as
+    # the passed index level. As the census IDs are sorted high -> low,
+    # the first item will be the newest possible clean postcode.
+    firsts = valid_postcode_lookup[clean_postcode_label].sort_index(ascending=(True, True, True, False)).groupby(level=index_level).first()
+    clean_postcodes = invalid_postcodes.map(firsts)
 
-    # Returns a column with updated postcodes
-    changed_records = records[invalid_postcodes_mask]
+    # Update the clean postcodes with the identified values
+    clean_postcodes_not_na = clean_postcodes.loc[clean_postcodes.notna()]
+    records.loc[clean_postcodes_not_na.index, clean_postcode_label] = clean_postcodes_not_na
+
+    # Get the clean postcodes of the previously invalid records
+    changed_records = records.loc[invalid_postcodes_mask, clean_postcode_label]
+
     # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
-    data[clean_postcode_label].update(changed_records[clean_postcode_label])
+    data[clean_postcode_label].update(changed_records)
 
     # Delete the Country column from the passed data as having this would prevent merging
     # Pass only the merge test column as a quick way to test that the postcode has merged
