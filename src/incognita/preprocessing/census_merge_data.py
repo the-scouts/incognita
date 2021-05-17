@@ -168,8 +168,7 @@ def _run_fixer(
     merge_test_column: pd.Series,
     column_label: str,
     index_level: int,
-    valid_postcode_lookup: pd.DataFrame,
-    census_id_label: str,
+    valid_clean_postcodes: pd.Series,
     clean_postcode_label: str,
 ) -> pd.DataFrame:
     """Runs postcode fixer for given data and parameters.
@@ -187,8 +186,7 @@ def _run_fixer(
       merge_test_column:
       column_label Label to index for
       index_level: Level of the MultiIndex to use
-      valid_postcode_lookup:
-      census_id_label:
+      valid_clean_postcodes:
       clean_postcode_label:
 
     Returns:
@@ -197,25 +195,19 @@ def _run_fixer(
     """
     # Index level: 0=District; 1=Group; 2=Section; 3=Census_ID
 
-    valid_postcodes_start = data[valid_postcode_label].sum()
-    invalid_postcodes_mask = (records[valid_postcode_label] == 0).to_numpy()
-    invalid_postcodes = records.loc[invalid_postcodes_mask, column_label]
+    valid_postcodes_start = data[valid_postcode_label].to_numpy().sum()
 
     # Get all clean postcodes from the lookup table with the same ID as
     # the passed index level. As the census IDs are sorted high -> low,
     # the first item will be the newest possible clean postcode.
-    firsts = valid_postcode_lookup[clean_postcode_label].sort_index(ascending=(True, True, True, False)).groupby(level=index_level).first()
-    clean_postcodes = invalid_postcodes.map(firsts)
+    firsts = valid_clean_postcodes.sort_index(ascending=(True, True, True, False)).groupby(level=index_level).first()
 
-    # Update the clean postcodes with the identified values
-    clean_postcodes_not_na = clean_postcodes.loc[clean_postcodes.notna()]
-    records.loc[clean_postcodes_not_na.index, clean_postcode_label] = clean_postcodes_not_na
-
-    # Get the clean postcodes of the previously invalid records
-    changed_records = records.loc[invalid_postcodes_mask, clean_postcode_label]
+    # Map invalid postcodes to valid postcodes by the given ID type/field
+    clean_postcodes = records.loc[records[valid_postcode_label] == 0, column_label].map(firsts)
 
     # Merge in the changed postcodes and overwrite pre-existing postcodes in the Clean Postcode column
-    data[clean_postcode_label].update(changed_records)
+    clean_postcodes_not_na = clean_postcodes.loc[clean_postcodes.notna()]  # .update(*) uses not_na filter
+    data.loc[clean_postcodes_not_na.index, clean_postcode_label] = clean_postcodes_not_na
 
     # Delete the Country column from the passed data as having this would prevent merging
     # Pass only the merge test column as a quick way to test that the postcode has merged
@@ -250,7 +242,8 @@ def _run_postcode_fix_step(
 
     logger.info(f"Fill invalid {invalid_type} postcodes with valid section postcodes from {fill_from}")
     section_records, valid_postcode_lookup = _create_helper_tables(census_data, entity_type_list, entity_type_label, fields_for_postcode_lookup, valid_postcode_label)
-    census_data = _run_fixer(census_data, section_records, valid_postcode_label, merge_test_column, column_label, index_level, valid_postcode_lookup, census_id_label, clean_postcode_label)
+    vpl_cp = valid_postcode_lookup[clean_postcode_label]
+    census_data = _run_fixer(census_data, section_records, valid_postcode_label, merge_test_column, column_label, index_level, vpl_cp, clean_postcode_label)
     return census_data
 
 
