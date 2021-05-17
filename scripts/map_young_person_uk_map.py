@@ -15,7 +15,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", {True})
 
     # generate district boundaries
-    district_boundaries.create_district_boundaries(scout_data)
+    district_boundaries.create_district_boundaries(scout_data.census_data)
 
     # generate boundary report
     reports = Reports("District", scout_data)

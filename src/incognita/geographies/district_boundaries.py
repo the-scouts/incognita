@@ -5,12 +5,11 @@ import shapely.geometry
 import shapely.ops
 
 from incognita.data import scout_census
-from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.utility import constants
 
 
-def create_district_boundaries(scout_data: ScoutData) -> None:
+def create_district_boundaries(census_data: pd.DataFrame) -> None:
     """Creates a GeoJSON file for the District Boundaries of the Scout Census.
 
     Aims to create a circular boundary around every section of maximal size
@@ -18,27 +17,18 @@ def create_district_boundaries(scout_data: ScoutData) -> None:
     """
 
     # Find all the District IDs and names
-    districts = scout_data.census_data[[scout_census.column_labels.id.DISTRICT, scout_census.column_labels.name.DISTRICT]].drop_duplicates()
+    districts = census_data[[scout_census.column_labels.id.DISTRICT, scout_census.column_labels.name.DISTRICT]].drop_duplicates()
 
     # Finds all the records with valid postcodes in the Scout Census
-    valid_locations = scout_data.census_data.loc[scout_data.census_data[scout_census.column_labels.VALID_POSTCODE]]
-
-    # Creates a new dataframe with a subset of columns resulting in
-    # each location being a distinct row
-    all_locations = pd.DataFrame(columns=["D_ID", "D_name", "lat", "long", "clean_postcode"])
-    cols_string = ["D_name", "Object_ID", "clean_postcode"]
-    cols_numeric = ["D_ID", "lat", "long"]
-    all_locations[cols_string] = valid_locations[cols_string]
-    all_locations[cols_numeric] = valid_locations[cols_numeric].apply(pd.to_numeric, errors="coerce")
-    all_locations.drop_duplicates(subset=["lat", "long"], inplace=True)
+    all_locations = census_data.loc[census_data[scout_census.column_labels.VALID_POSTCODE], ["D_ID", "D_name", "lat", "long", "clean_postcode", "Object_ID"]].drop_duplicates(subset=["lat", "long"]).reset_index(drop=True)
 
     # Uses the lat and long co-ordinates from above to create a GeoDataFrame
-    all_points = gpd.GeoDataFrame(all_locations, geometry=gpd.points_from_xy(all_locations.long, all_locations.lat), crs=constants.WGS_84)
+    points = gpd.points_from_xy(all_locations["long"], all_locations["lat"])
+    all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84)
 
     # Converts the co-ordinate reference system into OS36 which uses
     # (x-y) coordinates in metres, rather than (long, lat) coordinates.
     all_points = all_points.to_crs(epsg=constants.BNG)
-    all_points.reset_index(inplace=True)
 
     logger.info(f"Found {len(all_points.index)} different Section points")
 
