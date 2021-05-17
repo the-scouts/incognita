@@ -1,7 +1,10 @@
-"""Merges input data with ScoutCensus data on a given key
+"""Merges ONS postcode data with census data
 
-Outputs a file which is contains the original data, a postcode validity check, and the merged fields appended.
-The output is the original csv with the additional columns 'postcode_is_valid' and those specified in fields
+Outputs a file which is contains the original census data, a postcode validity
+check, and the merged data.
+
+The output fields are those in the census and ONS data, and the additional
+fields 'postcode_is_valid' and 'clean_postcode'.
 """
 
 import re
@@ -190,7 +193,7 @@ def _fill_unmerged_rows(census_data: pd.DataFrame, fields_data_types: dict) -> p
 
 
 def _run_postcode_fix_step(
-    data: pd.DataFrame, all_valid_postcodes: pd.Index, invalid_type: str, fill_from: str, entity_type_list: set[str], column_label: str, index_level: int
+    data: pd.DataFrame, all_valid_postcodes: pd.Index, invalid_type: str, fill_from: str, entity_types: set[str], column_label: str, index_level: int
 ) -> pd.DataFrame:
     """Runs postcode fixer for given data and parameters.
 
@@ -201,13 +204,13 @@ def _run_postcode_fix_step(
         (modal) postcode from sections in group in that year, then try successive years)
 
     Args:
-      data: Census data
-      all_valid_postcodes:
-      invalid_type:
-      fill_from:
-      entity_type_list:
-      column_label Label to index for
-      index_level: Level of the MultiIndex to use
+        data: Census data
+        all_valid_postcodes: Index of all valid postcodes in the ONS postcode directory
+        invalid_type: Which type of issue are we fixing (for log message)
+        fill_from: Where are we pulling valid postcodes from (for log message)
+        entity_types: Entity types to filter the fixing on (e.g. Colony, Group, Network, District)
+        column_label: Name of the index level being used
+        index_level: Level of the MultiIndex to filter on
 
     Returns:
         Updated census data
@@ -222,7 +225,7 @@ def _run_postcode_fix_step(
 
     # Gets all entity records matching the given criteria, and returns a
     # minimal set of fields for memory optimisation
-    records = data.loc[data[entity_type_label].isin(entity_type_list), [valid_postcode_label, column_label, CLEAN_POSTCODE_LABEL]]
+    records = data.loc[data[entity_type_label].isin(entity_types), [valid_postcode_label, column_label, CLEAN_POSTCODE_LABEL]]
 
     valid_postcodes_start = data[valid_postcode_label].to_numpy().sum()
 
