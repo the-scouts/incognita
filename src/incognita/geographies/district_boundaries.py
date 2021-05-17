@@ -122,58 +122,55 @@ def _buffer_distance(point_details: pd.Series, all_points: gpd.GeoDataFrame) -> 
         Distance
 
     """
-    if point_details["buffer_distance"] == 0:
-        distance = 0
-        valid = True
+    if point_details["buffer_distance"] != 0:
+        return point_details["buffer_distance"]
 
-        # Nearest points to given point
-        nearest_points = point_details["nearest_points"]
-        points_of_interest = all_points.loc[point_details["indexes_of_interest"]]
+    distance = 0
 
-        for nearby_point in nearest_points:
+    # Nearest points to given point
+    nearest_points = point_details["nearest_points"]
+    points_of_interest = all_points.loc[point_details["indexes_of_interest"]]
 
-            nearby_point_details = points_of_interest.loc[nearby_point["Index"], :]
+    for nearby_point in nearest_points:
 
-            buffer = nearby_point_details["buffer_distance"].iloc[0]
-            if buffer != 0:
-                new_distance = nearby_point["Distance"] - buffer
-                if distance == 0:
-                    distance = new_distance
-                elif new_distance < distance:
-                    distance = new_distance
-            else:
-                if (distance == 0) or (distance > (nearby_point["Distance"] / 2)):
-                    # Decide if these two points are a 'pair'.
-                    # I.e. if the restricting factor is just their mutual closeness
-                    nearest_to_nearby = nearby_point_details["nearest_points"].iloc[0]
+        nearby_point_details = points_of_interest.loc[nearby_point["Index"], :]
 
-                    nearest_to_nearby_indexes = [p["Index"][0] for p in nearest_to_nearby]
+        buffer = nearby_point_details["buffer_distance"].array[0]
+        if buffer != 0:
+            new_distance = nearby_point["Distance"] - buffer
+            if distance == 0:
+                distance = new_distance
+            elif new_distance < distance:
+                distance = new_distance
+        else:
+            if (distance == 0) or (distance > (nearby_point["Distance"] / 2)):
+                # Decide if these two points are a 'pair'.
+                # I.e. if the restricting factor is just their mutual closeness
+                nearest_to_nearby = nearby_point_details["nearest_points"].array[0]
 
-                    nearest_to_nearby_details = points_of_interest.loc[nearest_to_nearby_indexes, :]
+                nearest_to_nearby_indexes = [p["Index"][0] for p in nearest_to_nearby]
 
-                    unset_nearby = nearest_to_nearby_details.loc[nearest_to_nearby_details["buffer_distance"] == 0]
+                nearest_to_nearby_details = points_of_interest.loc[nearest_to_nearby_indexes, :]
 
-                    if not unset_nearby.empty:
-                        closest_unset = [p for p in nearest_to_nearby if p["Index"][0] in unset_nearby.index][0]
+                unset_nearby = nearest_to_nearby_details.loc[nearest_to_nearby_details["buffer_distance"] == 0]
 
-                        # Closer points with defined buffers
-                        closer_set = [p for p in nearest_to_nearby if p["Distance"] < closest_unset["Distance"]]
+                if not unset_nearby.empty:
+                    closest_unset = [p for p in nearest_to_nearby if p["Index"][0] in unset_nearby.index][0]
 
-                        if closer_set:
-                            buffers = nearest_to_nearby_details.loc[[p["Index"][0] for p in closer_set], :]["buffer_distance"]
+                    # Closer points with defined buffers
+                    closer_set = [p for p in nearest_to_nearby if p["Distance"] < closest_unset["Distance"]]
 
-                            if (not buffers.empty) and (max(buffers) > nearby_point["Distance"] / 2):
-                                valid = False
+                    if closer_set:
+                        buffers = nearest_to_nearby_details.loc[[p["Index"][0] for p in closer_set], :]["buffer_distance"]
 
-                        if points_of_interest.loc[closest_unset["Index"], :]["index"].iloc[0] == point_details["index"]:
-                            # The closest unset point to this near point we are considering is the original point
-                            distance = nearby_point["Distance"] / 2
-                        else:
-                            valid = False
-        if not valid:
-            distance = 0
-    else:
-        distance = point_details["buffer_distance"]
+                        if (not buffers.empty) and (max(buffers) > nearby_point["Distance"] / 2):
+                            return 0  # not valid
+
+                    if points_of_interest.loc[closest_unset["Index"], :]["index"].array[0] == point_details["index"]:
+                        # The closest unset point to this near point we are considering is the original point
+                        distance = nearby_point["Distance"] / 2
+                    else:
+                        return 0  # not valid
     return distance
 
 
