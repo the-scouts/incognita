@@ -58,6 +58,7 @@ def process_census_extract() -> None:
 
 def load_census_data() -> pd.DataFrame:
     # load raw census extract
+    # TODO potentially use PyArrow CSV reader - 7.5s (pandas) -> 1.2s (pyarrow)
     dtypes = {key: "bool" for key in cols_bool} | {key: "Int16" for key in cols_int_16} | {key: "Int32" for key in cols_int_32} | {key: "category" for key in cols_categorical}
     census_data = pd.read_csv(config.SETTINGS.census_extract.original, dtype=dtypes, encoding="utf-8")
 
@@ -100,14 +101,22 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd_data: pd.DataFrame) 
 
     # Filter to useful columns
     # fmt: off
-    cols_to_discard = {
-        "eastings", "northings", "IMD",
-        "Beavers_SelfIdentify", "Beavers_PreferNoToSay", "Cubs_SelfIdentify", "Cubs_PreferNoToSay", "Scouts_SelfIdentify", "Scouts_PreferNoToSay",
-        "Explorers_SelfIdentify", "Explorers_PreferNoToSay", "Network_SelfIdentify", "Network_PreferNoToSay",
-        "oseast1m", "osnrth1m"
-    }
+    data = data[[
+        "Object_ID", "compass", "type", "name", "G_ID", "G_name", "D_ID", "D_name", "C_ID", "C_name", "R_ID", "R_name", "X_ID", "X_name",
+        "postcode", "clean_postcode", "postcode_is_valid", "Census_ID", "Census Date", "Beavers_Units", "Cubs_Units", "Scouts_Units", "Explorers_Units", "Network_Units", "Young_Leader_Unit",
+        "Beavers_f", "Beavers_m", "Beavers_total", "Cubs_f", "Cubs_m", "Cubs_total", "Scouts_f", "Scouts_m", "Scouts_total", "Explorers_f", "Explorers_m", "Explorers_total",
+        "Network_f", "Network_m", "Network_total", "Yls", "WaitList_b", "WaitList_c", "WaitList_s", "WaitList_e", "Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults",
+        "Chief_Scout_Bronze_Awards", "Chief_Scout_Silver_Awards", "Chief_Scout_Gold_Awards", "Chief_Scout_Platinum_Awards", "Chief_Scout_Diamond_Awards",
+        "Duke_Of_Edinburghs_Bronze", "Duke_Of_Edinburghs_Silver", "Duke_Of_Edinburghs_Gold", "Young_Leader_Belts", "Explorer_Belts", "ScoutsOfTheWorldAward", "Queens_Scout_Awards",
+        "Eligible4Bronze", "Eligible4Silver", "Eligible4Gold", "Eligible4Diamond", "Eligible4QSA", "Eligible4SOWA",
+        "oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "lat", "long", "imd"
+    ]]
     # fmt: on
-    data = data[[col for col in data.columns if col not in cols_to_discard]]
+    # discarded columns:
+    # "eastings", "northings", "IMD",
+    # "Beavers_SelfIdentify", "Beavers_PreferNoToSay", "Cubs_SelfIdentify", "Cubs_PreferNoToSay", "Scouts_SelfIdentify", "Scouts_PreferNoToSay",
+    # "Explorers_SelfIdentify", "Explorers_PreferNoToSay", "Network_SelfIdentify", "Network_PreferNoToSay",
+    # "oseast1m", "osnrth1m"
 
     return data
 
@@ -166,19 +175,10 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
     data.to_feather(output_path.with_suffix(".feather"))
 
 
-# initial: 157s
-# change apply core: 71.3s (perf)
-# apply to loop: 59.7s (perf1)
-# only update postcode col 64.75s (perf2)
-# sort MultiIndex and always use first element 39.85s (perf3)
-# fully remove loop 40.46s (perf4)
-# simplify update logic 33.34s (perf5)
-# speed up valid postcode detection 30.21s (perf6)
-# speed up valid postcode detection 29.97s (perf7)
-# refactoring 28.77s (perf8)
 if __name__ == "__main__":
     # Turn on logging
     set_up_logger()
+
     logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
     start_time = time.time()
 

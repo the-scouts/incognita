@@ -153,7 +153,7 @@ def _try_fix_invalid_postcodes(census_data: pd.DataFrame, all_valid_postcodes: p
     # Sets a MultiIndex on the data table to enable fast searching and querying for data
     census_data = census_data.set_index(index_cols, drop=False)
 
-    census_data = _run_postcode_fix_step(census_data, all_valid_postcodes, "section", "2019", section_types, section_id_label, 2)
+    census_data = _run_postcode_fix_step(census_data, all_valid_postcodes, "section", "latest Census", section_types, section_id_label, 2)
     census_data = _run_postcode_fix_step(census_data, all_valid_postcodes, "group-section", "same group", group_section_types, group_id_label, 1)
     census_data = _run_postcode_fix_step(census_data, all_valid_postcodes, "district-section", "same district", district_section_types, district_id_label, 0)
     census_data = _run_postcode_fix_step(census_data, all_valid_postcodes, "pre 2017", "same entity", pre_2017_types, section_id_label, 2)
