@@ -21,7 +21,7 @@ def create_district_boundaries(scout_data: ScoutData) -> None:
     districts = scout_data.census_data[[scout_census.column_labels.id.DISTRICT, scout_census.column_labels.name.DISTRICT]].drop_duplicates()
 
     # Finds all the records with valid postcodes in the Scout Census
-    valid_locations = scout_data.census_data.loc[scout_data.census_data[scout_census.column_labels.VALID_POSTCODE] == 1]
+    valid_locations = scout_data.census_data.loc[scout_data.census_data[scout_census.column_labels.VALID_POSTCODE]]
 
     # Creates a new dataframe with a subset of columns resulting in
     # each location being a distinct row
