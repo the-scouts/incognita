@@ -16,6 +16,7 @@ dependencies:
   - pygeos
   - toml
   - pydantic
+  - scipy
 
   # Testing
   - pytest
@@ -27,6 +28,6 @@ dependencies:
   - ipython
   - pre-commit
 
-#  # Requirements not on conda:
-#  - pip:
-#    -
+  # Requirements not on conda:
+  - pip:
+    - geovoronoi

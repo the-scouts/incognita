@@ -1,11 +1,54 @@
 import geopandas as gpd
+from geopandas.array import GeometryArray
+import geopandas._vectorized as vectorised
+import geovoronoi
+import geovoronoi.plotting
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pygeos
+from scipy.spatial import Voronoi
+from shapely.ops import polygonize
 
 from incognita.data import scout_census
 from incognita.logger import logger
 from incognita.utility import constants
+
+
+def create_voronoi_scipy(points: GeometryArray):
+    coords = np.array([p.coords[0] for p in points])
+    vor = Voronoi(coords)
+
+    lines = pygeos.linestrings([vor.vertices[line] for line in vor.ridge_vertices if -1 not in line])
+    convex_hull = pygeos.buffer(pygeos.convex_hull(pygeos.multipoints(points.data)), 2)
+    line_polygons = pygeos.from_shapely([*polygonize(vectorised.to_shapely(lines))])  # TODO use pygeos.polygonise in pygeos 0.10
+
+    inner = pygeos.multipolygons(pygeos.intersection(convex_hull, line_polygons))
+    edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
+    result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
+
+    plt.plot(coords[:, 0], coords[:, 1], 'ko')
+    for r in pygeos.get_parts(result):
+        xy_coords = pygeos.get_coordinates(r)[:-1].T
+        plt.fill(tuple(xy_coords[0]), tuple(xy_coords[1]), alpha=0.4)
+
+    plt.show()
+
+
+def create_voronoi_geovoronoi(points: GeometryArray):
+    fig, ax = geovoronoi.plotting.subplot_for_map()
+
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    uk = world.loc[world.name == "United Kingdom", "geometry"].to_crs(constants.BNG)
+    gb_shape = uk.array[0][1]
+    gpd.GeoSeries(gb_shape).plot(ax=ax)
+    gpd.GeoSeries(points).plot(ax=ax, color='k')
+
+    coords = np.array([p.coords[0] for p in points])
+
+    polys, pts = geovoronoi.voronoi_regions_from_coords(coords, gb_shape, per_geom=False)
+    geovoronoi.plotting.plot_voronoi_polys_with_points_in_area(ax, gb_shape, polys, coords, pts)
+    plt.show()
 
 
 def create_district_boundaries(census_data: pd.DataFrame) -> None:
@@ -28,6 +71,9 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     # OS36. This is uses (x-y) coordinates in metres, rather than (long, lat)
     # coordinates, meaning that we can operate in metres from now on.
     all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84).to_crs(epsg=constants.BNG)
+
+    create_voronoi_scipy(all_points["geometry"].array)
+    # create_voronoi_geovoronoi(all_points["geometry"])
 
     logger.info(f"Found {len(all_points.index)} different Section points")
 
@@ -103,7 +149,7 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
 
     output_gpd["id"] = pd.to_numeric(output_gpd["id"], errors="coerce")
     logger.debug(f"output gpd\n{output_gpd}")
-    output_gpd.to_file("districts_buffered.geojson", driver="GeoJSON")
+    output_gpd.to_file("districts_buffered-2.geojson", driver="GeoJSON")
 
 
 def _buffer_distance(point_details: pd.Series, all_points: gpd.GeoDataFrame) -> int:
