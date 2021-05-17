@@ -15,6 +15,25 @@ from incognita.logger import logger
 from incognita.utility import constants
 
 
+def create_voronoi_pygeos(points: GeometryArray):
+    mp = pygeos.multipoints(points.data)
+    polys = pygeos.get_parts(pygeos.voronoi_polygons(mp))
+    convex_hull = pygeos.buffer(pygeos.convex_hull(mp), 2)
+
+    inner = pygeos.multipolygons(pygeos.intersection(convex_hull, polys))
+    edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
+    result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
+
+    coords = pygeos.get_coordinates(points.data).T
+    plt.plot(coords[0, :], coords[1, :], 'ko')
+    for r in pygeos.get_parts(result):
+        xy_coords = pygeos.get_coordinates(r)[:-1].T
+        plt.fill(tuple(xy_coords[0]), tuple(xy_coords[1]), alpha=0.4)
+
+    plt.show()
+
+
+
 def create_voronoi_scipy(points: GeometryArray):
     coords = np.array([p.coords[0] for p in points])
     vor = Voronoi(coords)
@@ -72,7 +91,8 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     # coordinates, meaning that we can operate in metres from now on.
     all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84).to_crs(epsg=constants.BNG)
 
-    create_voronoi_scipy(all_points["geometry"].array)
+    create_voronoi_pygeos(all_points["geometry"].array)
+    # create_voronoi_scipy(all_points["geometry"].array)
     # create_voronoi_geovoronoi(all_points["geometry"])
 
     logger.info(f"Found {len(all_points.index)} different Section points")
