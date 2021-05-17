@@ -1,5 +1,5 @@
 from incognita.data.scout_data import ScoutData
-from incognita.geographies.district_boundaries import DistrictBoundaries
+from incognita.geographies import district_boundaries
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 
@@ -15,8 +15,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", {True})
 
     # generate district boundaries
-    district_boundaries = DistrictBoundaries(scout_data)
-    district_boundaries.create_district_boundaries()
+    district_boundaries.create_district_boundaries(scout_data)
 
     # generate boundary report
     reports = Reports("District", scout_data)
