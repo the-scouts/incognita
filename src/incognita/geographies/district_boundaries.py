@@ -72,18 +72,18 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
 
     # Create the GeoDataFrame that will form the GeoJSON
     output_columns = ["id", "name"]
-    output_gpd = gpd.GeoDataFrame(columns=output_columns, crs=constants.BNG)
+    output_frames = []
     district_nu = 0
-    for count, district in districts.iterrows():
-        if str(district["D_ID"]) != "nan":
+    for district in districts.itertuples():
+        if str(district.D_ID) != "nan":
             district_nu += 1
             data = {
-                "id": [district["D_ID"]],
-                "name": [district["D_name"]],
+                "id": [district.D_ID],
+                "name": [district.D_name],
             }
-            logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district['D_name']}")
+            logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district.D_name}")
 
-            district_points = all_points.loc[all_points["D_ID"] == district["D_ID"]]
+            district_points = all_points.loc[all_points["D_ID"] == district.D_ID]
 
             # For each of the points in the district, produces a polygon to
             # represent the buffered point from the buffer distances
@@ -95,10 +95,11 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
             district_polygon = shapely.ops.unary_union(buffered_points)
             district_polygon2 = buffered_points.unary_union()
 
-            data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon])
-            output_gpd = gpd.GeoDataFrame(pd.concat([output_gpd, data_df], axis=0, sort=False))
+            data_df = gpd.GeoDataFrame(data, columns=output_columns, geometry=[district_polygon], crs=constants.BNG)
+            output_frames.append(data_df)
 
     # Convert co-ordinates back to WGS84, which uses latitude and longitude
+    output_gpd = pd.concat(output_frames)
     output_gpd = output_gpd.to_crs(epsg=constants.WGS_84)
     output_gpd.reset_index(drop=True, inplace=True)
 
