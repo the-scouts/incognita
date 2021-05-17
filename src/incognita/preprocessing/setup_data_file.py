@@ -68,14 +68,12 @@ def merge_ons_postcode_directory(data: pd.DataFrame, ons_pd: ONSPostcodeDirector
 
     logger.info("Adding ONS postcode directory data to Census and outputting")
 
-    # initially merge just Country column to test what postcodes can match
-    data = census_merge_data.merge_data(data, ons_pd_data["ctry"], "clean_postcode")
-
     # attempt to fix invalid postcodes
-    data = census_merge_data.try_fix_invalid_postcodes(data, ons_pd_data["ctry"])
+    data = census_merge_data.try_fix_invalid_postcodes(data, ons_pd_data.index)
 
     # fully merge the data
-    data = census_merge_data.merge_data(data, ons_pd_data, "clean_postcode")
+    logger.info("Merging data")
+    data = pd.merge(data, ons_pd_data, how="left", left_on="clean_postcode", right_index=True, sort=False)
 
     # fill unmerged rows with default values
     logger.info("filling unmerged rows")
@@ -152,6 +150,7 @@ def save_merged_data(data: pd.DataFrame, ons_pd_publication_date: str) -> None:
 # sort MultiIndex and always use first element 39.85s (perf3)
 # fully remove loop 40.46s (perf4)
 # simplify update logic 33.34s (perf5)
+# speed up valid postcode detection 33.34s (perf6)
 if __name__ == "__main__":
     # Turn on logging
     set_up_logger()
