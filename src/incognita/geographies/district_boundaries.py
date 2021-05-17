@@ -1,7 +1,7 @@
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import pygeos.constructive
+import pygeos
 
 from incognita.data import scout_census
 from incognita.logger import logger
@@ -31,11 +31,14 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
 
     logger.info(f"Found {len(all_points.index)} different Section points")
 
+    # Get geometries and form a square matrix from repeating the array. Keep
+    # the upper triangle, so that we don't duplicate distance calculations.
     geoms = all_points["geometry"].array.data
-    geoms_sq = np.tile(geoms,(geoms.size,1))
-    geoms_sq_tri = np.triu(geoms_sq)
-    distances_tri = np.array([[(col and pygeos.measurement.distance(col, geoms[i])) for col in row] for i, row in enumerate(geoms_sq_tri)])
-    # np.fill_diagonal(distances,np.diag(distances_tri))  # uneeded as diagonal is 0
+    geoms_sq_tri = np.triu(np.tile(geoms, (geoms.size, 1)))
+
+    # Calculate distances and re-cast to a numpy array. Create a square matrix
+    # from the upper triangle and (transposed) lower triangle
+    distances_tri = np.array([[(col and pygeos.distance(col, geoms[i])) for col in row] for i, row in enumerate(geoms_sq_tri)])
     distances = np.array(distances_tri) + np.array(distances_tri).T
 
     # Calculates all the other points within twice the distance of the
