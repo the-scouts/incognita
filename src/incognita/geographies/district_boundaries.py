@@ -1,6 +1,8 @@
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import pygeos.constructive
+import shapely.geos
 import shapely.geometry
 import shapely.ops
 
@@ -22,20 +24,34 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     # Finds all the records with valid postcodes in the Scout Census
     all_locations = census_data.loc[census_data[scout_census.column_labels.VALID_POSTCODE], ["D_ID", "D_name", "lat", "long", "clean_postcode", "Object_ID"]].drop_duplicates(subset=["lat", "long"]).reset_index(drop=True)
 
-    # Uses the lat and long co-ordinates from above to create a GeoDataFrame
+    # Create points from lat / long co-ordinates above
     points = gpd.points_from_xy(all_locations["long"], all_locations["lat"])
-    all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84)
 
-    # Converts the co-ordinate reference system into OS36 which uses
-    # (x-y) coordinates in metres, rather than (long, lat) coordinates.
-    all_points = all_points.to_crs(epsg=constants.BNG)
+    # create a GeoDataFrame and converts the co-ordinate reference system into
+    # OS36. This is uses (x-y) coordinates in metres, rather than (long, lat)
+    # coordinates, meaning that we can operate in metres from now on.
+    all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84).to_crs(epsg=constants.BNG)
 
     logger.info(f"Found {len(all_points.index)} different Section points")
 
+    geoms = all_points["geometry"].array.data
+    geoms_sq = np.tile(geoms,(geoms.size,1))
+    geoms_sq_tri = np.triu(geoms_sq)
+    distances_tri = np.array([[(col and pygeos.measurement.distance(col, geoms[i])) for col in row] for i, row in enumerate(geoms_sq_tri)])
+    # np.fill_diagonal(distances,np.diag(distances_tri))  # uneeded as diagonal is 0
+    distances = np.array(distances_tri) + np.array(distances_tri).T
+
     # Calculates all the other points within twice the distance of the
     # closest point from a neighbouring district
-    all_points["nearest_points"] = all_points.apply(lambda row: _nearest_other_points(row, all_points), axis=1)
-    all_points["indexes_of_interest"] = all_points.apply(lambda row: _indexes_of_interest(row, all_points), axis=1)
+    all_points["nearest_points"] = all_points.apply(lambda row: _nearest_other_points(row, all_points, distances), axis=1)
+    triple_distance = all_points["nearest_points"].apply(lambda r: r[0]["Distance"]) * 3
+
+    td_sq = pd.DataFrame(np.tile(triple_distance.to_numpy()[:, np.newaxis], (1, triple_distance.size)))
+    valid_distances = pd.DataFrame(distances) < td_sq
+    vdf = (valid_distances * valid_distances.columns)[valid_distances].fillna(-1).astype(valid_distances.columns.dtype)
+
+    all_points["indexes_of_interest"] = vdf.apply(lambda r: pd.Index(i for i in r if i > -1), axis=1)
+
     all_points["buffer_distance"] = 0
 
     # Initial calculation of the buffer distances
@@ -160,7 +176,7 @@ def _buffer_distance(point_details: pd.Series, all_points: gpd.GeoDataFrame) -> 
     return distance
 
 
-def _nearest_other_points(row: pd.Series, all_points: gpd.GeoDataFrame) -> list:
+def _nearest_other_points(row: pd.Series, all_points: gpd.GeoDataFrame, distances: np.ndarray) -> list[dict[str, object]]:
     """Given a row of a GeoDataFrame and a subset of a GeoDataFrame returns
     the points and corresponding distances for all points with twice
     the minimum distance from the row to the subset.
@@ -173,24 +189,30 @@ def _nearest_other_points(row: pd.Series, all_points: gpd.GeoDataFrame) -> list:
         Sorted list of dictionaries containing points and distances
 
     """
-    point = row["geometry"]
+    # point = row["geometry"]
 
-    other_data = all_points.loc[all_points["D_ID"] != row["D_ID"]]
-    other_points = shapely.geometry.MultiPoint(other_data["geometry"].tolist())
-    other_points2 = pygeos.constructive.extract_unique_points(other_data.geometry)
+    # other_data = all_points.loc[all_points["D_ID"] != row["D_ID"]]
+    # multi_point_geos = pygeos.creation.multipoints(other_data.geometry.array.data)
+    # # geos -> shapely conversion from geopandas._vectorised._pygeos_to_shapely
+    # other_points = shapely.geometry.base.geom_factory(shapely.geos.lgeos.GEOSGeom_clone(multi_point_geos._ptr))
+    #
+    # # TODO use pygeos 0.10 nearest(*) func (not released 2021-05-17)
+    # nearest_points = shapely.ops.nearest_points(point, other_points)
+    # nearest_other_point = nearest_points[1]  # [0] refers to self
+    # distance = point.distance(nearest_other_point) * 2
 
-    nearest_points = shapely.ops.nearest_points(point, other_points)
-    nearest_other_point = nearest_points[1]  # [0] refers to self
-    distance = point.distance(nearest_other_point) * 2
+    other_indicies = all_points.index[all_points["D_ID"] != row["D_ID"]]
+    distance_row = distances[row.name]
+    distance = distance_row[other_indicies].min() * 2
 
-    points = [{"Point": p, "Distance": point.distance(p), "Index": other_data.loc[other_data["geometry"] == p].index} for p in other_points if point.distance(p) < distance]
+    points = [{"Point": all_points["geometry"][i], "Distance": distance_row[i], "Index": i} for i in other_indicies if distance_row[i] < distance]
 
     points.sort(key=lambda i: i["Distance"])
 
     return points
 
 
-def _indexes_of_interest(row: pd.Series, all_points: gpd.GeoDataFrame) -> pd.Index:
+def _indexes_of_interest(row: pd.Series, all_points_geom: gpd.GeoSeries) -> pd.Index:
     """Provides index of all points within 3 times the distance of the
     closest point.
 
@@ -199,7 +221,7 @@ def _indexes_of_interest(row: pd.Series, all_points: gpd.GeoDataFrame) -> pd.Ind
 
     Args:
         row: Row of a GeoDataFrame - requires a 'nearest_points' column
-        all_points: All the points to be considered.
+        all_points_geom: All the points to be considered.
 
     Returns:
         Indexes of interest
@@ -207,13 +229,10 @@ def _indexes_of_interest(row: pd.Series, all_points: gpd.GeoDataFrame) -> pd.Ind
     """
 
     # Indexes distance
-    distance = row["nearest_points"][0]["Distance"]
+    distance = row["triple_distance"]
     point = row["geometry"]
 
-    indexes_of_interest = [all_points.loc[all_points["geometry"] == p].index for p in all_points["geometry"] if point.distance(p) < (distance * 3)]
-
-    resultant_indexes = indexes_of_interest[0]
-    for index in indexes_of_interest[1:]:
-        resultant_indexes = resultant_indexes.union(index)
-
-    return resultant_indexes
+    # indexes_of_interest = (i for p in all_points_geom if (point.distance(p) < distance) for i in all_points_geom.index[all_points_geom == p].array)
+    index_lists = (all_points_geom.index[all_points_geom == p].array for p in all_points_geom if point.distance(p) < distance)
+    indexes_of_interest = (i for idxs in index_lists for i in idxs)
+    return pd.Index(indexes_of_interest)  # resultant_indexes
