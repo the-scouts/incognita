@@ -74,34 +74,31 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     output_data = []
     district_nu = 0
     for district in districts.itertuples():
-        if pd.notna(district.D_ID):
-            district_nu += 1
+        if pd.isna(district.D_ID):
+            continue
 
-            logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district.D_name}")
+        district_nu += 1
+        logger.info(f"{district_nu}/{len(districts)} calculating boundary of {district.D_name}")
 
-            district_points = all_points.loc[all_points["D_ID"] == district.D_ID]
+        # For each of the points in the district, produces a polygon to
+        # represent the buffered point from the buffer distances
+        # calculated above. Then Unify the polygons created from each
+        # point in the District into one polygon for the District.
+        district_points = all_points.loc[all_points["D_ID"] == district.D_ID]
+        district_polygon = gpd.GeoSeries([row.geometry.buffer(row.buffer_distance) for row in district_points.itertuples()]).geometry.array.unary_union()
 
-            # For each of the points in the district, produces a polygon to
-            # represent the buffered point from the buffer distances
-            # calculated above
-            buffered_points = gpd.GeoSeries([row.geometry.buffer(row.buffer_distance) for row in district_points.itertuples()])
-
-            # Unifies the polygons created from each point in the District
-            # into one polygon for the District.
-            district_polygon = buffered_points.geometry.array.unary_union()
-            data = {
-                "id": district.D_ID,
-                "name": district.D_name,
-                "geometry": district_polygon,
-            }
-            output_data.append(data)
+        data = {
+            "id": district.D_ID,
+            "name": district.D_name,
+            "geometry": district_polygon,
+        }
+        output_data.append(data)
 
     # Convert co-ordinates back to WGS84, which uses latitude and longitude
     # output_gpd = pd.concat(output_frames)
     output_gpd = gpd.GeoDataFrame(output_data, crs=constants.BNG).to_crs(epsg=constants.WGS_84)
 
-    logger.debug(f"output gpd\n{output_gpd}")
-    output_gpd[["id"]] = output_gpd[["id"]].apply(pd.to_numeric, errors="coerce")
+    output_gpd["id"] = pd.to_numeric(output_gpd["id"], errors="coerce")
     logger.debug(f"output gpd\n{output_gpd}")
     output_gpd.to_file("districts_buffered.geojson", driver="GeoJSON")
 
