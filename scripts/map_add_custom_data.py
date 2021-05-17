@@ -11,7 +11,7 @@ if __name__ == "__main__":
     scout_data = ScoutData()
     scout_data.filter_records("Census_ID", {census_id})
     scout_data.filter_records("oslaua", {la_code})
-    scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
+    scout_data.filter_records("postcode_is_valid", {True}, exclusion_analysis=True)
 
     # Generate boundary report
     reports = Reports("LSOA", scout_data)

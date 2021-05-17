@@ -52,7 +52,7 @@ if __name__ == "__main__":
     scout_data.filter_records("X_name", country_names)
     # scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
     scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})
-    scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
+    scout_data.filter_records("postcode_is_valid", {True}, exclusion_analysis=True)
 
     offset = 5
     opts = [
