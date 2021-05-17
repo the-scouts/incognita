@@ -50,6 +50,9 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     valid_distances = pd.DataFrame(distances) < td_sq
     vdf = (valid_distances * valid_distances.columns)[valid_distances].fillna(-1).astype(valid_distances.columns.dtype)
 
+    # Get index of all points within 3 times the distance of the closest point.
+    # (This is the maximal set of points that could affect the buffer distance
+    # of this point)
     all_points["indexes_of_interest"] = vdf.apply(lambda r: pd.Index(i for i in r if i > -1), axis=1)
 
     all_points["buffer_distance"] = 0
@@ -208,29 +211,3 @@ def _nearest_other_points(row: pd.Series, all_points: gpd.GeoDataFrame, distance
     points.sort(key=lambda i: i["Distance"])
 
     return points
-
-
-def _indexes_of_interest(row: pd.Series, all_points_geom: gpd.GeoSeries) -> pd.Index:
-    """Provides index of all points within 3 times the distance of the
-    closest point.
-
-    (This is the maximal set of points that could affect the buffer distance
-    of this point)
-
-    Args:
-        row: Row of a GeoDataFrame - requires a 'nearest_points' column
-        all_points_geom: All the points to be considered.
-
-    Returns:
-        Indexes of interest
-
-    """
-
-    # Indexes distance
-    distance = row["triple_distance"]
-    point = row["geometry"]
-
-    # indexes_of_interest = (i for p in all_points_geom if (point.distance(p) < distance) for i in all_points_geom.index[all_points_geom == p].array)
-    index_lists = (all_points_geom.index[all_points_geom == p].array for p in all_points_geom if point.distance(p) < distance)
-    indexes_of_interest = (i for idxs in index_lists for i in idxs)
-    return pd.Index(indexes_of_interest)  # resultant_indexes
