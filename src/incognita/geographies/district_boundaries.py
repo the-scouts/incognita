@@ -24,14 +24,8 @@ def create_voronoi_pygeos(points: GeometryArray):
     edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
     result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
 
-    coords = pygeos.get_coordinates(points.data).T
-    plt.plot(coords[0, :], coords[1, :], 'ko')
-    for r in pygeos.get_parts(result):
-        xy_coords = pygeos.get_coordinates(r)[:-1].T
-        plt.fill(tuple(xy_coords[0]), tuple(xy_coords[1]), alpha=0.4)
-
+    plot_mpl(result, points)
     plt.show()
-
 
 
 def create_voronoi_scipy(points: GeometryArray):
@@ -46,27 +40,32 @@ def create_voronoi_scipy(points: GeometryArray):
     edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
     result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
 
-    plt.plot(coords[:, 0], coords[:, 1], 'ko')
-    for r in pygeos.get_parts(result):
-        xy_coords = pygeos.get_coordinates(r)[:-1].T
-        plt.fill(tuple(xy_coords[0]), tuple(xy_coords[1]), alpha=0.4)
-
+    plot_mpl(result, points)
     plt.show()
 
 
-def create_voronoi_geovoronoi(points: GeometryArray):
-    fig, ax = geovoronoi.plotting.subplot_for_map()
+def plot_mpl(polys, points):
+    coords = pygeos.get_coordinates(points.data).T
+    plt.plot(coords[0, :], coords[1, :], 'ko')
+    for r in pygeos.get_parts(polys):
+        xy_coords = pygeos.get_coordinates(r)[:-1].T
+        plt.fill(tuple(xy_coords[0]), tuple(xy_coords[1]), alpha=0.4)
 
+
+def create_voronoi_geovoronoi(points: GeometryArray):
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
     uk = world.loc[world.name == "United Kingdom", "geometry"].to_crs(constants.BNG)
     gb_shape = uk.array[0][1]
-    gpd.GeoSeries(gb_shape).plot(ax=ax)
-    gpd.GeoSeries(points).plot(ax=ax, color='k')
 
     coords = np.array([p.coords[0] for p in points])
 
     polys, pts = geovoronoi.voronoi_regions_from_coords(coords, gb_shape, per_geom=False)
-    geovoronoi.plotting.plot_voronoi_polys_with_points_in_area(ax, gb_shape, polys, coords, pts)
+    plot_geovoronoi(polys, pts, coords, gb_shape)
+
+
+def plot_geovoronoi(polys, points, coords, area_shape):
+    fig, ax = geovoronoi.plotting.subplot_for_map()
+    geovoronoi.plotting.plot_voronoi_polys_with_points_in_area(ax, area_shape, polys, coords, points)
     plt.show()
 
 
