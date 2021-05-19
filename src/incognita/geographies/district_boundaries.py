@@ -15,17 +15,21 @@ from incognita.logger import logger
 from incognita.utility import constants
 
 
-def create_voronoi_pygeos(points: GeometryArray):
-    mp = pygeos.multipoints(points.data)
-    polys = pygeos.get_parts(pygeos.voronoi_polygons(mp))
-    convex_hull = pygeos.buffer(pygeos.convex_hull(mp), 2)
+def clip_voronoi_polygons(polys: pygeos.Geometry, multipoint: pygeos.Geometry):
+    convex_hull = pygeos.buffer(pygeos.convex_hull(multipoint), 2)
 
     inner = pygeos.multipolygons(pygeos.intersection(convex_hull, polys))
     edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
     result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
+    return result
+
+
+def create_voronoi_pygeos(points: GeometryArray):
+    mp = pygeos.multipoints(points.data)
+    polys = pygeos.get_parts(pygeos.voronoi_polygons(mp))
+    result = clip_voronoi_polygons(polys, mp)
 
     plot_mpl(result, points)
-    plt.show()
 
 
 def create_voronoi_scipy(points: GeometryArray):
@@ -33,23 +37,18 @@ def create_voronoi_scipy(points: GeometryArray):
     vor = Voronoi(coords)
 
     lines = pygeos.linestrings([vor.vertices[line] for line in vor.ridge_vertices if -1 not in line])
-    convex_hull = pygeos.buffer(pygeos.convex_hull(pygeos.multipoints(points.data)), 2)
     line_polygons = pygeos.from_shapely([*polygonize(vectorised.to_shapely(lines))])  # TODO use pygeos.polygonise in pygeos 0.10
-
-    inner = pygeos.multipolygons(pygeos.intersection(convex_hull, line_polygons))
-    edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
-    result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
+    result = clip_voronoi_polygons(line_polygons, pygeos.multipoints(points.data))
 
     plot_mpl(result, points)
-    plt.show()
 
 
 def plot_mpl(polys, points):
     coords = pygeos.get_coordinates(points.data).T
     plt.plot(coords[0, :], coords[1, :], 'ko')
     for r in pygeos.get_parts(polys):
-        xy_coords = pygeos.get_coordinates(r)[:-1].T
-        plt.fill(tuple(xy_coords[0]), tuple(xy_coords[1]), alpha=0.4)
+        x_coords, y_coords = pygeos.get_coordinates(r)[:-1].T
+        plt.fill(tuple(x_coords), tuple(y_coords), alpha=0.4)
 
 
 def create_voronoi_geovoronoi(points: GeometryArray):
@@ -66,7 +65,6 @@ def create_voronoi_geovoronoi(points: GeometryArray):
 def plot_geovoronoi(polys, points, coords, area_shape):
     fig, ax = geovoronoi.plotting.subplot_for_map()
     geovoronoi.plotting.plot_voronoi_polys_with_points_in_area(ax, area_shape, polys, coords, points)
-    plt.show()
 
 
 def create_district_boundaries(census_data: pd.DataFrame) -> None:
@@ -93,6 +91,7 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     create_voronoi_pygeos(all_points["geometry"].array)
     # create_voronoi_scipy(all_points["geometry"].array)
     # create_voronoi_geovoronoi(all_points["geometry"])
+    plt.show()
 
     logger.info(f"Found {len(all_points.index)} different Section points")
 
