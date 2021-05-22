@@ -1,4 +1,7 @@
+from typing import Union
+
 import geopandas as gpd
+import shapely.geometry
 from geopandas.array import GeometryArray
 import geopandas._vectorized as vectorised
 import geovoronoi
@@ -14,8 +17,10 @@ from incognita.data import scout_census
 from incognita.logger import logger
 from incognita.utility import constants
 
+TYPES_SHAPELY_POLY = Union[shapely.geometry.Polygon, shapely.geometry.MultiPolygon]
 
-def clip_voronoi_polygons(polys: pygeos.Geometry, multipoint: pygeos.Geometry):
+
+def clip_voronoi_polygons(polys: pygeos.Geometry, multipoint: pygeos.Geometry) -> pygeos.Geometry:
     convex_hull = pygeos.buffer(pygeos.convex_hull(multipoint), 2)
 
     inner = pygeos.multipolygons(pygeos.intersection(convex_hull, polys))
@@ -24,7 +29,7 @@ def clip_voronoi_polygons(polys: pygeos.Geometry, multipoint: pygeos.Geometry):
     return result
 
 
-def create_voronoi_pygeos(points: GeometryArray):
+def create_voronoi_pygeos(points: GeometryArray) -> None:
     mp = pygeos.multipoints(points.data)
     polys = pygeos.get_parts(pygeos.voronoi_polygons(mp))
     result = clip_voronoi_polygons(polys, mp)
@@ -32,7 +37,7 @@ def create_voronoi_pygeos(points: GeometryArray):
     plot_mpl(result, points)
 
 
-def create_voronoi_scipy(points: GeometryArray):
+def create_voronoi_scipy(points: GeometryArray) -> None:
     coords = np.array([p.coords[0] for p in points])
     vor = Voronoi(coords)
 
@@ -43,7 +48,7 @@ def create_voronoi_scipy(points: GeometryArray):
     plot_mpl(result, points)
 
 
-def plot_mpl(polys, points):
+def plot_mpl(polys: pygeos.Geometry, points: GeometryArray) -> None:
     coords = pygeos.get_coordinates(points.data).T
     plt.plot(coords[0, :], coords[1, :], 'ko')
     for r in pygeos.get_parts(polys):
@@ -51,7 +56,7 @@ def plot_mpl(polys, points):
         plt.fill(tuple(x_coords), tuple(y_coords), alpha=0.4)
 
 
-def create_voronoi_geovoronoi(points: GeometryArray):
+def create_voronoi_geovoronoi(points: GeometryArray) -> None:
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
     uk = world.loc[world.name == "United Kingdom", "geometry"].to_crs(constants.BNG)
     gb_shape = uk.array[0][1]
@@ -62,7 +67,7 @@ def create_voronoi_geovoronoi(points: GeometryArray):
     plot_geovoronoi(polys, pts, coords, gb_shape)
 
 
-def plot_geovoronoi(polys, points, coords, area_shape):
+def plot_geovoronoi(polys: dict[int, TYPES_SHAPELY_POLY], points: dict[int, list[int]], coords: np.ndarray, area_shape: shapely.geometry.Polygon) -> None:
     fig, ax = geovoronoi.plotting.subplot_for_map()
     geovoronoi.plotting.plot_voronoi_polys_with_points_in_area(ax, area_shape, polys, coords, points)
 
