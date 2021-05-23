@@ -23,6 +23,8 @@ def clip_voronoi_polygons(polys: pygeos.Geometry, multipoint: pygeos.Geometry) -
 
     inner = pygeos.multipolygons(pygeos.intersection(convex_hull, polys))
     edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
+    if pygeos.is_empty(edge):
+        return inner
     result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
     return result
 
@@ -46,11 +48,15 @@ def create_voronoi_scipy(points: GeometryArray) -> None:
 
 
 def plot_mpl(polys: pygeos.Geometry, points: GeometryArray) -> None:
+    fig, ax = plt.subplots()
+
     coords = pygeos.get_coordinates(points.data).T
-    plt.plot(coords[0, :], coords[1, :], 'ko')
-    for r in pygeos.get_parts(polys):
+    ax.plot(coords[0, :], coords[1, :], 'ko')
+    sorted_polys = sorted(pygeos.get_parts(polys), key=lambda p: tuple(pygeos.get_coordinates(pygeos.centroid(p))[0]))
+    sorted_polys = sorted_polys
+    for r in sorted_polys:
         x_coords, y_coords = pygeos.get_coordinates(r)[:-1].T
-        plt.fill(tuple(x_coords), tuple(y_coords), alpha=0.4)
+        ax.fill(tuple(x_coords), tuple(y_coords), alpha=0.4)
 
 
 def create_voronoi_geovoronoi(points: GeometryArray) -> None:
@@ -91,8 +97,8 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84).to_crs(epsg=constants.BNG)
 
     create_voronoi_pygeos(all_points["geometry"].array)
-    # create_voronoi_scipy(all_points["geometry"].array)
-    # create_voronoi_geovoronoi(all_points["geometry"])
+    create_voronoi_scipy(all_points["geometry"].array)
+    create_voronoi_geovoronoi(all_points["geometry"])
     plt.show()
 
     logger.info(f"Found {len(all_points.index)} different Section points")
