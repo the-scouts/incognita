@@ -3,7 +3,6 @@ from typing import Union
 import geopandas as gpd
 import shapely.geometry
 from geopandas.array import GeometryArray
-import geopandas._vectorized as vectorised
 import geovoronoi
 import geovoronoi.plotting
 import matplotlib.pyplot as plt
@@ -11,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pygeos
 from scipy.spatial import Voronoi
-from shapely.ops import polygonize
 
 from incognita.data import scout_census
 from incognita.logger import logger
