@@ -4,6 +4,6 @@ numpy
 geopandas>=0.8
 shapely
 pyarrow
-pygeos
+pygeos>=0.10
 toml
 pydantic

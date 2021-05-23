@@ -11,7 +11,7 @@ dependencies:
   - pandas
   - shapely
   - pyarrow
-  - pygeos
+  - pygeos>=0.10
   - toml
   - pydantic
 
