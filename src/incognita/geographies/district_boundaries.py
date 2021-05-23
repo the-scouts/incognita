@@ -38,12 +38,11 @@ def create_voronoi_pygeos(points: GeometryArray) -> None:
 
 
 def create_voronoi_scipy(points: GeometryArray) -> None:
-    coords = np.array([p.coords[0] for p in points])
-    vor = Voronoi(coords)
+    vor = Voronoi(pygeos.get_coordinates(points.data))
 
-    lines = pygeos.linestrings([vor.vertices[line] for line in vor.ridge_vertices if -1 not in line])
-    line_polygons = pygeos.from_shapely([*polygonize(vectorised.to_shapely(lines))])  # TODO use pygeos.polygonise in pygeos 0.10
-    result = clip_voronoi_polygons(line_polygons, pygeos.multipoints(points.data))
+    boundary_vertices = [vor.vertices[line] for line in vor.ridge_vertices if -1 not in line]
+    polys = pygeos.get_parts(pygeos.polygonize(pygeos.linestrings(boundary_vertices)))
+    result = clip_voronoi_polygons(polys, pygeos.multipoints(points.data))
 
     plot_mpl(result, points)
 
