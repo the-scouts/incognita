@@ -23,28 +23,26 @@ def clip_voronoi_polygons(polys: pygeos.Geometry, multipoint: pygeos.Geometry) -
 
     inner = pygeos.multipolygons(pygeos.intersection(convex_hull, polys))
     edge = pygeos.difference(convex_hull, pygeos.union_all(inner))
-    if pygeos.is_empty(edge):
+    if pygeos.is_empty(edge):  # sometimes the edge geometry is empty...
         return inner
     result = pygeos.multipolygons(pygeos.get_parts([inner, edge]))
     return result
 
 
-def create_voronoi_pygeos(points: GeometryArray) -> None:
+def create_voronoi_pygeos(points: GeometryArray) -> pygeos.Geometry:
     mp = pygeos.multipoints(points.data)
     polys = pygeos.get_parts(pygeos.voronoi_polygons(mp))
     result = clip_voronoi_polygons(polys, mp)
+    return result
 
-    plot_mpl(result, points)
 
-
-def create_voronoi_scipy(points: GeometryArray) -> None:
+def create_voronoi_scipy(points: GeometryArray) -> pygeos.Geometry:
     vor = Voronoi(pygeos.get_coordinates(points.data))
 
     boundary_vertices = [vor.vertices[line] for line in vor.ridge_vertices if -1 not in line]
     polys = pygeos.get_parts(pygeos.polygonize(pygeos.linestrings(boundary_vertices)))
     result = clip_voronoi_polygons(polys, pygeos.multipoints(points.data))
-
-    plot_mpl(result, points)
+    return result
 
 
 def plot_mpl(polys: pygeos.Geometry, points: GeometryArray) -> None:
@@ -53,7 +51,6 @@ def plot_mpl(polys: pygeos.Geometry, points: GeometryArray) -> None:
     coords = pygeos.get_coordinates(points.data).T
     ax.plot(coords[0, :], coords[1, :], 'ko')
     sorted_polys = sorted(pygeos.get_parts(polys), key=lambda p: tuple(pygeos.get_coordinates(pygeos.centroid(p))[0]))
-    sorted_polys = sorted_polys
     for r in sorted_polys:
         x_coords, y_coords = pygeos.get_coordinates(r)[:-1].T
         ax.fill(tuple(x_coords), tuple(y_coords), alpha=0.4)
@@ -96,8 +93,11 @@ def create_district_boundaries(census_data: pd.DataFrame) -> None:
     # coordinates, meaning that we can operate in metres from now on.
     all_points = gpd.GeoDataFrame(all_locations, geometry=points, crs=constants.WGS_84).to_crs(epsg=constants.BNG)
 
-    create_voronoi_pygeos(all_points["geometry"].array)
-    create_voronoi_scipy(all_points["geometry"].array)
+    points = all_points["geometry"].array
+    res_pg = create_voronoi_pygeos(points)
+    res_sp = create_voronoi_scipy(points)
+    plot_mpl(res_pg, points)
+    plot_mpl(res_sp, points)
     create_voronoi_geovoronoi(all_points["geometry"])
     plt.show()
 
