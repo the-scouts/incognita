@@ -12,6 +12,7 @@ from incognita.data.ons_pd import ons_postcode_directory_may_20
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import filter
+from incognita.utility import timing
 from incognita.utility import constants
 
 
@@ -80,6 +81,4 @@ class ScoutData:
         if path is not None and uid is not None:
             merged.reset_index(drop=False).to_feather(uid)
 
-    def close(self) -> None:
-        """Outputs the duration of the programme"""
-        logger.info(f"Script finished, {time.time() - self.start_time:.2f} seconds elapsed.")
+    close = timing.close
