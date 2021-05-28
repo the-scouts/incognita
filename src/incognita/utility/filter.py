@@ -38,7 +38,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, exclude_matc
         logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
 
     filtered = data.loc[filter_mask]
-    logger.info(f"Resulting in {filtered.index.size} records remaining.")
+    logger.debug(f"Resulting in {filtered.index.size} records remaining.")
 
     if exclusion_analysis:
         excluded = data.loc[~filter_mask]
