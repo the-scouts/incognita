@@ -17,7 +17,8 @@ if TYPE_CHECKING:
     from incognita.data.scout_data import ScoutData
     from incognita.utility.config import Boundary
 
-BOUNDARIES_DICT = config.SETTINGS.ons2020 | config.SETTINGS.custom_boundaries
+# Combine the ONS and Scout boundaries directories
+BOUNDARIES_DICT: dict[str, Boundary] = config.SETTINGS.ons2020 | config.SETTINGS.custom_boundaries
 
 
 class Geography:
@@ -27,7 +28,7 @@ class Geography:
     Attributes:
         metadata: incognita.data.ons_pd.Boundary object with geography metadata
         boundary_codes: Table mapping region codes to human-readable names
-        name: Human readable ('nice') name for the geography
+        geog_key: Human readable ('nice') name for the geography
     """
 
     def __init__(self, geography_name: str):
@@ -40,24 +41,23 @@ class Geography:
 
         """
         logger.info(f"Setting the boundary by {geography_name}")
-
-        # Combine the ONS and Scout boundaries directories
-
         if geography_name not in BOUNDARIES_DICT:
             raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {BOUNDARIES_DICT.keys()}")
-        self.metadata: Boundary = BOUNDARIES_DICT[geography_name]
-        self.name: str = self.metadata.key  # human readable name
+        metadata: Boundary = BOUNDARIES_DICT[geography_name]
+        codes = metadata.codes
 
-        # Names & Codes file path
-        logger.debug(f"Loading {geography_name} codes map")
-        boundary_codes_dtypes = {self.metadata.codes.key: self.metadata.codes.key_type, self.metadata.codes.name: "string"}
+        # Load Names & Codes file
         start_time = time.time()
-        codes_map = pd.read_csv(root.DATA_ROOT / self.metadata.codes.path, dtype=boundary_codes_dtypes)
-        logger.debug(f"Loading {geography_name} codes map finished, {time.time() - start_time:.2f} seconds elapsed")
-        codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in boundary_codes_dtypes])  # drop extras e.g. welsh names
-        logger.debug(f"Normalising {geography_name} codes columns")
-        codes_map.columns = codes_map.columns.map({self.metadata.codes.key: "codes", self.metadata.codes.name: "names"})
+        codes_map = pd.read_csv(root.DATA_ROOT / codes.path, dtype={codes.key: codes.key_type, codes.name: "string"})
+        logger.debug(f"Loaded {geography_name} codes map, {time.time() - start_time:.2f} seconds elapsed")
+        # Normalise codes columns
+        codes_map.columns = codes_map.columns.map({codes.key: "codes", codes.name: "names"})
+        # drop extras e.g. welsh names
+        codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in {"codes", "names"}])  
+
         self.boundary_codes: pd.DataFrame = codes_map
+        self.geog_key: str = metadata.key  # human readable name
+        self.metadata = metadata  # used in Reports, Map
 
     def filter_ons_boundaries(self, field: str, value_list: set) -> pd.DataFrame:
         """Filters the boundary_codes table by if the area code is within both value_list and the census_data table.
@@ -77,20 +77,20 @@ class Geography:
         # Transforms codes from values_list in column 'field' to codes for the current geography
         # 'field' is the start geography and 'metadata.key' is the target geography
         # Returns a list
-        logger.info(f"Filtering {len(self.boundary_codes)} {self.name} boundaries by {field} being in {value_list}")
+        logger.info(f"Filtering {len(self.boundary_codes)} {self.geog_key} boundaries by {field} being in {value_list}")
         logger.debug(f"Loading ONS postcode data.")
         ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
-            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.metadata.key].drop_duplicates().to_list()
+            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.geog_key].drop_duplicates().to_list()
         except KeyError:
-            msg = f"{self.metadata.key} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
+            msg = f"{self.geog_key} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
             logger.error(msg)
             raise KeyError(msg) from None
-        logger.debug(f"This corresponds to {len(boundary_subset)} {self.name} boundaries")
+        logger.debug(f"This corresponds to {len(boundary_subset)} {self.geog_key} boundaries")
 
         # Filters the boundary names and codes table to only areas within the boundary_subset list
         self.boundary_codes = self.boundary_codes.loc[self.boundary_codes["codes"].isin(set(boundary_subset))]
-        logger.info(f"Resulting in {len(self.boundary_codes)} {self.name} boundaries")
+        logger.info(f"Resulting in {len(self.boundary_codes)} {self.geog_key} boundaries")
 
         return self.boundary_codes
 
