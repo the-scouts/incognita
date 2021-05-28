@@ -5,7 +5,6 @@ import pandas as pd
 import pygeos
 
 from incognita.data import scout_census
-from incognita.logger import logger
 from incognita.utility import constants
 
 
@@ -18,7 +17,8 @@ def create_voronoi(points: Sequence[pygeos.Geometry]) -> Sequence[pygeos.Geometr
 
 def spatial_join(points: Sequence[pygeos.Geometry], voronoi_polygons: Sequence[pygeos.Geometry]) -> Sequence[int]:
     query_result = pygeos.STRtree(voronoi_polygons).query_bulk(points, predicate="intersects")
-    return query_result[1]  # TODO dict map
+    assert (query_result[0] == range(query_result[0].size)).all()  # check that the first array is a standard range
+    return query_result[1]
 
 
 def merge_to_districts(district_ids, points: Sequence[pygeos.Geometry]) -> pd.Series:
