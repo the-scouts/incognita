@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
+import pyarrow
 import shapely.geometry
 
 from incognita.data import scout_census
@@ -59,7 +60,7 @@ class Geography:
         self.geog_key: str = metadata.key  # human readable name
         self.metadata = metadata  # used in Reports, Map
 
-    def filter_ons_boundaries(self, field: str, value_list: set) -> pd.DataFrame:
+    def filter_ons_boundaries(self, field: str, values: set) -> pd.DataFrame:
         """Filters the boundary_codes table by if the area code is within both value_list and the census_data table.
 
         Uses ONS Postcode Directory to find which of set boundaries are within
@@ -67,7 +68,7 @@ class Geography:
 
         Args:
             field: The field on which to filter
-            value_list: The values on which to filter
+            values: The values on which to filter
 
         Returns:
              Filtered self.boundary_codes
@@ -75,22 +76,21 @@ class Geography:
         """
 
         # Transforms codes from values_list in column 'field' to codes for the current geography
-        # 'field' is the start geography and 'metadata.key' is the target geography
-        # Returns a list
-        logger.info(f"Filtering {len(self.boundary_codes)} {self.geog_key} boundaries by {field} being in {value_list}")
+        # 'field' is the start geography and 'geog_key' is the target geography
+        logger.info(f"Filtering {len(self.boundary_codes)} {self.geog_key} boundaries by {field} being in {values}")
         logger.debug(f"Loading ONS postcode data.")
-        ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
         try:
-            boundary_subset = ons_pd_data.loc[ons_pd_data[field].isin(value_list), self.geog_key].drop_duplicates().to_list()
-        except KeyError:
-            msg = f"{self.geog_key} not in ONS PD dataframe. \nValid values are: {ons_pd_data.columns.to_list()}"
-            logger.error(msg)
-            raise KeyError(msg) from None
-        logger.debug(f"This corresponds to {len(boundary_subset)} {self.geog_key} boundaries")
-
-        # Filters the boundary names and codes table to only areas within the boundary_subset list
-        self.boundary_codes = self.boundary_codes.loc[self.boundary_codes["codes"].isin(set(boundary_subset))]
-        logger.info(f"Resulting in {len(self.boundary_codes)} {self.geog_key} boundaries")
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=[self.geog_key, field])
+        except pyarrow.ArrowInvalid:
+            # read in the full file to get valid columns
+            valid_cols = pd.read_feather(config.SETTINGS.ons_pd.reduced).columns.to_list()
+            raise KeyError(f"{self.geog_key} not in ONS PD dataframe. Valid values are: {valid_cols}") from None
+        # Finds records in the ONS PD where the given `field` matches with
+        # `values`, and constructs a set of the corresponding `geog_key` codes.
+        # Then uses those codes to filter the `boundary_codes` table.
+        matching_codes = set(ons_pd_data[self.geog_key][ons_pd_data[field].isin(values)].array)
+        self.boundary_codes = self.boundary_codes.loc[self.boundary_codes["codes"].isin(matching_codes)]
+        logger.info(f"Leaving {len(self.boundary_codes.index)} boundaries after filtering")
 
         return self.boundary_codes
 
