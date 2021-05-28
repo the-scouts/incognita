@@ -114,14 +114,13 @@ class Geography:
 
         # Filters scout data to values passed through (values in column `column' in `values_list')
         # Gets associated ons code column from filtered records
-        records = scout_data.census_data.loc[scout_data.census_data[column].isin(value_list), ons_boundary].drop_duplicates().dropna()
-        logger.debug(f"Found {len(records)} records that match {column} in {value_list}")
-
         # Removes original ons-census merge errors
-        ons_codes = records[records != scout_census.DEFAULT_VALUE].to_list()
+        ons_boundary_records = scout_data.census_data[ons_boundary].dropna()
+        ons_codes = set(ons_boundary_records[scout_data.census_data[column].isin(value_list)].array)
+        ons_codes.discard(scout_census.DEFAULT_VALUE)
         logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {value_list}")
 
-        return self.filter_ons_boundaries(ons_boundary, set(ons_codes))
+        return self.filter_ons_boundaries(ons_boundary, ons_codes)
 
     def filter_boundaries_near_scout_area(self, scout_data: ScoutData, boundary: str, field: str, value_list: set, distance: int = 3_000) -> pd.DataFrame:
         """Filters boundary list to those boundaries containing a scout unit matching requirements, or boundaries
