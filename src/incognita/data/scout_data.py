@@ -19,37 +19,30 @@ from incognita.utility import constants
 class ScoutData:
     """Provides access to manipulate and process data."""
 
-    def __init__(self, merged_csv: bool = True, load_census_data: bool = True):
-        # record a class-wide start time
+    def __init__(self, load_census_data: bool = True):
         self.start_time = time.time()
-        logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime())}")
+        logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime(self.start_time))}")
 
         # Loads Scout Census Data from disk.
-        logger.info("Loading Scout Census data")
         self.census_data = feather.read_feather(config.SETTINGS.census_extract.merged) if load_census_data else pd.DataFrame()
-        logger.info(f"Loading Scout Census data finished, {time.time() - self.start_time:.2f} seconds elapsed.")
-        self.points_data = gpd.GeoDataFrame()
-
-        # Check if the data has been merged with the ONS postcode directory
-        if merged_csv and column_labels.VALID_POSTCODE not in self.census_data.columns:
-            raise ValueError(f"The ScoutCensus file has no ONS data, because it doesn't have a {column_labels.VALID_POSTCODE} column")
-        self.ons_pd = ons_postcode_directory_may_20
-        logger.info(f"Loaded {self.ons_pd.PUBLICATION_DATE} ONS data!")
+        logger.info(f"Loaded Scout Census data, {time.time() - self.start_time:.2f} seconds elapsed.")
 
         # Filterable columns are the ID and name columns of the dataset
         self.filterable_columns: set[str] = {*column_labels.id.__dict__.values(), *column_labels.name.__dict__.values()}
+        self.points_data = gpd.GeoDataFrame()
+        self.ons_pd = ons_postcode_directory_may_20
 
-    def filter_records(self, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> None:
+    def filter_records(self, field: str, value_list: set, exclude_matching: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
 
         Args:
             field: The field on which to filter
             value_list: The values on which to filter
-            mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
+            exclude_matching: If True, exclude the values that match the filter. If False, keep the values that match the filter.
             exclusion_analysis:
 
         """
-        self.census_data = filter.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
+        self.census_data = filter.filter_records(self.census_data, field, value_list, exclude_matching, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:

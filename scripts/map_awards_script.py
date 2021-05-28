@@ -18,7 +18,7 @@ if __name__ == "__main__":
     scout_data.filter_records("postcode_is_valid", {True})
     scout_data.filter_records("Census_ID", {census_id})
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
-    scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
+    scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
 
     # Generate boundary report
     reports = Reports("Local Authority", scout_data)

@@ -21,7 +21,7 @@ def scout_data_factory():
     """Returns a ScoutData factory"""
 
     def _scout_data_factory(data_df: pd.DataFrame) -> ScoutData:
-        sd = ScoutData(load_census_data=False, merged_csv=False)
+        sd = ScoutData(load_census_data=False)
         sd.census_data = data_df
         return sd
 
@@ -62,7 +62,7 @@ def test_scout_data_columns(scout_data_factory):
 def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
     scout_data_stub = scout_data_factory(data)
-    scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=True, exclusion_analysis=False)
+    scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=True, exclusion_analysis=False)
 
     expected_outcome = data.loc[~(data[COLUMN_NAME] == first_country_code)]
     assert scout_data_stub.census_data.equals(expected_outcome)
@@ -72,7 +72,7 @@ def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
 def test_filter_records_exclusion(scout_data_factory, data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
     scout_data_stub = scout_data_factory(data)
-    scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=False, exclusion_analysis=False)
+    scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=False, exclusion_analysis=False)
 
     expected_outcome = data.loc[data[COLUMN_NAME] == first_country_code]
     assert scout_data_stub.census_data.equals(expected_outcome)
@@ -84,8 +84,8 @@ def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_fac
     scout_data_stub = scout_data_factory(data)
 
     with pytest.raises(ValueError):
-        scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=False, exclusion_analysis=True)
-        scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, mask=True, exclusion_analysis=True)
+        scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=False, exclusion_analysis=True)
+        scout_data_stub.filter_records(field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=True, exclusion_analysis=True)
 
 
 @hypothesis.given(LocationDataFrame)

@@ -9,7 +9,7 @@ if __name__ == "__main__":
     scout_data.filter_records("X_name", {"England", "Scotland", "Wales", "Northern Ireland"})
 
     # If filtering on IMD, remove NA values
-    # scout_data.filter_records("imd_decile", ["nan"], mask=True)
+    # scout_data.filter_records("imd_decile", ["nan"], exclude_matching=True)
     # scout_data.filter_records("imd_decile", [1, 2, 3])
 
     section_history = HistorySummary(scout_data)
