@@ -431,7 +431,7 @@ class HistorySummary:
             postcode_valid = most_recent.at["postcode_is_valid"]
             # logger.debug(f"Identified:\n{most_recent} determined postcode valid:\n{postcode_valid}\n{postcode_valid == 1}\n{postcode_valid == 1}")
             # add postcode
-            if postcode_valid == 1:
+            if postcode_valid:
                 logger.debug(f"Adding postcode {most_recent.at[scout_census.column_labels.POSTCODE]}")
                 section_data["Postcode"] = most_recent.at[scout_census.column_labels.POSTCODE]
                 country = self.scout_data.ons_pd.COUNTRY_CODES.get(most_recent.at["ctry"])

@@ -156,7 +156,7 @@ class Map:
             raise ValueError("Layer already used!")
 
         # Sets the map so that it opens in the right area
-        valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE] == 1, ["lat", "long"]]
+        valid_points = sections.loc[sections[scout_census.column_labels.VALID_POSTCODE], ["lat", "long"]]
         self.map["bounds"] = _output_fit_bounds(((valid_points.lat.min(), valid_points.long.min()), (valid_points.lat.max(), valid_points.long.max())))
 
         section_names = sections["name"].astype(str)

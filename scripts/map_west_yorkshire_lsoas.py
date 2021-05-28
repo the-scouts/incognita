@@ -9,7 +9,7 @@ if __name__ == "__main__":
     scout_data = ScoutData()
     scout_data.filter_records("Census_ID", {census_id})  # 16, 17, 18, 19, 20
     scout_data.filter_records("C_name", {county_name})  # "Shropshire", "West Mercia"
-    scout_data.filter_records("postcode_is_valid", {1})
+    scout_data.filter_records("postcode_is_valid", {True})
 
     reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("C_name", {county_name}, "oslaua")

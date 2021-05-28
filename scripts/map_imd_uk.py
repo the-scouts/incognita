@@ -19,7 +19,7 @@ if __name__ == "__main__":
     scout_data.filter_records("X_name", countries)
     scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})
     scout_data.filter_records("ctry", country_codes)
-    scout_data.filter_records("postcode_is_valid", {1}, exclusion_analysis=True)
+    scout_data.filter_records("postcode_is_valid", {True}, exclusion_analysis=True)
 
     lsoa = Reports("LSOA", scout_data)
     lsoa.filter_boundaries("ctry", country_codes)
