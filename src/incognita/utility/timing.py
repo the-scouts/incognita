@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from functools import wraps
 import time
-from typing import TYPE_CHECKING
+from typing import Protocol, TYPE_CHECKING
 
 from incognita.logger import logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    class SupportsEndTime(Protocol):
+        start_time: float
 
 
 def time_function(method: Callable) -> Callable:
@@ -42,3 +45,8 @@ def time_function(method: Callable) -> Callable:
         return output
 
     return wrapper
+
+
+def close(closeable: SupportsEndTime, /) -> None:
+    """Outputs the duration of the programme"""
+    logger.info(f"Script finished, {time.time() - closeable.start_time:.2f} seconds elapsed.")
