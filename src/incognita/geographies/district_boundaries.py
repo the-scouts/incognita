@@ -37,6 +37,14 @@ def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
     Aims to create a circular boundary around every section of maximal size
     that doesn't overlap or leave gaps between Districts.
 
+    Args:
+        census_data: Dataframe with census data
+
+    Returns: GeoDataFrame of district IDs -> district polygons
+
+    Todo:
+        Spatial transforms add 20x overhead, but buffering relies on them to work. Fix.
+
     """
     # Finds and de-duplicates all the records with valid postcodes in the Scout Census
     all_locations = census_data.loc[census_data[scout_census.column_labels.VALID_POSTCODE], ["D_ID", "lat", "long"]]
@@ -49,4 +57,6 @@ def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
     # coordinates, meaning that we can operate in metres from now on.
     points = points.to_crs(epsg=constants.BNG).data
 
-    return gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
+    district_gdf = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
+    district_gdf.to_file("districts_buffered.geojson", driver="GeoJSON")
+    return district_gdf
