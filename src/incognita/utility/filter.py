@@ -11,14 +11,14 @@ if TYPE_CHECKING:
 sections_model = scout_census.column_labels.sections
 
 
-def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
+def filter_records(data: pd.DataFrame, field: str, value_list: set, exclude_matching: bool = False, exclusion_analysis: bool = False) -> pd.DataFrame:
     """Filters the Census records by any field in ONS PD.
 
     Args:
         data:
         field: The field on which to filter
         value_list: The values on which to filter
-        mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
+        exclude_matching: If True, exclude the values that match the filter. If False, keep the values that match the filter.
         exclusion_analysis:
 
     Returns:
@@ -28,7 +28,7 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
     # Count number of rows
     original_records = data.index.size
     matching_records = data[field].isin(value_list)
-    if mask:
+    if exclude_matching:
         # Excluding records that match the filter criteria
         filter_mask = ~matching_records
         logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")

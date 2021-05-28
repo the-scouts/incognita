@@ -32,17 +32,17 @@ class ScoutData:
         self.points_data = gpd.GeoDataFrame()
         self.ons_pd = ons_postcode_directory_may_20
 
-    def filter_records(self, field: str, value_list: set, mask: bool = False, exclusion_analysis: bool = False) -> None:
+    def filter_records(self, field: str, value_list: set, exclude_matching: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
 
         Args:
             field: The field on which to filter
             value_list: The values on which to filter
-            mask: If True, exclude the values that match the filter. If False, keep the values that match the filter.
+            exclude_matching: If True, exclude the values that match the filter. If False, keep the values that match the filter.
             exclusion_analysis:
 
         """
-        self.census_data = filter.filter_records(self.census_data, field, value_list, mask, exclusion_analysis)
+        self.census_data = filter.filter_records(self.census_data, field, value_list, exclude_matching, exclusion_analysis)
 
     def add_shape_data(self, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> None:
         if path is not None:

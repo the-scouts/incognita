@@ -11,7 +11,7 @@ if __name__ == "__main__":
     scout_data.filter_records("Census_ID", {census_id})
     scout_data.filter_records("R_name", {region_name})
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
-    scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, mask=True)
+    scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
     scout_data.filter_records("postcode_is_valid", {True})
 
     # generate district boundaries
