@@ -26,56 +26,58 @@ def filter_records(data: pd.DataFrame, field: str, value_list: set, mask: bool =
 
     """
     # Count number of rows
-    original_records = len(data.index)
-    excluded_data = original_data = None
+    original_records = data.index.size
 
-    # Filter records
+    matching_records = data[field].isin(value_list)
     if mask:
         # Excluding records that match the filter criteria
+        filter_mask = ~matching_records
         logger.info(f"Selecting records that satisfy {field} not in {value_list} from {original_records} records.")
-        if exclusion_analysis:
-            original_data = data.copy()
-            excluded_data = data.loc[data[field].isin(value_list)]
-        data = data.loc[~data[field].isin(value_list)]
     else:
         # Including records that match the filter criteria
+        filter_mask = matching_records
         logger.info(f"Selecting records that satisfy {field} in {value_list} from {original_records} records.")
-        if exclusion_analysis:
-            original_data = data.copy()
-            excluded_data = data.loc[~data[field].isin(value_list)]
-        data = data.loc[data[field].isin(value_list)]
 
-    remaining_records = len(data.index)
+    filtered = data.loc[filter_mask]
+    remaining_records = len(filtered.index)
     logger.info(f"Resulting in {remaining_records} records remaining.")
 
     if exclusion_analysis:
-        cols = [scout_census.column_labels.UNIT_TYPE] + [section_model.total for section, section_model in sections_model]
-        if not all([col in data.columns for col in cols]):
-            raise ValueError("Required columns are not in dataset!\n" f"Required columns are: {cols}.\n" f"Your columns are: {data.columns.to_list()}")
+        excluded = data.loc[~filter_mask]
+        _exclusion_analysis(data, filtered, excluded)
 
-        # Calculate the number of records that have been filtered out
-        excluded_records = original_records - remaining_records
-        logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
+    return filtered
 
-        # Prints number of members and % of members filtered out for each section
-        for section_name, section_model in sections_model:
-            logger.debug(f"Analysis of {section_name} member exclusions")
-            section_type = section_model.type
-            members_col = section_model.total
 
-            excluded_sections = excluded_data.loc[excluded_data[scout_census.column_labels.UNIT_TYPE] == section_type]
-            excluded_members = 0
-            if not excluded_sections.empty:
-                logger.debug(f"Excluded sections\n{excluded_sections}")
-                logger.debug(f"Finding number of excluded {section_name} by summing {members_col}")
-                excluded_members = excluded_sections[members_col].sum()
-                logger.debug(f"{excluded_members} {section_name} excluded")
+def _exclusion_analysis(original: pd.DataFrame, filtered: pd.DataFrame, excluded: pd.DataFrame):
+    cols = [scout_census.column_labels.UNIT_TYPE] + [section_model.total for section, section_model in sections_model]
+    if not all([col in original.columns for col in cols]):
+        o_cols = original.columns.to_list()
+        raise ValueError("Required columns are not in dataset!\n" f"Required columns are: {cols}.\n" f"Your columns are: {o_cols}")
 
-            original_members = original_data.loc[original_data[scout_census.column_labels.UNIT_TYPE] == section_type, members_col].sum()
+    # Calculate the number of records that have been filtered out
+    original_records = original.index.size
+    excluded_records = original_records - filtered.index.size
+    logger.info(f"{excluded_records} records were removed ({excluded_records / original_records * 100}% of total)")
 
-            if original_members > 0:
-                logger.info(f"{excluded_members} {section_name} members were removed ({excluded_members / original_members * 100}%) of total")
-            else:
-                logger.info(f"There are no {section_name} members present in data")
+    # Prints number of members and % of members filtered out for each section
+    for section_name, section_model in sections_model:
+        logger.debug(f"Analysis of {section_name} member exclusions")
+        section_type = section_model.type
+        members_col = section_model.total
 
-    return data
+        excluded_sections_mask = excluded[scout_census.column_labels.UNIT_TYPE] == section_type
+        excluded_sections = excluded.loc[excluded_sections_mask]
+        excluded_members = 0
+        if not excluded_sections.empty:
+            logger.debug(f"Excluded sections\n{excluded_sections}")
+            logger.debug(f"Finding number of excluded {section_name} by summing {members_col}")
+            excluded_members = excluded_sections[members_col].sum()
+            logger.debug(f"{excluded_members} {section_name} excluded")
+
+        original_members = excluded.loc[excluded_sections_mask, members_col].sum()
+
+        if original_members > 0:
+            logger.info(f"{excluded_members} {section_name} members were removed ({excluded_members / original_members * 100}%) of total")
+        else:
+            logger.info(f"There are no {section_name} members present in data")
