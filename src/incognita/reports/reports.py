@@ -15,6 +15,14 @@ from incognita.utility.timing import time_function
 if TYPE_CHECKING:
     from incognita.data.ons_pd import ONSPostcodeDirectory
 
+ONS_GEOG_NAMES = {boundary_model.key for boundary_model in config.SETTINGS.ons2020.values()}
+SECTION_AGES = {
+    "Beavers": {"ages": ["6", "7"]},
+    "Cubs": {"ages": ["8", "9"], "halves": ["10"]},
+    "Scouts": {"halves": ["10"], "ages": ["11", "12", "13"]},
+    "Explorers": {"ages": ["14", "15", "16", "17"]},
+}
+
 
 class Reports:
     @property
@@ -29,13 +37,6 @@ class Reports:
         self.boundary_report = None
 
         self.ons_pd_data: Optional[pd.DataFrame] = None
-
-    SECTION_AGES = {
-        "Beavers": {"ages": ["6", "7"]},
-        "Cubs": {"ages": ["8", "9"], "halves": ["10"]},
-        "Scouts": {"halves": ["10"], "ages": ["11", "12", "13"]},
-        "Explorers": {"ages": ["14", "15", "16", "17"]},
-    }
 
     @time_function
     def add_shapefile_data(self) -> None:
@@ -186,9 +187,8 @@ class Reports:
             dataframes.append(agg)
 
         if opt_awards:
-            geog_names = {boundary_model.key for boundary_model in config.SETTINGS.ons2020.values()}
-            if geog_name not in geog_names:
-                raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
+            if geog_name not in ONS_GEOG_NAMES:
+                raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {ONS_GEOG_NAMES}")
 
             district_id_column = scout_census.column_labels.id.DISTRICT
             award_name = sections_model.Beavers.top_award[0]
@@ -297,14 +297,14 @@ class Reports:
             raise
 
         # population data
-        for section, ages in Reports.SECTION_AGES.items():
+        for section, ages in SECTION_AGES.items():
             section_population = age_profile_pd[ages["ages"]].sum(axis=1)
             section_population += age_profile_pd[ages["halves"]].sum(axis=1) // 2 if ages.get("halves") else 0
             age_profile_pd[f"Pop_{section}"] = section_population.astype("UInt32")
         age_profile_pd["Pop_All"] = age_profile_pd[[f"{age}" for age in range(6, 17 + 1)]].sum(axis=1).astype("UInt32")
 
         # merge population data
-        cols = [age_profile_key] + [f"Pop_{section}" for section in Reports.SECTION_AGES.keys()] + ["Pop_All"]
+        cols = [age_profile_key] + [f"Pop_{section}" for section in SECTION_AGES.keys()] + ["Pop_All"]
         reduced_age_profile_pd = age_profile_pd[cols]
 
         # Pivot age profile to current geography type if needed
@@ -333,7 +333,7 @@ class Reports:
         for census_id in census_ids:
             # clip here as unexpectedly large values throw off the scale bars.
             # TODO normalise unexpectedly large values so that we don't need to clip
-            for section in Reports.SECTION_AGES.keys():
+            for section in SECTION_AGES.keys():
                 uptake_section = 100 * uptake_report[f"{section}-{census_id}"] / uptake_report[f"Pop_{section}"]
                 max_value = uptake_section.quantile(0.975)
                 uptake_report[f"%-{section}-{census_id}"] = uptake_section.clip(upper=max_value)
