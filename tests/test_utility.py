@@ -20,7 +20,6 @@ ons_postcode_directory_stub = ons_pd.ONSPostcodeDirectory(
     PUBLICATION_DATE="",
     IMD_MAX={"England": 32844, "Wales": 1909, "Scotland": 6976, "Northern Ireland": 890},
     COUNTRY_CODES={"E92000001": "England", "W92000004": "Wales", "S92000003": "Scotland", "N92000002": "Northern Ireland"},
-    BOUNDARIES={},
 )
 
 

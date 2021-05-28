@@ -14,7 +14,6 @@ class ONSPostcodeDirectory(pydantic.BaseModel):
     # IMD_MAX: DeprivationMaximums  # Highest IMD rank in each of IMD 2015, WIMD 2014, SIMD 2016, NIMDM2017
     IMD_MAX: dict[str, int]  # Highest ranked Lower Level Super Output Area (or equivalent) in each country
     COUNTRY_CODES: dict[str, str]  # ONS Postcode Directory codes for each country
-    BOUNDARIES: dict[str, config.Boundary]  # Dictionary holding dictionaries with information for each type of boundary
 
 
 # https://geoportal.statistics.gov.uk/datasets/ons-postcode-directory-may-2020
@@ -45,5 +44,4 @@ ons_postcode_directory_may_20 = ONSPostcodeDirectory(
         # "L93000001": "Channel Islands",
         # "M83000003": "Isle of Man"
     },
-    BOUNDARIES=config.SETTINGS.ons2020,
 )

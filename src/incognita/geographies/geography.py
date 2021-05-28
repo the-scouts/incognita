@@ -14,9 +14,10 @@ from incognita.utility import constants
 from incognita.utility import root
 
 if TYPE_CHECKING:
-    from incognita.data.ons_pd import ONSPostcodeDirectory
     from incognita.data.scout_data import ScoutData
     from incognita.utility.config import Boundary
+
+BOUNDARIES_DICT = config.SETTINGS.ons2020 | config.SETTINGS.custom_boundaries
 
 
 class Geography:
@@ -29,24 +30,22 @@ class Geography:
         name: Human readable ('nice') name for the geography
     """
 
-    def __init__(self, geography_name: str, ons_pd: ONSPostcodeDirectory):
+    def __init__(self, geography_name: str):
         """Instantiates Geography, loads metadata for a given geography type.
 
         Args:
             geography_name:
                 The type of boundary, e.g. "LSOA", "Constituency" etc. Must be
                 an ONS or specified custom boundary.
-            ons_pd:
-                An ONSPostcodeDirectory model with boundaries for a given release
 
         """
         logger.info(f"Setting the boundary by {geography_name}")
 
         # Combine the ONS and Scout boundaries directories
-        boundaries_dict = ons_pd.BOUNDARIES | config.SETTINGS.custom_boundaries
-        if geography_name not in boundaries_dict:
-            raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {boundaries_dict.keys()}")
-        self.metadata: Boundary = boundaries_dict[geography_name]
+
+        if geography_name not in BOUNDARIES_DICT:
+            raise ValueError(f"{geography_name} is an invalid boundary.\nValid boundaries include: {BOUNDARIES_DICT.keys()}")
+        self.metadata: Boundary = BOUNDARIES_DICT[geography_name]
         self.name: str = self.metadata.key  # human readable name
 
         # Names & Codes file path

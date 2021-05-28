@@ -24,7 +24,7 @@ class Reports:
     def __init__(self, geography_name: str, scout_data: ScoutData):
         self.ons_pd: ONSPostcodeDirectory = scout_data.ons_pd  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data  # only uses are for self.scout_data.data
-        self.geography = Geography(geography_name, self.ons_pd)
+        self.geography = Geography(geography_name)
 
         self.boundary_report = None
 
@@ -186,8 +186,7 @@ class Reports:
             dataframes.append(agg)
 
         if opt_awards:
-            # Must be self.ons_pd as BOUNDARIES dictionary changes for subclasses of ONSPostcodeDirectory
-            geog_names = {boundary_model.key for boundary_model in self.ons_pd.BOUNDARIES.values()}
+            geog_names = {boundary_model.key for boundary_model in config.SETTINGS.ons2020.values()}
             if geog_name not in geog_names:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {geog_names}")
 
