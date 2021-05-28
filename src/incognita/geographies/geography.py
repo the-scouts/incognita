@@ -3,15 +3,12 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-import geopandas as gpd
 import pandas as pd
 import pyarrow
-import shapely.geometry
 
 from incognita.data import scout_census
 from incognita.logger import logger
 from incognita.utility import config
-from incognita.utility import constants
 from incognita.utility import root
 
 if TYPE_CHECKING:
@@ -94,7 +91,7 @@ class Geography:
 
         return self.boundary_codes
 
-    def filter_boundaries_by_scout_area(self, scout_data: ScoutData, ons_boundary: str, column: str, value_list: set) -> pd.DataFrame:
+    def filter_boundaries_by_scout_area(self, census_data: pd.DataFrame, ons_boundary: str, column: str, value_list: set) -> pd.DataFrame:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -104,7 +101,7 @@ class Geography:
         Then filters boundaries to those intersecting within said ONS codes.
 
         Args:
-            scout_data: ScoutData object with data to operate on
+            census_data: Census data to operate on
             ons_boundary: ONS boundary to filter on
             column: Scout boundary (e.g. C_ID)
             value_list: Values in the Scout boundary
@@ -115,8 +112,8 @@ class Geography:
         # Filters scout data to values passed through (values in column `column' in `values_list')
         # Gets associated ons code column from filtered records
         # Removes original ons-census merge errors
-        ons_boundary_records = scout_data.census_data[ons_boundary].dropna()
-        ons_codes = set(ons_boundary_records[scout_data.census_data[column].isin(value_list)].array)
+        ons_boundary_records = census_data[ons_boundary].dropna()
+        ons_codes = set(ons_boundary_records[census_data[column].isin(value_list)].array)
         ons_codes.discard(scout_census.DEFAULT_VALUE)
         logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {value_list}")
 

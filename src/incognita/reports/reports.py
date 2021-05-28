@@ -61,13 +61,11 @@ class Reports:
         destination keys.
 
         """
-        # Check if field (i.e. scout_data column) is a census column or ONS column
-        valid_filter_columns = self.ons_pd.fields | self.scout_data.filterable_columns
-        if field not in valid_filter_columns:
-            raise ValueError(f"Field value {field} not valid. Valid values are {valid_filter_columns}")
         if field in self.ons_pd.fields:
             return self.geography.filter_ons_boundaries(field, value_list)
-        return self.geography.filter_boundaries_by_scout_area(self.scout_data, boundary, field, value_list)
+        if field in self.scout_data.filterable_columns:
+            return self.geography.filter_boundaries_by_scout_area(self.scout_data.census_data, boundary, field, value_list)
+        raise ValueError(f"Field {field} not valid. Valid fields are {self.ons_pd.fields | self.scout_data.filterable_columns}")
 
     def _ons_to_district_mapping(self, region_type: str) -> dict:
         """Create json file, containing which scout districts are within an
