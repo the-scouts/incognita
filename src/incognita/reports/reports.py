@@ -26,17 +26,6 @@ class Reports:
         self.geography = Geography(geography_name)
 
     @time_function
-    def add_shapefile_data(self) -> None:
-
-        logger.info("Adding shapefile data")
-        # self.scout_data = copy.copy(self.scout_data)
-        # self.scout_data.census_data = self.scout_data.census_data.copy()
-
-        shapefile_key = self.geography.metadata.shapefile.key
-        self.scout_data.add_shape_data(shapefile_key, path=self.geography.metadata.shapefile.path)
-        self.scout_data.census_data = self.scout_data.census_data.rename(columns={shapefile_key: self.geography.metadata.key})
-
-    @time_function
     def filter_boundaries(self, field: str, values: set[str], boundary: str = "") -> pd.DataFrame:
         """Keep all geographic boundaries where the value of `field` is in the given value list.
 
