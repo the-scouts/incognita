@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from incognita.data import scout_census
+from incognita.data.ons_pd import ons_postcode_directory_may_20 as ONS_PD
 from incognita.logger import logger
 from incognita.utility import report_io
 
@@ -111,7 +112,7 @@ class HistorySummary:
         # apply the imd function and map country codes to country names
         logger.info(f"Creating table of IMD data and postcodes")
         imd_table = grouped_data.apply(_imd_groupby).droplevel(1)
-        imd_table["IMD Country"] = imd_table["ctry"].map(self.scout_data.ons_pd.COUNTRY_CODES)
+        imd_table["IMD Country"] = imd_table["ctry"].map(ONS_PD.COUNTRY_CODES)
 
         # fmt: off
         column_renaming = {
@@ -434,7 +435,7 @@ class HistorySummary:
             if postcode_valid:
                 logger.debug(f"Adding postcode {most_recent.at[scout_census.column_labels.POSTCODE]}")
                 section_data["Postcode"] = most_recent.at[scout_census.column_labels.POSTCODE]
-                country = self.scout_data.ons_pd.COUNTRY_CODES.get(most_recent.at["ctry"])
+                country = ONS_PD.COUNTRY_CODES.get(most_recent.at["ctry"])
                 section_data["IMD Country"] = country if country else scout_census.DEFAULT_VALUE
                 section_data["IMD Decile"] = most_recent.at["imd_decile"]
                 section_data["IMD Rank"] = most_recent.at["imd"]

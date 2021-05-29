@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 import pandas as pd
 
 from incognita.data import scout_census
+from incognita.data.ons_pd import ons_postcode_directory_may_20 as ONS_PD
 from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import report_io
 from incognita.utility.timing import time_function
-
-if TYPE_CHECKING:
-    from incognita.data.ons_pd import ONSPostcodeDirectory
 
 ONS_GEOG_NAMES = {boundary_model.key for boundary_model in config.SETTINGS.ons2020.values()}
 SECTION_AGES = {
@@ -30,7 +28,6 @@ class Reports:
         return self.boundary_report
 
     def __init__(self, geography_name: str, scout_data: ScoutData):
-        self.ons_pd: ONSPostcodeDirectory = scout_data.ons_pd  # Only needed for BOUNDARIES dict
         self.scout_data = scout_data  # only uses are for self.scout_data.data
         self.geography = Geography(geography_name)
 
@@ -61,11 +58,11 @@ class Reports:
         destination keys.
 
         """
-        if field in self.ons_pd.fields:
+        if field in ONS_PD.fields:
             return self.geography.filter_ons_boundaries(field, values)
         if field in self.scout_data.filterable_columns:
             return self.geography.filter_boundaries_by_scout_area(field, values, self.scout_data.census_data, boundary)
-        raise ValueError(f"Field {field} not valid. Valid fields are {self.ons_pd.fields | self.scout_data.filterable_columns}")
+        raise ValueError(f"Field {field} not valid. Valid fields are {ONS_PD.fields | self.scout_data.filterable_columns}")
 
     @time_function
     def create_boundary_report(self, options: set[str] = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
