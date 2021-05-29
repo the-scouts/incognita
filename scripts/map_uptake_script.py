@@ -7,7 +7,7 @@ This script has no command line options.
 """
 import time
 
-from incognita.data.scout_data import load_census_data
+from incognita.data.scout_census import load_census_data
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports

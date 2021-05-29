@@ -1,6 +1,6 @@
 import time
 
-from incognita.data.scout_data import load_census_data
+from incognita.data.scout_census import load_census_data
 from incognita.geographies import district_boundaries
 from incognita.logger import logger
 from incognita.maps.map import Map
