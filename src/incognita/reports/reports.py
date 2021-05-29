@@ -296,11 +296,11 @@ def _ons_to_district_mapping(census_data: pd.DataFrame, boundary_codes: pd.DataF
     # count of how many regions the district occupies:
     count_regions_in_district = (
         census_data.loc[(census_data[district_id_column].isin(district_ids) & (census_data[region_type] != DEFAULT_VALUE)), [district_id_column, region_type]]
-            .dropna()
-            .drop_duplicates()
-            .groupby(district_id_column)
-            .count()
-            .rename(columns={region_type: "count"})
+        .dropna()
+        .drop_duplicates()
+        .groupby(district_id_column)
+        .count()
+        .rename(columns={region_type: "count"})
     )
     count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column).set_index([region_type, district_id_column])
 

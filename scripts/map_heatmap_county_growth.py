@@ -90,15 +90,11 @@ if __name__ == "__main__":
     data = cty_boundary_report
     for i in range(offset):
         j = i * 2
-        data[f"{data.iloc[:, j + 3].name.split('-')[0]}_change"] = (
-            data.iloc[:, j + 3 + offset * 2] / data.iloc[:, j + 3]
-        ) * 100 - 100
+        data[f"{data.iloc[:, j + 3].name.split('-')[0]}_change"] = (data.iloc[:, j + 3 + offset * 2] / data.iloc[:, j + 3]) * 100 - 100
         print(f"{data.iloc[:, j + 3 + offset * 2].name} / {data.iloc[:, j + 3].name}")
     data[f"Adults_change"] = (data.iloc[:, 22] / data.iloc[:, 12]) * 100 - 100
     data[f"Sections_change"] = (
-        data[["Colonys-2020", "Packs-2020", "Troops-2020", "Units-2020"]].sum(axis=1)
-        / data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1)
-        - 1
+        data[["Colonys-2020", "Packs-2020", "Troops-2020", "Units-2020"]].sum(axis=1) / data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1) - 1
     ) * 100
     report_io.save_report(data, f"{location_name} - Counties with change")
 

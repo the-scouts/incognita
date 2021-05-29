@@ -19,6 +19,7 @@ if __name__ == "__main__":
     census_data = filter.filter_records(census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
 
     reports = Reports("IMD Decile", census_data)
-    boundary_report = reports.create_boundary_report({"Groups", "Number of Sections", "Section numbers", "waiting list total"}, report_name=f"{county_name} - {census_id} IMD report")
+    report_options = {"Groups", "Number of Sections", "Section numbers", "waiting list total"}
+    boundary_report = reports.create_boundary_report(report_options, report_name=f"{county_name} - {census_id} IMD report")
 
     timing.close(start_time)
