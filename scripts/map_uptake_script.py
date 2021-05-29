@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
     nys_reports = Reports("District (NYS)", census_data)
     nys_reports.filter_boundaries("C_name", {county_name}, "oslaua")
-    nys_reports.add_shapefile_data()
+    # nys_reports.add_shapefile_data()
     nys_boundary_report = nys_reports.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name=f"{county_name} - nys")
     nys_reports.create_uptake_report(nys_boundary_report, report_name=f"{county_name} - nys (uptake)")
 
