@@ -14,7 +14,6 @@ import pandas as pd
 from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
-from incognita.reports.reports import Reports
 from incognita.utility import config
 from incognita.utility import constants
 
@@ -45,7 +44,8 @@ class Map:
         var_col: str,
         tooltip: str,
         layer_name: str,
-        reports: Reports,
+        boundary_report: pd.DataFrame,
+        boundary_metadata: config.Boundary,
         show: bool = False,
         colour_bounds: list[int] = None,
         significance_threshold: float = 2.5,
@@ -57,14 +57,15 @@ class Map:
             var_col: Data column to use for choropleth colour values
             tooltip: Mouseover tooltip for each boundary (e.g. "% Change 6-18")
             layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
-            reports:
+            boundary_report:
+            boundary_metadata:
             show: If True, show the layer by default
             colour_bounds: Colour breaks to create a fixed legend
             significance_threshold: If an area's value is significant enough to be displayed
             categorical: If the data are categorical
 
         """
-        data = reports.boundary_report
+        data = boundary_report
         if var_col not in data.columns:
             logger.error(f"{var_col} is not a valid column in the data. \n" f"Valid columns include {data.columns}")
             raise KeyError(f"{var_col} is not a valid column in the data.")
@@ -104,7 +105,7 @@ class Map:
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
 
-        metadata = reports.geography.metadata
+        metadata = boundary_metadata
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
             colour_data=choropleth_data.to_dict(),
@@ -357,7 +358,7 @@ class Map:
         webbrowser.open(self.out_file.as_uri())
 
 
-def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
+def _load_boundary(boundary_report: pd.DataFrame, boundary_metadata: config.Boundary) -> gpd.GeoDataFrame:
     """Loads a given boundary from a Reports object.
 
     Loads shapefile from path into GeoPandas dataframe
@@ -365,14 +366,15 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
     Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
     Args:
-        reports: A Reports object with data. This contains shapefile paths, and labels for region codes and names
+        boundary_report: A DataFrame object with boundary report data
+        boundary_metadata: This contains shapefile paths, and labels for region codes and names
 
     Returns:
         GeoDataFrame with filtered and CRS transformed shapes
 
     """
-    metadata = reports.geography.metadata
-    data = reports.boundary_report
+    metadata = boundary_metadata
+    data = boundary_report
 
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
     logger.info("Loading Shapefile data")
