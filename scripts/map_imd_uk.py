@@ -8,12 +8,14 @@ This script has no command line options.
 import time
 
 from incognita.data.scout_data import ScoutData
+from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 from incognita.utility import timing
 
 if __name__ == "__main__":
     start_time = time.time()
+    logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime(start_time))}")
 
     countries = {"England", "Wales"}
     country_codes = {"E92000001", "W92000004"}

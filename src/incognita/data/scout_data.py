@@ -14,12 +14,10 @@ class ScoutData:
     """Provides access to manipulate and process data."""
 
     def __init__(self, load_census_data: bool = True):
-        self.start_time = time.time()
-        logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime(self.start_time))}")
-
         # Loads Scout Census Data from disk.
+        start_time = time.time()
         self.census_data = feather.read_feather(config.SETTINGS.census_extract.merged) if load_census_data else pd.DataFrame()
-        logger.info(f"Loaded Scout Census data, {time.time() - self.start_time:.2f} seconds elapsed.")
+        logger.info(f"Loaded Scout Census data, {time.time() - start_time:.2f} seconds elapsed.")
 
     def filter_records(self, field: str, value_list: set, exclude_matching: bool = False, exclusion_analysis: bool = False) -> None:
         """Filters the Census records by any field in ONS PD.
