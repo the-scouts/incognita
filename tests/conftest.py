@@ -8,10 +8,10 @@ from hypothesis.extra.pandas import range_indexes
 import hypothesis.strategies as st
 import pytest
 
-from incognita.utility import constants
-
 # https://github.com/pytest-dev/pytest/issues/2421#issuecomment-403724503
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from incognita.utility import constants  # NoQA: E402
 
 COLUMN_NAME = "ctry"
 
