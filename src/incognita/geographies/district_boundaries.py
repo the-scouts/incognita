@@ -31,7 +31,7 @@ def merge_to_districts(district_ids, points: Sequence[pygeos.Geometry]) -> pd.Se
     return merged_polys
 
 
-def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
+def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geometry = None) -> gpd.GeoSeries:
     """Estimates district boundaries from group locations.
 
     Aims to estimate district boundaries from Group points, using the Voronoi
@@ -39,6 +39,7 @@ def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
 
     Args:
         census_data: Dataframe with census data
+        clip_to: Optional area to clip results to. Must be in WGS84 projection.
 
     Returns: GeoDataFrame of district IDs -> district polygons
 
@@ -57,4 +58,7 @@ def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
     # coordinates, meaning that we can operate in metres from now on.
     points = points.to_crs(epsg=constants.BNG).data
 
-    return gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
+    districts = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
+    if clip_to is not None:
+        districts.geometry.array.data = pygeos.intersection(districts.geometry.array.data, clip_to)
+    return districts
