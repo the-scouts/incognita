@@ -78,7 +78,7 @@ if __name__ == "__main__":
     cty_reports.add_shapefile_data()
     cty_boundary_report = cty_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - Counties")
     cty_reports.create_uptake_report(cty_boundary_report, report_name=f"{location_name} - Counties (uptake)")
-    data = cty_reports.boundary_report
+    data = cty_boundary_report
     for i in range(offset):
         j = i * 2
         data[f"{data.iloc[:, j + 3].name.split('-')[0]}_change"] = (

@@ -24,7 +24,6 @@ class Reports:
     def __init__(self, geography_name: str, scout_data: ScoutData):
         self.scout_data = scout_data
         self.geography = Geography(geography_name)
-        self.boundary_report = None
 
     @time_function
     def add_shapefile_data(self) -> None:
@@ -179,16 +178,14 @@ class Reports:
             qsa_prop = 100 * awards_regions_data["QSA"] / awards_regions_data["qsa_eligible"]
             qsa_prop[awards_regions_data["qsa_eligible"] == 0] = pd.NA
 
-            award_data = pd.DataFrame(
-                {
-                    award_name: award_total,
-                    award_eligible: eligible_total,
-                    f"%-{award_name}": award_prop,
-                    "QSA": awards_regions_data["QSA"],
-                    "%-QSA": qsa_prop,
-                }
-            )
-            dataframes.append(award_data)
+            award_data = {
+                award_name: award_total,
+                award_eligible: eligible_total,
+                f"%-{award_name}": award_prop,
+                "QSA": awards_regions_data["QSA"],
+                "%-QSA": qsa_prop,
+            }
+            dataframes.append(pd.DataFrame(award_data))
 
         # TODO find a way to keep DUMMY geography coding
         output_data = boundary_codes.reset_index(drop=True).copy()
@@ -198,8 +195,6 @@ class Reports:
             logger.debug(f"Loading ONS postcode data & Adding IMD deciles.")
             ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=["lsoa11", "imd_decile"]).drop_duplicates()
             output_data = output_data.merge(ons_pd_data, how="left", left_on="codes", right_on="lsoa11").drop(columns="lsoa11")
-
-        self.boundary_report = output_data
 
         if report_name:
             report_io.save_report(output_data, report_name)
@@ -284,7 +279,6 @@ class Reports:
         if report_name:
             report_io.save_report(uptake_report, report_name)
 
-        self.boundary_report = uptake_report
         return uptake_report
 
 

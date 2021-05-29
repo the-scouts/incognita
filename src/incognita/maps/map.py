@@ -359,7 +359,7 @@ class Map:
 
 
 def _load_boundary(boundary_report: pd.DataFrame, boundary_metadata: config.Boundary) -> gpd.GeoDataFrame:
-    """Loads a given boundary from a Reports object.
+    """Loads a given boundary from a boundary report and metadata.
 
     Loads shapefile from path into GeoPandas dataframe
     Filters out unneeded shapes within all shapes loaded

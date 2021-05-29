@@ -53,7 +53,7 @@ class Geography:
         codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in {"codes", "names"}])  
 
         self.boundary_codes: pd.DataFrame = codes_map
-        self.metadata = metadata  # used in Reports, Map
+        self.metadata = metadata  # used in Reports
 
     def filter_ons_boundaries(self, field: str, values: set) -> pd.DataFrame:
         """Filters the boundary_codes table by if the area code is within both value_list and the census_data table.
