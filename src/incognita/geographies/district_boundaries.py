@@ -24,23 +24,21 @@ def spatial_join(points: Sequence[pygeos.Geometry], voronoi_polygons: Sequence[p
 def merge_to_districts(district_ids, points: Sequence[pygeos.Geometry]) -> pd.Series:
     voronoi_polygons = create_voronoi(points)
     index_map = spatial_join(points, voronoi_polygons)
-    df = pd.DataFrame({"D_ID": district_ids, "polys": voronoi_polygons[index_map]})
-    merged_polys = df.groupby("D_ID")["polys"].apply(pygeos.coverage_union_all)
-    merged_polys.index.name = None
-    merged_polys.name = "district_polygons"
-    return merged_polys
+    df = pd.DataFrame({"D_ID": district_ids, "geometry": voronoi_polygons[index_map]})
+    return df.groupby("D_ID")["geometry"].apply(pygeos.coverage_union_all)
 
 
-def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
-    """Creates a GeoJSON file for the District Boundaries of the Scout Census.
+def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geometry = None) -> gpd.GeoDataFrame:
+    """Estimates district boundaries from group locations.
 
-    Aims to create a circular boundary around every section of maximal size
-    that doesn't overlap or leave gaps between Districts.
+    Aims to estimate district boundaries from Group points, using the Voronoi
+    diagram method.
 
     Args:
         census_data: Dataframe with census data
+        clip_to: Optional area to clip results to. Must be in WGS84 projection.
 
-    Returns: GeoDataFrame of district IDs -> district polygons
+    Returns: GeoDataFrame with district IDs and polygons
 
     Todo:
         Spatial transforms add 20x overhead, but buffering relies on them to work. Fix.
@@ -57,6 +55,7 @@ def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
     # coordinates, meaning that we can operate in metres from now on.
     points = points.to_crs(epsg=constants.BNG).data
 
-    district_gdf = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
-    district_gdf.to_file("districts_buffered.geojson", driver="GeoJSON")
-    return district_gdf
+    districts = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
+    if clip_to is not None:
+        districts.geometry.array.data = pygeos.intersection(districts.geometry.array.data, clip_to)
+    return districts.reset_index()[["geometry", "D_ID"]]  # return district IDs (the index) as a field/column

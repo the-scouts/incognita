@@ -1,7 +1,6 @@
 import time
 
 from incognita.data.scout_census import load_census_data
-from incognita.geographies import district_boundaries
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
@@ -22,14 +21,11 @@ if __name__ == "__main__":
     census_data = filter.filter_records(census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
     census_data = filter.filter_records(census_data, "postcode_is_valid", {True})
 
-    # generate district boundaries
-    district_boundaries.create_district_boundaries(census_data)
-
     # generate boundary report
     reports = Reports("District", census_data)
     boundary_report = reports.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="uk_by_district")
 
-    mapper = Map(map_name="uk_by_la_map")
+    mapper = Map(map_name="uk_by_scout_district_map", map_title="Youth membership by scout district - UK")
     mapper.add_areas(f"All-{census_id}", "Under 18s", "Scouts aged under 18", boundary_report, reports.geography.metadata, show=True)
     mapper.add_sections_to_map(census_data, "D_ID", {"youth membership"}, cluster_markers=True)
 
