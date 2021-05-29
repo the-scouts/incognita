@@ -8,6 +8,7 @@ This script has no command line options.
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import timing
 
 if __name__ == "__main__":
     county_name = "North Yorkshire"
@@ -102,4 +103,4 @@ if __name__ == "__main__":
     #     section_map.save_map()
 
     # get script execution time etc.
-    scout_data.close()
+    timing.close(scout_data)

@@ -2,6 +2,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.geographies import district_boundaries
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import timing
 
 if __name__ == "__main__":
     region_name = "South West"
@@ -29,4 +30,4 @@ if __name__ == "__main__":
     mapper.save_map()
     mapper.show_map()
 
-    scout_data.close()
+    timing.close(scout_data)

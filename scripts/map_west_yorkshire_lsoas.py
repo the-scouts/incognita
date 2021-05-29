@@ -1,6 +1,7 @@
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import timing
 
 if __name__ == "__main__":
     county_name = "Birmingham"
@@ -26,4 +27,4 @@ if __name__ == "__main__":
     # Save the map and display
     mapper.save_map()
     mapper.show_map()
-    scout_data.close()
+    timing.close(scout_data)

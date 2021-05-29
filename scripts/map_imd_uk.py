@@ -8,6 +8,7 @@ This script has no command line options.
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import timing
 
 if __name__ == "__main__":
     countries = {"England", "Wales"}
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     # Plot sections
     mapper.add_meeting_places_to_map(
         sections=scout_data.census_data,
-        colour="D_ID",
+        colour_key="D_ID",
         marker_data={"youth membership"},
         cluster_markers=True,
         coloured_region=countries,
@@ -50,4 +51,4 @@ if __name__ == "__main__":
     mapper.save_map()
     mapper.show_map()
 
-    scout_data.close()
+    timing.close(scout_data)

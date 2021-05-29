@@ -10,6 +10,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 from incognita.utility import report_io
+from incognita.utility import timing
 
 if __name__ == "__main__":
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
@@ -136,4 +137,4 @@ if __name__ == "__main__":
     #     section_map.save_map()
 
     # get script execution time etc.
-    scout_data.close()
+    timing.close(scout_data)
