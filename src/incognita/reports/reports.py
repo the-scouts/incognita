@@ -80,10 +80,12 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
         opt_awards = "awards" in options
 
+        census_data = self.scout_data.census_data
+        boundary_codes = self.geography.boundary_codes
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
-        logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(self.scout_data.census_data.index)} records")
+        logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(census_data.index)} records")
 
-        census_dates = sorted(set(self.scout_data.census_data["Census Date"].dropna()))
+        census_dates = sorted(set(census_data["Census Date"].dropna()))
         if len(census_dates) > 1:
             if not historical:
                 raise ValueError(f"Historical option not selected, but multiple censuses selected ({census_dates[0]} - {census_dates[-1]})")
@@ -98,7 +100,7 @@ class Reports:
             # Gets all groups in the census_data dataframe and calculates the
             # number of groups.
             logger.debug(f"Adding group data")
-            groups = self.scout_data.census_data[[geog_name, scout_census.column_labels.name.GROUP]].copy()
+            groups = census_data[[geog_name, scout_census.column_labels.name.GROUP]].copy()
             groups[scout_census.column_labels.name.GROUP] = groups[scout_census.column_labels.name.GROUP].str.strip()
             grouped_rgn = groups.drop_duplicates().dropna().groupby([geog_name], dropna=False)[scout_census.column_labels.name.GROUP]
             dataframes.append(pd.DataFrame({"Groups": grouped_rgn.unique().apply("\n".join), "Number of Groups": grouped_rgn.nunique(dropna=True)}))
@@ -106,9 +108,9 @@ class Reports:
         if opt_section_numbers or opt_number_of_sections or opt_6_to_17_numbers or opt_waiting_list_totals or opt_adult_numbers:
             total_cols = [section_model.total for section_name, section_model in sections_model if section_name != "Network"]
             waiting_cols = [section_model.waiting_list for section_name, section_model in sections_model if section_name != "Network"]
-            self.scout_data.census_data["All"] = self.scout_data.census_data[total_cols].sum(axis=1).astype("Int32")
-            self.scout_data.census_data["Waiting List"] = self.scout_data.census_data[waiting_cols].sum(axis=1).astype("Int32")
-            self.scout_data.census_data["Adults"] = self.scout_data.census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
+            census_data["All"] = census_data[total_cols].sum(axis=1).astype("Int32")
+            census_data["Waiting List"] = census_data[waiting_cols].sum(axis=1).astype("Int32")
+            census_data["Adults"] = census_data[["Leaders", "AssistantLeaders", "SectAssistants", "OtherAdults"]].sum(axis=1).astype("Int32")
 
             logger.debug(f"Adding young people numbers")
             metric_cols = []
@@ -125,7 +127,7 @@ class Reports:
                 metric_cols += ["Waiting List"]
             if opt_adult_numbers:
                 metric_cols += ["Adults"]
-            agg = self.scout_data.census_data.groupby([geog_name, "Census_ID"], dropna=False)[metric_cols].sum().unstack().sort_index()
+            agg = census_data.groupby([geog_name, "Census_ID"], dropna=False)[metric_cols].sum().unstack().sort_index()
             agg.columns = [f"{rename.get(key, key)}-{census_year}".replace("_total", "") for key, census_year in agg.columns]
             dataframes.append(agg)
 
@@ -138,9 +140,9 @@ class Reports:
             award_eligible = sections_model.Beavers.top_award_eligible[0]
 
             logger.debug(f"Creating awards mapping")
-            awards_mapping = _ons_to_district_mapping(self.scout_data.census_data, self.geography.boundary_codes, geog_name)
+            awards_mapping = _ons_to_district_mapping(census_data, boundary_codes, geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
-            grouped_dist = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column, dropna=False)
+            grouped_dist = census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column, dropna=False)
             ons_regions_in_district = grouped_dist[district_id_column].first().map(district_numbers)
             awards_per_district_per_regions = pd.DataFrame(
                 {
@@ -153,8 +155,8 @@ class Reports:
 
             # Check that our pivot keeps the total membership constant
             yp_cols = ["Beavers_total", "Cubs_total", "Scouts_total", "Explorers_total"]
-            grouped_rgn = self.scout_data.census_data.groupby([geog_name], dropna=False)
-            assert int(self.scout_data.census_data[yp_cols].sum().sum()) == int(grouped_rgn[yp_cols].sum().sum().sum())
+            grouped_rgn = census_data.groupby([geog_name], dropna=False)
+            assert int(census_data[yp_cols].sum().sum()) == int(grouped_rgn[yp_cols].sum().sum().sum())
 
             logger.debug(f"Adding awards data")
             award_total = grouped_rgn[award_name].sum()
@@ -189,7 +191,7 @@ class Reports:
             dataframes.append(award_data)
 
         # TODO find a way to keep DUMMY geography coding
-        output_data: pd.DataFrame = self.geography.boundary_codes.reset_index(drop=True).copy()
+        output_data = boundary_codes.reset_index(drop=True).copy()
         output_data = output_data.merge(pd.concat(dataframes, axis=1), how="left", left_on="codes", right_index=True, sort=False)
 
         if geog_name == "lsoa11":
@@ -219,15 +221,14 @@ class Reports:
             Uptake data of Scouts in the boundary
 
         """
-        geog_name = self.geography.metadata.key
+        metadata = self.geography.metadata
+        census_data = self.scout_data.census_data
+        geog_key = metadata.key
         try:
-            age_profile_path = config.SETTINGS.folders.national_statistical / self.geography.metadata.age_profile.path
-            age_profile_key = self.geography.metadata.age_profile.key
+            age_profile_path = config.SETTINGS.folders.national_statistical / metadata.age_profile.path
+            age_profile_key = metadata.age_profile.key
         except KeyError:
-            raise AttributeError(f"Population by age data not present for this {geog_name}")
-
-        if boundary_report is None:
-            raise AttributeError("Geography report doesn't exist")
+            raise AttributeError(f"Population by age data not present for this {geog_key}")
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
         try:
@@ -248,13 +249,13 @@ class Reports:
         reduced_age_profile_pd = age_profile_pd[cols]
 
         # Pivot age profile to current geography type if needed
-        pivot_key = self.geography.metadata.age_profile.pivot_key
-        if pivot_key and pivot_key != geog_name:
+        pivot_key = metadata.age_profile.pivot_key
+        if pivot_key and pivot_key != geog_key:
             logger.debug(f"Loading ONS postcode data.")
-            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=[geog_name, pivot_key])
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=[geog_key, pivot_key])
             merged_age_profile = reduced_age_profile_pd.merge(ons_pd_data, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
-            merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_name])
-            pivoted_age_profile = merged_age_profile_no_na.groupby(geog_name).sum().astype("UInt32")
+            merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_key])
+            pivoted_age_profile = merged_age_profile_no_na.groupby(geog_key).sum().astype("UInt32")
 
             # Check we did not accidentally expand the population!
             # assert merged_age_profile["Pop_All"].sum() == reduced_age_profile_pd["Pop_All"].sum()  # this will fail
@@ -264,7 +265,7 @@ class Reports:
             uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
-        census_ids = self.scout_data.census_data["Census_ID"].drop_duplicates().dropna().sort_values()
+        census_ids = census_data["Census_ID"].drop_duplicates().dropna().sort_values()
 
         # add uptake data
         for census_id in census_ids:
