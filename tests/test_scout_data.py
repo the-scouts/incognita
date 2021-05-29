@@ -9,7 +9,6 @@ import hypothesis.strategies as st
 import pandas as pd
 import pytest
 
-from incognita.data import scout_census
 from incognita.data.scout_data import ScoutData
 from incognita.utility import constants
 
@@ -47,15 +46,6 @@ LocationDataFrame = data_frames(
     ],
     index=range_indexes(min_size=2),
 )
-
-
-def test_scout_data_columns(scout_data_factory):
-    scout_data_stub = scout_data_factory(pd.DataFrame())
-
-    column_labels = scout_census.column_labels
-    columns = {col for key, col in (*column_labels.name, *column_labels.id)}
-
-    assert scout_data_stub.filterable_columns == columns
 
 
 @hypothesis.given(CountryDataFrame)

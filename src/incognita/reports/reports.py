@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import pandas as pd
 
-from incognita.data import scout_census
-from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
+from incognita.data.scout_census import column_labels
+from incognita.data.scout_census import DEFAULT_VALUE
 from incognita.data.scout_data import ScoutData
+from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import report_io
 from incognita.utility.timing import time_function
 
+# Filterable columns are the ID and name columns of the dataset
+FILTERABLE_COLUMNS: set[str] = {*column_labels.id.__dict__.values(), *column_labels.name.__dict__.values()}
 ONS_GEOG_NAMES = {boundary_model.key for boundary_model in config.SETTINGS.ons2020.values()}
 SECTION_AGES = {
     "Beavers": {"ages": ["6", "7"]},
@@ -39,9 +42,9 @@ class Reports:
         """
         if field in ONS_PD.fields:
             return self.geography.filter_ons_boundaries(field, values)
-        if field in self.scout_data.filterable_columns:
+        if field in FILTERABLE_COLUMNS:
             return self.geography.filter_boundaries_by_scout_area(field, values, self.scout_data.census_data, boundary)
-        raise ValueError(f"Field {field} not valid. Valid fields are {ONS_PD.fields | self.scout_data.filterable_columns}")
+        raise ValueError(f"Field {field} not valid. Valid fields are {ONS_PD.fields | FILTERABLE_COLUMNS}")
 
     @time_function
     def create_boundary_report(self, options: set[str] = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
@@ -79,7 +82,7 @@ class Reports:
                 raise ValueError(f"Historical option not selected, but multiple censuses selected ({census_dates[0]} - {census_dates[-1]})")
             logger.info(f"Historical analysis from {census_dates[0]} to {census_dates[-1]}")
 
-        sections_model = scout_census.column_labels.sections
+        sections_model = column_labels.sections
 
         dataframes = []
 
@@ -88,9 +91,9 @@ class Reports:
             # Gets all groups in the census_data dataframe and calculates the
             # number of groups.
             logger.debug(f"Adding group data")
-            groups = census_data[[geog_name, scout_census.column_labels.name.GROUP]].copy()
-            groups[scout_census.column_labels.name.GROUP] = groups[scout_census.column_labels.name.GROUP].str.strip()
-            grouped_rgn = groups.drop_duplicates().dropna().groupby([geog_name], dropna=False)[scout_census.column_labels.name.GROUP]
+            groups = census_data[[geog_name, column_labels.name.GROUP]].copy()
+            groups[column_labels.name.GROUP] = groups[column_labels.name.GROUP].str.strip()
+            grouped_rgn = groups.drop_duplicates().dropna().groupby([geog_name], dropna=False)[column_labels.name.GROUP]
             dataframes.append(pd.DataFrame({"Groups": grouped_rgn.unique().apply("\n".join), "Number of Groups": grouped_rgn.nunique(dropna=True)}))
 
         if opt_section_numbers or opt_number_of_sections or opt_6_to_17_numbers or opt_waiting_list_totals or opt_adult_numbers:
@@ -123,7 +126,7 @@ class Reports:
             if geog_name not in ONS_GEOG_NAMES:
                 raise ValueError(f"{geog_name} is not a valid geography name. Valid values are {ONS_GEOG_NAMES}")
 
-            district_id_column = scout_census.column_labels.id.DISTRICT
+            district_id_column = column_labels.id.DISTRICT
             award_name = sections_model.Beavers.top_award[0]
             award_eligible = sections_model.Beavers.top_award_eligible[0]
 
@@ -286,7 +289,7 @@ def _ons_to_district_mapping(census_data: pd.DataFrame, boundary_codes: pd.DataF
 
     logger.debug("Creating mapping from ons boundary to scout district")
 
-    district_id_column = scout_census.column_labels.id.DISTRICT
+    district_id_column = column_labels.id.DISTRICT
 
     region_ids = set(boundary_codes["codes"].dropna())
 
@@ -295,7 +298,7 @@ def _ons_to_district_mapping(census_data: pd.DataFrame, boundary_codes: pd.DataF
 
     # count of how many regions the district occupies:
     count_regions_in_district = (
-        census_data.loc[(census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)), [district_id_column, region_type]]
+        census_data.loc[(census_data[district_id_column].isin(district_ids) & (census_data[region_type] != DEFAULT_VALUE)), [district_id_column, region_type]]
             .dropna()
             .drop_duplicates()
             .groupby(district_id_column)
