@@ -25,7 +25,7 @@ class Geography:
     Attributes:
         metadata: incognita.data.ons_pd.Boundary object with geography metadata
         boundary_codes: Table mapping region codes to human-readable names
-        geog_key: Human readable ('nice') name for the geography
+
     """
 
     def __init__(self, geography_name: str):
@@ -53,7 +53,6 @@ class Geography:
         codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in {"codes", "names"}])  
 
         self.boundary_codes: pd.DataFrame = codes_map
-        self.geog_key: str = metadata.key  # human readable name
         self.metadata = metadata  # used in Reports, Map
 
     def filter_ons_boundaries(self, field: str, values: set) -> pd.DataFrame:
@@ -72,19 +71,19 @@ class Geography:
         """
 
         # Transforms codes from values_list in column 'field' to codes for the current geography
-        # 'field' is the start geography and 'geog_key' is the target geography
-        logger.info(f"Filtering {len(self.boundary_codes)} {self.geog_key} boundaries by {field} being in {values}")
+        # 'field' is the start geography and 'metadata.key' is the target geography
+        logger.info(f"Filtering {len(self.boundary_codes)} {self.metadata.key} boundaries by {field} being in {values}")
         logger.debug(f"Loading ONS postcode data.")
         try:
-            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=[self.geog_key, field])
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=[self.metadata.key, field])
         except pyarrow.ArrowInvalid:
             # read in the full file to get valid columns
             valid_cols = pd.read_feather(config.SETTINGS.ons_pd.reduced).columns.to_list()
-            raise KeyError(f"{self.geog_key} not in ONS PD dataframe. Valid values are: {valid_cols}") from None
+            raise KeyError(f"{self.metadata.key} not in ONS PD dataframe. Valid values are: {valid_cols}") from None
         # Finds records in the ONS PD where the given `field` matches with
-        # `values`, and constructs a set of the corresponding `geog_key` codes.
+        # `values`, and constructs a set of the corresponding `metadata.key` codes.
         # Then uses those codes to filter the `boundary_codes` table.
-        matching_codes = set(ons_pd_data[self.geog_key][ons_pd_data[field].isin(values)].array)
+        matching_codes = set(ons_pd_data[self.metadata.key][ons_pd_data[field].isin(values)].array)
         self.boundary_codes = self.boundary_codes.loc[self.boundary_codes["codes"].isin(matching_codes)]
         logger.info(f"Leaving {len(self.boundary_codes.index)} boundaries after filtering")
 
