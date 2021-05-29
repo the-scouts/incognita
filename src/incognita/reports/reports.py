@@ -21,10 +21,6 @@ SECTION_AGES = {
 
 
 class Reports:
-    @property
-    def data(self) -> pd.DataFrame:
-        return self.boundary_report
-
     def __init__(self, geography_name: str, scout_data: ScoutData):
         self.scout_data = scout_data
         self.geography = Geography(geography_name)

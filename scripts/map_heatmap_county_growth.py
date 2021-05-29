@@ -78,19 +78,20 @@ if __name__ == "__main__":
     cty_reports.add_shapefile_data()
     cty_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - Counties")
     cty_reports.create_uptake_report(report_name=f"{location_name} - Counties (uptake)")
+    data = cty_reports.boundary_report
     for i in range(offset):
         j = i * 2
-        cty_reports.data[f"{cty_reports.data.iloc[:, j + 3].name.split('-')[0]}_change"] = (
-            cty_reports.data.iloc[:, j + 3 + offset * 2] / cty_reports.data.iloc[:, j + 3]
+        data[f"{data.iloc[:, j + 3].name.split('-')[0]}_change"] = (
+            data.iloc[:, j + 3 + offset * 2] / data.iloc[:, j + 3]
         ) * 100 - 100
-        print(f"{cty_reports.data.iloc[:, j + 3 + offset * 2].name} / {cty_reports.data.iloc[:, j + 3].name}")
-    cty_reports.data[f"Adults_change"] = (cty_reports.data.iloc[:, 22] / cty_reports.data.iloc[:, 12]) * 100 - 100
-    cty_reports.data[f"Sections_change"] = (
-        cty_reports.data[["Colonys-2020", "Packs-2020", "Troops-2020", "Units-2020"]].sum(axis=1)
-        / cty_reports.data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1)
+        print(f"{data.iloc[:, j + 3 + offset * 2].name} / {data.iloc[:, j + 3].name}")
+    data[f"Adults_change"] = (data.iloc[:, 22] / data.iloc[:, 12]) * 100 - 100
+    data[f"Sections_change"] = (
+        data[["Colonys-2020", "Packs-2020", "Troops-2020", "Units-2020"]].sum(axis=1)
+        / data[["Colonys-2019", "Packs-2019", "Troops-2019", "Units-2019"]].sum(axis=1)
         - 1
     ) * 100
-    report_io.save_report(cty_reports.data, f"{location_name} - Counties with change")
+    report_io.save_report(data, f"{location_name} - Counties with change")
 
     # Create map object
     mapper = Map(map_name=f"{location_name} uptake map")
