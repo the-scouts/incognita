@@ -20,7 +20,7 @@ if __name__ == "__main__":
     census_data = filter.filter_records(census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
 
     # low resolution shape data
-    world_low_res = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    world_low_res = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
     uk_shape = world_low_res.loc[world_low_res.name == "United Kingdom", "geometry"].array.data[0]
     # # high resolution shape data
     # uk_shape = gpd.read_file(r"S:\Development\incognita\data\UK Shape\GBR_adm0.shp")["geometry"].array.data[0]

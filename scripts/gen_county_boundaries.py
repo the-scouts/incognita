@@ -1,5 +1,5 @@
-import time
 import random
+import time
 
 import geopandas as gpd
 import matplotlib.cm
@@ -25,10 +25,10 @@ if __name__ == "__main__":
 
     # https://matplotlib.org/stable/tutorials/colors/colormaps.html
     # cmap = matplotlib.cm.get_cmap('Set1')
-    cmap = matplotlib.cm.get_cmap('tab20')
+    cmap = matplotlib.cm.get_cmap("tab20")
     # cmap = matplotlib.cm.get_cmap('hsv')
 
-    cmap_indicies = (i/(len(gdf.index)-1) for i in range(len(gdf.index)))  # qualitative colours
+    cmap_indicies = (i / (len(gdf.index) - 1) for i in range(len(gdf.index)))  # qualitative colours
     # cmap_indicies = (random.random() for _ in range(len(gdf.index)))  # qualitative colours
 
     gdf["fill"] = [rgb2hex(cmap(i)) for i in cmap_indicies]
