@@ -1,11 +1,10 @@
 import logging
 
+from conftest import COLUMN_NAME
+from conftest import CountryDataFrame
 import hypothesis
 import pandas as pd
 import pytest
-
-from conftest import COLUMN_NAME
-from conftest import CountryDataFrame
 
 
 @hypothesis.given(CountryDataFrame)

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pandas as pd
 
+from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.data.scout_census import column_labels
 from incognita.data.scout_census import DEFAULT_VALUE
 from incognita.data.scout_data import ScoutData
-from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
 from incognita.utility import config

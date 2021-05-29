@@ -1,11 +1,10 @@
+from conftest import LocationDataFrame
 import geopandas as gpd
 import hypothesis
 import pandas as pd
 
-from incognita.utility import constants
 from incognita.data import add_shape_data
-
-from conftest import LocationDataFrame
+from incognita.utility import constants
 
 
 @hypothesis.given(LocationDataFrame)

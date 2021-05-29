@@ -50,7 +50,7 @@ class Geography:
         # Normalise codes columns
         codes_map.columns = codes_map.columns.map({codes.key: "codes", codes.name: "names"})
         # drop extras e.g. welsh names
-        codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in {"codes", "names"}])  
+        codes_map = codes_map.drop(columns=[col for col in codes_map.columns if col not in {"codes", "names"}])
 
         self.boundary_codes: pd.DataFrame = codes_map
         self.metadata = metadata  # used in Reports
