@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import pandas as pd
 
 from incognita.data import scout_census
@@ -28,12 +26,9 @@ class Reports:
         return self.boundary_report
 
     def __init__(self, geography_name: str, scout_data: ScoutData):
-        self.scout_data = scout_data  # only uses are for self.scout_data.data
+        self.scout_data = scout_data
         self.geography = Geography(geography_name)
-
         self.boundary_report = None
-
-        self.ons_pd_data: Optional[pd.DataFrame] = None
 
     @time_function
     def add_shapefile_data(self) -> None:
@@ -202,13 +197,9 @@ class Reports:
         output_data = output_data.merge(pd.concat(dataframes, axis=1), how="left", left_on="codes", right_index=True, sort=False)
 
         if geog_name == "lsoa11":
-            logger.debug(f"Loading ONS postcode data.")
-            if self.ons_pd_data is None:
-                self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
-
-            logger.debug(f"Adding IMD deciles")
-            imd_deciles = self.ons_pd_data[["lsoa11", "imd_decile"]].drop_duplicates()
-            output_data = output_data.merge(imd_deciles, how="left", left_on="codes", right_on="lsoa11").drop(columns="lsoa11")
+            logger.debug(f"Loading ONS postcode data & Adding IMD deciles.")
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=["lsoa11", "imd_decile"]).drop_duplicates()
+            output_data = output_data.merge(ons_pd_data, how="left", left_on="codes", right_on="lsoa11").drop(columns="lsoa11")
 
         self.boundary_report = output_data
 
@@ -263,11 +254,8 @@ class Reports:
         pivot_key = self.geography.metadata.age_profile.pivot_key
         if pivot_key and pivot_key != geog_name:
             logger.debug(f"Loading ONS postcode data.")
-            if self.ons_pd_data is None:
-                self.ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced)
-
-            ons_data_subset = self.ons_pd_data[[geog_name, pivot_key]]
-            merged_age_profile = reduced_age_profile_pd.merge(ons_data_subset, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
+            ons_pd_data = pd.read_feather(config.SETTINGS.ons_pd.reduced, columns=[geog_name, pivot_key])
+            merged_age_profile = reduced_age_profile_pd.merge(ons_pd_data, how="left", left_on=age_profile_key, right_on=pivot_key).drop(pivot_key, axis=1)
             merged_age_profile_no_na = merged_age_profile.dropna(subset=[geog_name])
             pivoted_age_profile = merged_age_profile_no_na.groupby(geog_name).sum().astype("UInt32")
 
