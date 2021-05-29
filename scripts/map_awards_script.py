@@ -12,6 +12,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import filter
 from incognita.utility import timing
 
 if __name__ == "__main__":
@@ -21,10 +22,10 @@ if __name__ == "__main__":
     census_id = 20
 
     scout_data = ScoutData()
-    scout_data.filter_records("postcode_is_valid", {True})
-    scout_data.filter_records("Census_ID", {census_id})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "postcode_is_valid", {True})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "Census_ID", {census_id})
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
-    scout_data.filter_records("C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
 
     # Generate boundary report
     reports = Reports("Local Authority", scout_data)

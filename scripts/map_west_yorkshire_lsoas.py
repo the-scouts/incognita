@@ -4,6 +4,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import filter
 from incognita.utility import timing
 
 if __name__ == "__main__":
@@ -14,9 +15,9 @@ if __name__ == "__main__":
     census_id = 21
 
     scout_data = ScoutData()
-    scout_data.filter_records("Census_ID", {census_id})  # 16, 17, 18, 19, 20
-    scout_data.filter_records("C_name", {county_name})  # "Shropshire", "West Mercia"
-    scout_data.filter_records("postcode_is_valid", {True})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "Census_ID", {census_id})  # 16, 17, 18, 19, 20
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "C_name", {county_name})  # "Shropshire", "West Mercia"
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "postcode_is_valid", {True})
 
     reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("C_name", {county_name}, "oslaua")

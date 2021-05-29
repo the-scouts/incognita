@@ -11,6 +11,7 @@ from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
+from incognita.utility import filter
 from incognita.utility import timing
 
 if __name__ == "__main__":
@@ -22,11 +23,11 @@ if __name__ == "__main__":
 
     # setup data
     scout_data = ScoutData()
-    scout_data.filter_records("Census_ID", {20})
-    scout_data.filter_records("X_name", countries)
-    scout_data.filter_records("type", {"Colony", "Pack", "Troop", "Unit"})
-    scout_data.filter_records("ctry", country_codes)
-    scout_data.filter_records("postcode_is_valid", {True}, exclusion_analysis=True)
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "Census_ID", {20})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "X_name", countries)
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "type", {"Colony", "Pack", "Troop", "Unit"})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "ctry", country_codes)
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
 
     lsoa = Reports("LSOA", scout_data)
     lsoa.filter_boundaries("ctry", country_codes)

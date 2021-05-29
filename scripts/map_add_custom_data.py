@@ -5,6 +5,7 @@ from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 from incognita.utility import config
+from incognita.utility import filter
 from incognita.utility import timing
 
 if __name__ == "__main__":
@@ -16,9 +17,9 @@ if __name__ == "__main__":
     census_id = 20
 
     scout_data = ScoutData()
-    scout_data.filter_records("Census_ID", {census_id})
-    scout_data.filter_records("oslaua", {la_code})
-    scout_data.filter_records("postcode_is_valid", {True}, exclusion_analysis=True)
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "Census_ID", {census_id})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "oslaua", {la_code})
+    scout_data.census_data = filter.filter_records(scout_data.census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
 
     # Generate boundary report
     reports = Reports("LSOA", scout_data)
