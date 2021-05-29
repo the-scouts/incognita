@@ -3,10 +3,15 @@ from incognita.reports.history_summary import HistorySummary
 
 if __name__ == "__main__":
     scout_data = ScoutData()
-    # scout_data.filter_records("imd_decile", {1, 2})
-    # scout_data.filter_records("C_name", {"Shropshire"})
+    scout_data.filter_records("imd_decile", {1, 2})
+    scout_data.filter_records("C_name", {"Shropshire"})
 
-    years = [2020]  # + [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+    # # Read group list - with a column headed "G_ID"
+    # groups = pd.read_csv(r"Output\yuf_groups.csv")
+    # group_ids = groups["G_ID"].drop_duplicates().dropna().to_list()
+    # scout_data.filter_records("G_ID", {group_ids})
+
+    years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
     history_summary = HistorySummary(scout_data)
-    history_summary.group_history_summary(sorted(years), report_name="group_history_report")
+    history_summary.group_history_summary(years, report_name="group_history_report")
     scout_data.close()
