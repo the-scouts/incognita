@@ -58,4 +58,4 @@ def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geo
     districts = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
     if clip_to is not None:
         districts.geometry.array.data = pygeos.intersection(districts.geometry.array.data, clip_to)
-    return districts.reset_index()  # return district IDs (the index) as a field/column
+    return districts.reset_index()[["geometry", "D_ID"]]  # return district IDs (the index) as a field/column

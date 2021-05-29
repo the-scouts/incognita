@@ -1,6 +1,7 @@
 import time
 
 import geopandas as gpd
+import pandas as pd
 
 from incognita.data.scout_census import load_census_data
 from incognita.geographies import district_boundaries
@@ -27,6 +28,10 @@ if __name__ == "__main__":
 
     district_polygons = district_boundaries.create_district_boundaries(census_data, clip_to=uk_shape)
     logger.info("District boundaries estimated!")
+
+    location_ids = census_data[["D_ID", "C_ID", "R_ID", "X_ID"]].dropna(subset=["D_ID"]).drop_duplicates().astype("Int64")
+    district_polygons = pd.merge(district_polygons, location_ids, how="left", on="D_ID")
+    logger.info("Added County, Region & Country location codes.")
 
     district_polygons.to_file(config.SETTINGS.folders.boundaries / "districts-borders-uk.geojson", driver="GeoJSON")
     logger.info("District boundaries saved.")
