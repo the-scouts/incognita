@@ -126,10 +126,6 @@ The
 [Beginner's Guide to UK Geography](https://geoportal.statistics.gov.uk/search?collection=Document&sort=name&tags=DOC_BGG)
 can be useful as an introduction for those new to GIS.
 
-## Branches
-The heroku branch is specifically for the heroku application: http://scout-mapping.herokuapp.com. It contains a cut down requirements file to ensure that it
-loads into heroku correctly.
-
 ## License
 
 ***Incognita*** is naturally
