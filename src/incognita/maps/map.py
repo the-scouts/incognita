@@ -12,9 +12,7 @@ import numpy as np
 import pandas as pd
 
 from incognita.data import scout_census
-from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
-from incognita.reports.reports import Reports
 from incognita.utility import config
 from incognita.utility import constants
 
@@ -45,7 +43,8 @@ class Map:
         var_col: str,
         tooltip: str,
         layer_name: str,
-        reports: Reports,
+        boundary_report: pd.DataFrame,
+        boundary_metadata: config.Boundary,
         show: bool = False,
         colour_bounds: list[int] = None,
         significance_threshold: float = 2.5,
@@ -57,19 +56,21 @@ class Map:
             var_col: Data column to use for choropleth colour values
             tooltip: Mouseover tooltip for each boundary (e.g. "% Change 6-18")
             layer_name: Legend key for the layer (e.g. "% Change 6-18 (Counties)")
-            reports:
+            boundary_report:
+            boundary_metadata:
             show: If True, show the layer by default
             colour_bounds: Colour breaks to create a fixed legend
             significance_threshold: If an area's value is significant enough to be displayed
             categorical: If the data are categorical
 
         """
-        if var_col not in reports.data.columns:
-            logger.error(f"{var_col} is not a valid column in the data. \n" f"Valid columns include {reports.data.columns}")
+        data = boundary_report
+        if var_col not in data.columns:
+            logger.error(f"{var_col} is not a valid column in the data. \n" f"Valid columns include {data.columns}")
             raise KeyError(f"{var_col} is not a valid column in the data.")
 
         colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
-        choropleth_data = reports.data[["codes", var_col]].set_index("codes")[var_col]  # contains shapefile paths, and labels for region codes and names
+        choropleth_data = data[["codes", var_col]].set_index("codes")[var_col]  # contains shapefile paths, and labels for region codes and names
 
         # Set value col properties to use for a particular boundary
         logger.info(f"Setting choropleth column to {var_col} (displayed: {tooltip})")
@@ -103,15 +104,16 @@ class Map:
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
 
+        metadata = boundary_metadata
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
             colour_data=choropleth_data.to_dict(),
-            api_base=reports.geography.metadata.api.url,
-            query_params=reports.geography.metadata.api.query_params,
+            api_base=metadata.api.url,
+            query_params=metadata.api.query_params,
             colour_scale_id=colour_map_id,
             threshold=significance_threshold,
-            code_col=reports.geography.metadata.api.codes_col,
-            name_col=reports.geography.metadata.api.names_col,
+            code_col=metadata.api.codes_col,
+            name_col=metadata.api.names_col,
             measure_name=tooltip,
             show=show,
         )
@@ -253,7 +255,7 @@ class Map:
 
     def add_sections_to_map(
         self,
-        scout_data: ScoutData,
+        census_data: pd.DataFrame,
         colour_key: str,
         marker_data: set[str],
         single_section: str = None,
@@ -272,7 +274,7 @@ class Map:
         that have returned in the latest year of the dataset.
 
         Args:
-            scout_data:
+            census_data:
             colour_key: Determines marker colour. If a column in `sections`, categorical colours. Otherwise, must be a CSS colour name.
             marker_data: List of strings which determines content for popup, including:
                 - youth membership
@@ -285,10 +287,10 @@ class Map:
 
         """
         if single_section:
-            filtered_data = scout_data.census_data
+            filtered_data = census_data
             section_types = {getattr(scout_census.column_labels.sections, single_section).type}
         else:
-            filtered_data = scout_data.census_data.loc[scout_data.census_data["Census_ID"] == scout_data.census_data["Census_ID"].max()]
+            filtered_data = census_data.loc[census_data["Census_ID"] == census_data["Census_ID"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
         self.add_meeting_places_to_map(filtered_data, colour_key, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
@@ -355,39 +357,43 @@ class Map:
         webbrowser.open(self.out_file.as_uri())
 
 
-def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
-    """Loads a given boundary from a Reports object.
+def _load_boundary(boundary_report: pd.DataFrame, boundary_metadata: config.Boundary) -> gpd.GeoDataFrame:
+    """Loads a given boundary from a boundary report and metadata.
 
     Loads shapefile from path into GeoPandas dataframe
     Filters out unneeded shapes within all shapes loaded
     Converts from British National Grid to WGS84, as Leaflet doesn't understand BNG
 
     Args:
-        reports: A Reports object with data. This contains shapefile paths, and labels for region codes and names
+        boundary_report: A DataFrame object with boundary report data
+        boundary_metadata: This contains shapefile paths, and labels for region codes and names
 
     Returns:
         GeoDataFrame with filtered and CRS transformed shapes
 
     """
+    metadata = boundary_metadata
+    data = boundary_report
+
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
     logger.info("Loading Shapefile data")
-    logger.debug(f"Shapefile path: {reports.geography.metadata.shapefile.path}")
+    logger.debug(f"Shapefile path: {metadata.shapefile.path}")
     start_time = time.time()
-    all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
+    all_shapes = gpd.read_file(metadata.shapefile.path)
     logger.info(f"Loading Shapefile data finished, {time.time() - start_time:.2f} seconds elapsed")
-    if reports.geography.metadata.shapefile.key not in all_shapes.columns:
-        raise KeyError(f"{reports.geography.metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
+    if metadata.shapefile.key not in all_shapes.columns:
+        raise KeyError(f"{metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
     # Rename columns
-    shapes_col_map = {reports.geography.metadata.shapefile.key: "shape_codes", reports.geography.metadata.shapefile.name: "shape_names"}
+    shapes_col_map = {metadata.shapefile.key: "shape_codes", metadata.shapefile.name: "shape_names"}
     all_shapes.columns = [shapes_col_map.get(col, col) for col in all_shapes.columns]
 
     # Filter and convert GeoDataFrame to world co-ordinates
     logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the codes column of the map_data")
-    all_codes = set(reports.data["codes"])
+    all_codes = set(data["codes"])
     logger.debug(f"All codes list: {all_codes}")
     geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=constants.WGS_84)
-    logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
+    logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*data.columns]}.")
     return geo_data
 
 

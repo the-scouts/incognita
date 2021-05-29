@@ -1,16 +1,25 @@
-from incognita.data.scout_data import ScoutData
+import time
+
+from incognita.data.scout_census import load_census_data
+from incognita.logger import logger
 from incognita.reports.reports import Reports
+from incognita.utility import filter
+from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+    logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime(start_time))}")
+
     county_name = "Gt. London South"
     census_id = 20
 
-    scout_data = ScoutData()
-    scout_data.filter_records("Census_ID", {census_id})
-    scout_data.filter_records("C_name", {county_name})
-    scout_data.filter_records("postcode_is_valid", {True}, exclusion_analysis=True)
+    census_data = load_census_data()
+    census_data = filter.filter_records(census_data, "Census_ID", {census_id})
+    census_data = filter.filter_records(census_data, "C_name", {county_name})
+    census_data = filter.filter_records(census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
 
-    reports = Reports("IMD Decile", scout_data)
-    reports.create_boundary_report({"Groups", "Number of Sections", "Section numbers", "waiting list total"}, report_name=f"{county_name} - {census_id} IMD report")
+    reports = Reports("IMD Decile", census_data)
+    report_options = {"Groups", "Number of Sections", "Section numbers", "waiting list total"}
+    boundary_report = reports.create_boundary_report(report_options, report_name=f"{county_name} - {census_id} IMD report")
 
-    scout_data.close()
+    timing.close(start_time)

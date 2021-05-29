@@ -42,3 +42,6 @@ def set_up_logger(file_path: Path = None, log_level: int = logging.DEBUG) -> log
         log_filterer.setLevel(log_level)
 
     return logger
+
+
+set_up_logger()

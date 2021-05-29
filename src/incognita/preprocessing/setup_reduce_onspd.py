@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-from incognita.data.ons_pd import ons_postcode_directory_may_20
+from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.utility import config
@@ -13,17 +13,17 @@ if __name__ == "__main__":
 
     logger.info("Starting")
     to_keep = ("oscty", "oslaua", "osward", "ctry", "rgn", "pcon", "lsoa11", "msoa11", "imd", "imd_decile")  # 'lat', 'long', 'nys_districts', 'pcd'
-    fields = [f for f in to_keep if f in ons_postcode_directory_may_20.fields]
+    fields = [f for f in to_keep if f in ONS_PD.fields]
 
     # Load Full ONS Postcode Directory
-    data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ons_postcode_directory_may_20.data_types, encoding="utf-8")
+    data = pd.read_csv(config.SETTINGS.ons_pd.full, dtype=ONS_PD.data_types, encoding="utf-8")
     logger.info("Loaded data")
 
     orig = data.copy()
     logger.info("DEBUG - copied original data")
 
     # Add IMD Decile
-    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ons_postcode_directory_may_20).astype("UInt8")
+    data["imd_decile"] = deciles.calc_imd_decile(data["imd"], data["ctry"], ONS_PD).astype("UInt8")
     logger.info("IMD Deciles added")
 
     # Save minified full ONS Postcode Directory
