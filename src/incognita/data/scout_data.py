@@ -8,7 +8,6 @@ from pyarrow import feather
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import filter
-from incognita.utility import timing
 
 
 class ScoutData:
@@ -33,5 +32,3 @@ class ScoutData:
 
         """
         self.census_data = filter.filter_records(self.census_data, field, value_list, exclude_matching, exclusion_analysis)
-
-    close = timing.close

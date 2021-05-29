@@ -6,6 +6,8 @@ import hypothesis
 import pandas as pd
 import pytest
 
+from incognita.utility import timing
+
 
 @hypothesis.given(CountryDataFrame)
 def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
@@ -42,6 +44,6 @@ def test_close_script(caplog: pytest.LogCaptureFixture, scout_data_factory):
 
     caplog.set_level(logging.INFO)
 
-    scout_data_stub.close()
+    timing.close(scout_data_stub)
 
     assert "Script finished, 0.00 seconds elapsed." in caplog.text
