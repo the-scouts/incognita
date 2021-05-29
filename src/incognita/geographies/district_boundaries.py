@@ -27,7 +27,6 @@ def merge_to_districts(district_ids, points: Sequence[pygeos.Geometry]) -> pd.Se
     df = pd.DataFrame({"D_ID": district_ids, "polys": voronoi_polygons[index_map]})
     merged_polys = df.groupby("D_ID")["polys"].apply(pygeos.coverage_union_all)
     merged_polys.index.name = None
-    merged_polys.name = "district_polygons"
     return merged_polys
 
 
@@ -61,4 +60,4 @@ def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geo
     districts = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
     if clip_to is not None:
         districts.geometry.array.data = pygeos.intersection(districts.geometry.array.data, clip_to)
-    return districts
+    return districts.reset_index()  # return district IDs (the index) as a field/column
