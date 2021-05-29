@@ -7,7 +7,6 @@ dependencies:
   - pip
 
   # Core requirements
-  - dash
   - geopandas>=0.8
   - numpy
   - pandas
@@ -16,7 +15,6 @@ dependencies:
   - pygeos>=0.10
   - toml
   - pydantic
-  - scipy
 
   # Testing
   - pytest

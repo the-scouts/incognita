@@ -1,12 +1,5 @@
 -r requirements-test.txt
 
-# serve
-dash
-
-# testing
-pytest
-hypothesis
-
 # dev
 black
 isort

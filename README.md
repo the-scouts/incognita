@@ -53,7 +53,6 @@ This project is written and tested in Python 3.9, and depends on:
 - [shapely](https://github.com/Toblerity/Shapely), 
   [pygeos](https://github.com/pygeos/pygeos) - for manipulation and
   analysis of geometric objects
-- [dash](https://github.com/plotly/dash) - for simple web-apps
 
 JavaScript dependencies are:
 - [Leaflet.js](https://github.com/Leaflet/Leaflet) - for slippy maps
