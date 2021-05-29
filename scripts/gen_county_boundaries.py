@@ -23,6 +23,7 @@ if __name__ == "__main__":
     gdf = gpd.read_file(config.SETTINGS.folders.boundaries / "districts-borders-uk.geojson")
     gdf = gdf[gdf["C_ID"] == county_id].copy()
 
+    # https://matplotlib.org/stable/tutorials/colors/colormaps.html
     # cmap = matplotlib.cm.get_cmap('Set1')
     cmap = matplotlib.cm.get_cmap('tab20')
     # cmap = matplotlib.cm.get_cmap('hsv')
@@ -35,3 +36,4 @@ if __name__ == "__main__":
 
     sanitised_county = county_name.lower().replace(" ", "-")
     gdf.to_file(f"districts-{sanitised_county}.geojson", driver="GeoJSON")
+    # geojson.io recognises colours in the format above
