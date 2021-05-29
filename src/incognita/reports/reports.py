@@ -5,7 +5,6 @@ import pandas as pd
 from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.data.scout_census import column_labels
 from incognita.data.scout_census import DEFAULT_VALUE
-from incognita.data.scout_data import ScoutData
 from incognita.geographies.geography import Geography
 from incognita.logger import logger
 from incognita.utility import config
@@ -24,8 +23,8 @@ SECTION_AGES = {
 
 
 class Reports:
-    def __init__(self, geography_name: str, scout_data: ScoutData):
-        self.scout_data = scout_data
+    def __init__(self, geography_name: str, census_data: pd.DataFrame):
+        self.census_data = census_data
         self.geography = Geography(geography_name)
 
     @time_function
@@ -43,14 +42,12 @@ class Reports:
         if field in ONS_PD.fields:
             return self.geography.filter_ons_boundaries(field, values)
         if field in FILTERABLE_COLUMNS:
-            return self.geography.filter_boundaries_by_scout_area(field, values, self.scout_data.census_data, boundary)
+            return self.geography.filter_boundaries_by_scout_area(field, values, self.census_data, boundary)
         raise ValueError(f"Field {field} not valid. Valid fields are {ONS_PD.fields | FILTERABLE_COLUMNS}")
 
     @time_function
     def create_boundary_report(self, options: set[str] = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
         """Produces .csv file summarising by boundary provided.
-
-        Requires self.boundary_data to be set, preferably by :meth:scout_data._set_boundary
 
         Args:
             options: List of data to be included in report
@@ -71,7 +68,7 @@ class Reports:
         opt_adult_numbers = "Adult numbers" in options
         opt_awards = "awards" in options
 
-        census_data = self.scout_data.census_data
+        census_data = self.census_data
         boundary_codes = self.geography.boundary_codes
         geog_name = self.geography.metadata.key  # e.g oslaua osward pcon lsoa11
         logger.info(f"Creating report by {geog_name} with {', '.join(options)} from {len(census_data.index)} records")
@@ -209,7 +206,7 @@ class Reports:
 
         """
         metadata = self.geography.metadata
-        census_data = self.scout_data.census_data
+        census_data = self.census_data
         geog_key = metadata.key
         try:
             age_profile_path = config.SETTINGS.folders.national_statistical / metadata.age_profile.path

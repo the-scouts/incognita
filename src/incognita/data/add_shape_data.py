@@ -10,18 +10,16 @@ from incognita.logger import logger
 from incognita.utility import constants
 
 if TYPE_CHECKING:
-    from incognita.data.scout_data import ScoutData
     from incognita.utility.config import Boundary
 
 
-def add_shapefile_data(scout_data: ScoutData, metadata: Boundary) -> None:
+def add_shapefile_data(census_data: pd.DataFrame, metadata: Boundary) -> pd.DataFrame:
     logger.info("Adding shapefile data")
-    # self.scout_data = copy.copy(self.scout_data)
-    # self.scout_data.census_data = self.scout_data.census_data.copy()
+    # self.census_data = self.census_data.copy()
 
     shapefile_key = metadata.shapefile.key
-    new_data, points_data = add_shape_data(scout_data.census_data, shapefile_key, path=metadata.shapefile.path)
-    scout_data.census_data = new_data.rename(columns={shapefile_key: metadata.key})
+    new_data, points_data = add_shape_data(census_data, shapefile_key, path=metadata.shapefile.path)
+    return new_data.rename(columns={shapefile_key: metadata.key})
 
 
 def add_shape_data(census_data: pd.DataFrame, shapes_key: str, path: Path = None, gdf: gpd.GeoDataFrame = None) -> tuple[pd.DataFrame, gpd.GeoDataFrame]:

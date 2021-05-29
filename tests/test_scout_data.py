@@ -1,4 +1,5 @@
 import logging
+import time
 
 from conftest import COLUMN_NAME
 from conftest import CountryDataFrame
@@ -11,40 +12,40 @@ from incognita.utility import timing
 
 
 @hypothesis.given(CountryDataFrame)
-def test_filter_records_inclusion(scout_data_factory, data: pd.DataFrame):
+def test_filter_records_inclusion(data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
-    scout_data_stub = scout_data_factory(data)
-    scout_data_stub.census_data = filter.filter_records(scout_data_stub.census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=True, exclusion_analysis=False)
+    census_data = data
+    census_data = filter.filter_records(census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=True, exclusion_analysis=False)
 
     expected_outcome = data.loc[~(data[COLUMN_NAME] == first_country_code)]
-    assert scout_data_stub.census_data.equals(expected_outcome)
+    assert census_data.equals(expected_outcome)
 
 
 @hypothesis.given(CountryDataFrame)
-def test_filter_records_exclusion(scout_data_factory, data: pd.DataFrame):
+def test_filter_records_exclusion(data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
-    scout_data_stub = scout_data_factory(data)
-    scout_data_stub.census_data = filter.filter_records(scout_data_stub.census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=False, exclusion_analysis=False)
+    census_data = data
+    census_data = filter.filter_records(census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=False, exclusion_analysis=False)
 
     expected_outcome = data.loc[data[COLUMN_NAME] == first_country_code]
-    assert scout_data_stub.census_data.equals(expected_outcome)
+    assert census_data.equals(expected_outcome)
 
 
 @hypothesis.given(CountryDataFrame)
-def test_filter_records_exclusion_analysis_with_incorrect_columns(scout_data_factory, data: pd.DataFrame):
+def test_filter_records_exclusion_analysis_with_incorrect_columns(data: pd.DataFrame):
     first_country_code = data.loc[0, COLUMN_NAME]
-    scout_data_stub = scout_data_factory(data)
+    census_data = data
 
     with pytest.raises(ValueError):
-        scout_data_stub.census_data = filter.filter_records(scout_data_stub.census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=False, exclusion_analysis=True)
-        scout_data_stub.census_data = filter.filter_records(scout_data_stub.census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=True, exclusion_analysis=True)
+        census_data = filter.filter_records(census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=False, exclusion_analysis=True)
+        census_data = filter.filter_records(census_data, field=COLUMN_NAME, value_list={first_country_code}, exclude_matching=True, exclusion_analysis=True)
 
 
-def test_close_script(caplog: pytest.LogCaptureFixture, scout_data_factory):
-    scout_data_stub = scout_data_factory(pd.DataFrame())
+def test_close_script(caplog: pytest.LogCaptureFixture):
+    start_time = time.time()
 
     caplog.set_level(logging.INFO)
 
-    timing.close(scout_data_stub)
+    timing.close(start_time)
 
     assert "Script finished, 0.00 seconds elapsed." in caplog.text

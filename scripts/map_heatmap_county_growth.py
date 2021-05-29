@@ -8,7 +8,7 @@ This script has no command line options.
 
 import time
 
-from incognita.data.scout_data import ScoutData
+from incognita.data.scout_data import load_census_data
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
@@ -55,12 +55,12 @@ if __name__ == "__main__":
     census_ids = {19, 20}
 
     # setup data
-    scout_data = ScoutData()
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "Census_ID", census_ids)
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "X_name", country_names)
-    # scout_data.census_data = filter.filter_records(scout_data.census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "type", {"Colony", "Pack", "Troop", "Unit"})
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
+    census_data = load_census_data()
+    census_data = filter.filter_records(census_data, "Census_ID", census_ids)
+    census_data = filter.filter_records(census_data, "X_name", country_names)
+    # census_data = filter.filter_records(census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
+    census_data = filter.filter_records(census_data, "type", {"Colony", "Pack", "Troop", "Unit"})
+    census_data = filter.filter_records(census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
 
     offset = 5
     opts = [
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         "Number of Sections",
     ]
 
-    # lad_reports = Reports("Local Authority", scout_data)
+    # lad_reports = Reports("Local Authority", census_data)
     # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
     # lad_boundary_report = lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # lad_reports.data[f"Adults_change"] = (lad_reports.data.iloc[:, 22] / lad_reports.data.iloc[:, 12]) * 100 - 100
     # lad_reports.data[f"Sections_change"] = (lad_reports.data[['Colonys-2020', 'Packs-2020', 'Troops-2020', 'Units-2020']].sum(axis=1) / lad_reports.data[['Colonys-2019', 'Packs-2019', 'Troops-2019', 'Units-2019']].sum(axis=1) - 1) * 100
 
-    cty_reports = Reports("County", scout_data)
+    cty_reports = Reports("County", census_data)
     cty_reports.ons_pd.fields.add(cty_reports.geography.metadata.key)
     cty_reports.filter_boundaries("ctry", {"W92000004"})
     cty_reports.geography.boundary_codes = cty_reports.geography.boundary_codes[cty_reports.geography.boundary_codes["codes"].str.startswith("W")]
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # for section_label in Reports.SECTION_AGES.keys():
     #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
     #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, colour_bounds=[0, 3, 4, 6, 8, 11])
-    #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), {"youth membership"}, single_section=section_label)
+    #     section_map.add_sections_to_map(census_data, "D_ID", {"youth membership"}, single_section=section_label)
     #     section_map.save_map()
 
     # get script execution time etc.

@@ -1,6 +1,6 @@
 import time
 
-from incognita.data.scout_data import ScoutData
+from incognita.data.scout_data import load_census_data
 from incognita.logger import logger
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
@@ -16,13 +16,13 @@ if __name__ == "__main__":
     la_code = "E08000035"  # Leeds LA code
     census_id = 20
 
-    scout_data = ScoutData()
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "Census_ID", {census_id})
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "oslaua", {la_code})
-    scout_data.census_data = filter.filter_records(scout_data.census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
+    census_data = load_census_data()
+    census_data = filter.filter_records(census_data, "Census_ID", {census_id})
+    census_data = filter.filter_records(census_data, "oslaua", {la_code})
+    census_data = filter.filter_records(census_data, "postcode_is_valid", {True}, exclusion_analysis=True)
 
     # Generate boundary report
-    reports = Reports("LSOA", scout_data)
+    reports = Reports("LSOA", census_data)
     reports.filter_boundaries("oslaua", {la_code})  # Leeds LA code
     boundary_report = reports.create_boundary_report({"Section numbers"}, report_name="leeds_sections")
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         location_cols="Postcodes",
         marker_data=["EstablishmentName"],
     )
-    mapper.add_sections_to_map(scout_data, "D_ID", {"youth membership"}, single_section="Beavers")
+    mapper.add_sections_to_map(census_data, "D_ID", {"youth membership"}, single_section="Beavers")
 
     # Save the map and display
     mapper.save_map()

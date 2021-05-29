@@ -6,28 +6,14 @@ from hypothesis.extra.pandas import column
 from hypothesis.extra.pandas import data_frames
 from hypothesis.extra.pandas import range_indexes
 import hypothesis.strategies as st
-import pandas as pd
 import pytest
 
-from incognita.data.scout_data import ScoutData
 from incognita.utility import constants
 
 # https://github.com/pytest-dev/pytest/issues/2421#issuecomment-403724503
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 COLUMN_NAME = "ctry"
-
-
-@pytest.fixture(scope="module")
-def scout_data_factory():
-    """Returns a ScoutData factory"""
-
-    def _scout_data_factory(data_df: pd.DataFrame) -> ScoutData:
-        sd = ScoutData(load_census_data=False)
-        sd.census_data = data_df
-        return sd
-
-    return _scout_data_factory
 
 
 @pytest.fixture(scope="module")

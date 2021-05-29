@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from incognita.data import scout_census
-from incognita.data.scout_data import ScoutData
 from incognita.logger import logger
 from incognita.utility import config
 from incognita.utility import constants
@@ -256,7 +255,7 @@ class Map:
 
     def add_sections_to_map(
         self,
-        scout_data: ScoutData,
+        census_data: pd.DataFrame,
         colour_key: str,
         marker_data: set[str],
         single_section: str = None,
@@ -275,7 +274,7 @@ class Map:
         that have returned in the latest year of the dataset.
 
         Args:
-            scout_data:
+            census_data:
             colour_key: Determines marker colour. If a column in `sections`, categorical colours. Otherwise, must be a CSS colour name.
             marker_data: List of strings which determines content for popup, including:
                 - youth membership
@@ -288,10 +287,10 @@ class Map:
 
         """
         if single_section:
-            filtered_data = scout_data.census_data
+            filtered_data = census_data
             section_types = {getattr(scout_census.column_labels.sections, single_section).type}
         else:
-            filtered_data = scout_data.census_data.loc[scout_data.census_data["Census_ID"] == scout_data.census_data["Census_ID"].max()]
+            filtered_data = census_data.loc[census_data["Census_ID"] == census_data["Census_ID"].max()]
             section_types = scout_census.TYPES_GROUP | scout_census.TYPES_DISTRICT
         filtered_data = filtered_data.loc[filtered_data[scout_census.column_labels.UNIT_TYPE].isin(section_types)]
         self.add_meeting_places_to_map(filtered_data, colour_key, marker_data, layer, cluster_markers, coloured_region=coloured_region, coloured_region_key=coloured_region_key)
