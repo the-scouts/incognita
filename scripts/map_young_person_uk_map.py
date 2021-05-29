@@ -27,7 +27,8 @@ if __name__ == "__main__":
     census_data = filter.filter_records(census_data, "postcode_is_valid", {True})
 
     # generate district boundaries
-    district_boundaries.create_district_boundaries(census_data).to_file("districts_buffered.geojson", driver="GeoJSON")
+    sanitised_county = county_name.lower().replace(" ", "-")
+    district_boundaries.create_district_boundaries(census_data).to_file(f"districts-{sanitised_county}.geojson", driver="GeoJSON")
 
     # generate boundary report
     reports = Reports("District", census_data)
