@@ -32,10 +32,10 @@ def merge_to_districts(district_ids, points: Sequence[pygeos.Geometry]) -> pd.Se
 
 
 def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
-    """Creates a GeoJSON file for the District Boundaries of the Scout Census.
+    """Estimates district boundaries from group locations.
 
-    Aims to create a circular boundary around every section of maximal size
-    that doesn't overlap or leave gaps between Districts.
+    Aims to estimate district boundaries from Group points, using the Voronoi
+    diagram method.
 
     Args:
         census_data: Dataframe with census data
@@ -57,6 +57,4 @@ def create_district_boundaries(census_data: pd.DataFrame) -> gpd.GeoSeries:
     # coordinates, meaning that we can operate in metres from now on.
     points = points.to_crs(epsg=constants.BNG).data
 
-    district_gdf = gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)
-    district_gdf.to_file("districts_buffered.geojson", driver="GeoJSON")
-    return district_gdf
+    return gpd.GeoSeries(merge_to_districts(all_locations["D_ID"], points), crs=constants.BNG).to_crs(epsg=constants.WGS_84)

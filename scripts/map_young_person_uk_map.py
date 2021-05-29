@@ -12,18 +12,22 @@ if __name__ == "__main__":
     start_time = time.time()
     logger.info(f"Starting at {time.strftime('%H:%M:%S', time.localtime(start_time))}")
 
-    region_name = "South West"
+    # region_name = "South West"
+    # county_name = "Cornwall"
+    region_name = "North East"
+    county_name = "Central Yorkshire"
     census_id = 20
 
     census_data = load_census_data()
     census_data = filter.filter_records(census_data, "Census_ID", {census_id})
     census_data = filter.filter_records(census_data, "R_name", {region_name})
+    census_data = filter.filter_records(census_data, "C_name", {county_name})
     # Remove Jersey, Guernsey, and Isle of Man as they don't have lat long coordinates in their postcodes
     census_data = filter.filter_records(census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
     census_data = filter.filter_records(census_data, "postcode_is_valid", {True})
 
     # generate district boundaries
-    district_boundaries.create_district_boundaries(census_data)
+    district_boundaries.create_district_boundaries(census_data).to_file("districts_buffered.geojson", driver="GeoJSON")
 
     # generate boundary report
     reports = Reports("District", census_data)
