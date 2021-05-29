@@ -205,13 +205,14 @@ class Reports:
         return output_data
 
     @time_function
-    def create_uptake_report(self, report_name: str = None) -> pd.DataFrame:
+    def create_uptake_report(self, boundary_report: pd.DataFrame, report_name: str = None) -> pd.DataFrame:
         """Creates a report of scouting uptake in geographic areas
 
         Creates an report by the boundary that has been set, requires a boundary report to already have been run.
         Requires population data by age for the specified boundary.
 
         Args:
+            boundary_report: Boundary report from `Reports.create_boundary_report`
             report_name: Name to save the report as
 
         Returns:
@@ -225,7 +226,7 @@ class Reports:
         except KeyError:
             raise AttributeError(f"Population by age data not present for this {geog_name}")
 
-        if self.boundary_report is None:
+        if boundary_report is None:
             raise AttributeError("Geography report doesn't exist")
 
         data_types = {str(key): "Int16" for key in range(5, 26)}
@@ -258,9 +259,9 @@ class Reports:
             # Check we did not accidentally expand the population!
             # assert merged_age_profile["Pop_All"].sum() == reduced_age_profile_pd["Pop_All"].sum()  # this will fail
             assert pivoted_age_profile["Pop_All"].sum() == merged_age_profile_no_na["Pop_All"].sum()
-            uptake_report = self.boundary_report.merge(pivoted_age_profile, how="left", left_on="codes", right_index=True, sort=False)
+            uptake_report = boundary_report.merge(pivoted_age_profile, how="left", left_on="codes", right_index=True, sort=False)
         else:
-            uptake_report = self.boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
+            uptake_report = boundary_report.merge(reduced_age_profile_pd, how="left", left_on="codes", right_on=age_profile_key, sort=False)
             del uptake_report[age_profile_key]
 
         census_ids = self.scout_data.census_data["Census_ID"].drop_duplicates().dropna().sort_values()
