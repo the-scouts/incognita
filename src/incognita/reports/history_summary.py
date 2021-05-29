@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from incognita.data import scout_census
-from incognita.data.ons_pd import ons_postcode_directory_may_20 as ONS_PD
+from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.logger import logger
 from incognita.utility import report_io
 

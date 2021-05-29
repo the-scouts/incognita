@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from incognita.data import scout_census
-from incognita.data.ons_pd import ons_postcode_directory_may_20
+from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
 from incognita.logger import logger
 from incognita.logger import set_up_logger
 from incognita.preprocessing import census_merge_data
@@ -41,19 +41,19 @@ cols_categorical = ["compass", "type", "name", "G_name", "D_name", "C_name", "R_
 
 def process_census_extract() -> None:
     census_data = load_census_data()
-    ons_pd_data = load_postcode_directory(ons_postcode_directory_may_20)
+    ons_pd_data = load_postcode_directory(ONS_PD)
 
     # merge the census extract and ONS postcode directory
     merged_data = merge_ons_postcode_directory(census_data, ons_pd_data)
 
     # Add IMD deciles
-    merged_data = create_imd_deciles(merged_data, ons_postcode_directory_may_20)
+    merged_data = create_imd_deciles(merged_data, ONS_PD)
 
     # Set data types
     merged_data = coerce_data_types(merged_data)
 
     # Save the processed extract
-    save_merged_data(merged_data, ons_postcode_directory_may_20.PUBLICATION_DATE)
+    save_merged_data(merged_data, ONS_PD.PUBLICATION_DATE)
 
 
 def load_census_data() -> pd.DataFrame:

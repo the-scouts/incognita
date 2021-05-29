@@ -1,7 +1,5 @@
 import pydantic
 
-from incognita.utility import config
-
 
 class ONSPostcodeDirectory(pydantic.BaseModel):
     """Used for holding and accessing ONS Postcode Directory data."""
@@ -17,7 +15,7 @@ class ONSPostcodeDirectory(pydantic.BaseModel):
 
 
 # https://geoportal.statistics.gov.uk/datasets/ons-postcode-directory-may-2020
-ons_postcode_directory_may_20 = ONSPostcodeDirectory(
+ONS_POSTCODE_DIRECTORY_MAY_20 = ONSPostcodeDirectory(
     fields={"lsoa11", "msoa11", "oslaua", "osward", "pcon", "oscty", "lat", "long", "imd", "ctry", "rgn", "pcd", "imd_decile"},
     index_column="pcd",
     data_types={
