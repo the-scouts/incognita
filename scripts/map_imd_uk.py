@@ -23,18 +23,18 @@ if __name__ == "__main__":
 
     lsoa = Reports("LSOA", scout_data)
     lsoa.filter_boundaries("ctry", country_codes)
-    lsoa.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="lsoa_ew")
+    lsoa_boundary_report = lsoa.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="lsoa_ew")
 
     # iz = Reports("Intermediate Zone", scout_data)
     # iz.filter_boundaries(field="ctry", value_list={"S92000003"})
-    # iz.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="iz_all")
+    # iz_boundary_report = iz.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="iz_all")
 
     # Create map object
     mapper = Map(map_name="lsoa_ew_map 6")
 
     # Create 6 to 17 map - IMD deciles
-    mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", lsoa, show=True, colour_bounds=[1, 3, 7, 10])
-    # mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", iz, show=True)
+    mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", lsoa_boundary_report, lsoa.geography.metadata, show=True, colour_bounds=[1, 3, 7, 10])
+    # mapper.add_areas("imd_decile", "IMD", "Index of Multiple Deprivation Decile", iz_boundary_report, iz.geography.metadata, show=True)
 
     # Plot sections
     mapper.add_meeting_places_to_map(

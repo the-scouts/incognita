@@ -22,13 +22,13 @@ if __name__ == "__main__":
 
     # Generate boundary report
     reports = Reports("Local Authority", scout_data)
-    reports.create_boundary_report({"awards"}, report_name="laua_awards_report")
+    boundary_report = reports.create_boundary_report({"awards"}, report_name="laua_awards_report")
 
     # Create map object
     mapper = Map(map_name="UK_QSA_awards")
 
     # Plot
-    mapper.add_areas("%-QSA", "QSA %", "QSA %", reports, show=True)
+    mapper.add_areas("%-QSA", "QSA %", "QSA %", boundary_report, reports.geography.metadata, show=True)
     mapper.add_sections_to_map(scout_data, "D_ID", {"youth membership", "awards"}, single_section="Explorers", cluster_markers=True)
 
     # Save the map and display

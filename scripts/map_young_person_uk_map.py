@@ -19,10 +19,10 @@ if __name__ == "__main__":
 
     # generate boundary report
     reports = Reports("District", scout_data)
-    reports.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="uk_by_district")
+    boundary_report = reports.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name="uk_by_district")
 
     mapper = Map(map_name="uk_by_la_map")
-    mapper.add_areas(f"All-{census_id}", "Under 18s", "Scouts aged under 18", reports, show=True)
+    mapper.add_areas(f"All-{census_id}", "Under 18s", "Scouts aged under 18", boundary_report, reports.geography.metadata, show=True)
     mapper.add_sections_to_map(scout_data, "D_ID", {"youth membership"}, cluster_markers=True)
 
     # Save the map and display

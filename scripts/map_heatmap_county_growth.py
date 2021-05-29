@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # lad_reports = Reports("Local Authority", scout_data)
     # lad_reports.filter_boundaries("X_name", country_names, "oslaua")
-    # lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
+    # lad_boundary_report = lad_reports.create_boundary_report(opts, historical=True, report_name=f"{location_name} - LADs")
     # for i in range(offset):
     #     j = i * 2
     #     lad_reports.data[f"{lad_reports.data.iloc[:, j + 3].name.split('-')[0]}_change"] = (lad_reports.data.iloc[:, j + 3 + offset * 2] / lad_reports.data.iloc[:, j + 3]) * 100 - 100
@@ -96,33 +96,33 @@ if __name__ == "__main__":
     # Create map object
     mapper = Map(map_name=f"{location_name} uptake map")
 
-    # mapper.add_areas("All_change", "% Change 6-18", "% Change 6-18 (LADs)", lad_reports)
+    # mapper.add_areas("All_change", "% Change 6-18", "% Change 6-18 (LADs)", lad_boundary_report, lad_reports.geography.metadata)
 
     # TODO BUG only last add areas has correct colour mapping for same reports instance
 
-    mapper.add_areas("All_change", "% Change 6-18", "% Change 6-18 (Counties)", cty_reports, show=True)
+    mapper.add_areas("All_change", "% Change 6-18", "% Change 6-18 (Counties)", cty_boundary_report, cty_reports.geography.metadata, show=True)
 
-    mapper.add_areas("Beavers_change", "% Change Beavers", "% Change Beavers (Counties)", cty_reports)
+    mapper.add_areas("Beavers_change", "% Change Beavers", "% Change Beavers (Counties)", cty_boundary_report, cty_reports.geography.metadata)
 
-    mapper.add_areas("Cubs_change", "% Change Cubs", "% Change Cubs (Counties)", cty_reports)
+    mapper.add_areas("Cubs_change", "% Change Cubs", "% Change Cubs (Counties)", cty_boundary_report, cty_reports.geography.metadata)
 
-    mapper.add_areas("Scouts_change", "% Change Scouts", "% Change Scouts (Counties)", cty_reports)
+    mapper.add_areas("Scouts_change", "% Change Scouts", "% Change Scouts (Counties)", cty_boundary_report, cty_reports.geography.metadata)
 
-    mapper.add_areas("Explorers_change", "% Change Explorers", "% Change Explorers (Counties)", cty_reports)
+    mapper.add_areas("Explorers_change", "% Change Explorers", "% Change Explorers (Counties)", cty_boundary_report, cty_reports.geography.metadata)
 
-    mapper.add_areas("Adults_change", "% Change Adults", "% Change Adults (Counties)", cty_reports)
+    mapper.add_areas("Adults_change", "% Change Adults", "% Change Adults (Counties)", cty_boundary_report, cty_reports.geography.metadata)
 
-    mapper.add_areas("Sections_change", "% Change # Sections", "% Change # Sections (Counties)", cty_reports)
+    mapper.add_areas("Sections_change", "% Change # Sections", "% Change # Sections (Counties)", cty_boundary_report, cty_reports.geography.metadata)
 
-    # mapper.add_areas("%-All-2020", "% Uptake 6-18", "% Uptake 6-18 (Counties)", cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-All-2020", "% Uptake 6-18", "% Uptake 6-18 (Counties)", cty_boundary_report, cty_reports.geography.metadata, significance_threshold=0)
     #
-    # mapper.add_areas("%-Beavers-2020", "% Uptake Beavers", "% Uptake Beavers (Counties)", cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Beavers-2020", "% Uptake Beavers", "% Uptake Beavers (Counties)", cty_boundary_report, cty_reports.geography.metadata, significance_threshold=0)
     #
-    # mapper.add_areas("%-Cubs-2020", "% Uptake Cubs", "% Uptake Cubs (Counties)", cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Cubs-2020", "% Uptake Cubs", "% Uptake Cubs (Counties)", cty_boundary_report, cty_reports.geography.metadata, significance_threshold=0)
     #
-    # mapper.add_areas("%-Scouts-2020", "% Uptake Scouts", "% Uptake Scouts (Counties)", cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Scouts-2020", "% Uptake Scouts", "% Uptake Scouts (Counties)", cty_boundary_report, cty_reports.geography.metadata, significance_threshold=0)
     #
-    # mapper.add_areas("%-Explorers-2020", "% Uptake Explorers", "% Uptake Explorers (Counties)", cty_reports, significance_threshold=0)
+    # mapper.add_areas("%-Explorers-2020", "% Uptake Explorers", "% Uptake Explorers (Counties)", cty_boundary_report, cty_reports.geography.metadata, significance_threshold=0)
 
     # Save the map and display
     mapper.save_map()

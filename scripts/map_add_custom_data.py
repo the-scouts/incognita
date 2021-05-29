@@ -16,13 +16,13 @@ if __name__ == "__main__":
     # Generate boundary report
     reports = Reports("LSOA", scout_data)
     reports.filter_boundaries("oslaua", {la_code})  # Leeds LA code
-    reports.create_boundary_report({"Section numbers"}, report_name="leeds_sections")
+    boundary_report = reports.create_boundary_report({"Section numbers"}, report_name="leeds_sections")
 
     # Create map object
     mapper = Map(map_name="Leeds")
 
     # Plot
-    mapper.add_areas(f"Beavers-{census_id}", f"Beavers {census_id}", "# Beavers", reports, show=True)
+    mapper.add_areas(f"Beavers-{census_id}", f"Beavers {census_id}", "# Beavers", boundary_report, reports.geography.metadata, show=True)
     mapper.add_custom_data(
         config.SETTINGS.folders.national_statistical / "leeds_primary_schools.csv",
         "Primary Schools",

@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # # 6-17 IMD from Jan-2020 Scout Census with May 2019 ONS
     # imd_reports = Reports("LSOA", scout_data)
     # imd_reports.filter_boundaries("C_name", {county_name}, "pcon")
-    # imd_reports.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name=f"{county_name} - IMD")
+    # imd_boundary_report = imd_reports.create_boundary_report({"Section numbers", "6 to 17 numbers"}, report_name=f"{county_name} - IMD")
     #
     # # % 6-17 LAs uptake from Jan-2020 Scout Census with May 2019 ONS
     # # lad_reports = Reports("Local Authority", scout_data)
@@ -56,19 +56,19 @@ if __name__ == "__main__":
     mapper = Map(map_name=f"{county_name} uptake map")
 
     # # Create 6 to 17 map - Westminster Constituencies
-    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (PCon)", pcon_reports, show=True)
+    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (PCon)", pcon_boundary_report, pcon_reports.geography.metadata, show=True)
     #
     # # Create 6 to 17 map - IMD deciles
-    # mapper.add_areas("imd_decile", "IMD", "IMD Decile", imd_reports)
+    # mapper.add_areas("imd_decile", "IMD", "IMD Decile", imd_boundary_report, imd_reports.geography.metadata)
     #
     # # Create 6 to 17 map - Local Authorities
-    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (LAs)", lad_reports)
+    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (LAs)", lad_boundary_report, lad_reports.geography.metadata)
     #
     # # Create 6 to 17 map - Wards
-    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (Wards)", wards_reports)
+    # mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (Wards)", wards_boundary_report, wards_reports.geography.metadata)
 
     # Create 6 to 17 map - Wards
-    mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (Districts)", nys_reports, show=True)
+    mapper.add_areas(f"%-All-{census_id}", "% 6-17 Uptake", "% 6-17 Uptake (Districts)", nys_boundary_report, nys_reports.geography.metadata, show=True)
 
     # Plot sections
     sections_in_county = scout_data.census_data["C_name"] == county_name
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # create_section_maps
     # for section_label in Reports.SECTION_AGES.keys():
     #     section_map = Map(map_name=f"pcon_uptake_report_{section_label}")
-    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_reports, colour_bounds=[0, 3, 4, 6, 8, 11])
+    #     section_map.add_areas(f"%-{section_label}-{year}", section_label, f"{year} {section_label} uptake (%)", pcon_boundary_report, pcon_reports.geography.metadata, colour_bounds=[0, 3, 4, 6, 8, 11])
     #     section_map.add_sections_to_map(scout_data, section_map.district_colour_mapping(scout_data), {"youth membership"}, single_section=section_label)
     #     section_map.save_map()
 
