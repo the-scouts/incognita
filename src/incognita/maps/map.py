@@ -64,12 +64,13 @@ class Map:
             categorical: If the data are categorical
 
         """
-        if var_col not in reports.data.columns:
-            logger.error(f"{var_col} is not a valid column in the data. \n" f"Valid columns include {reports.data.columns}")
+        data = reports.boundary_report
+        if var_col not in data.columns:
+            logger.error(f"{var_col} is not a valid column in the data. \n" f"Valid columns include {data.columns}")
             raise KeyError(f"{var_col} is not a valid column in the data.")
 
         colours = list(reversed(("#4dac26", "#b8e186", "#f1b6da", "#d01c8b")))
-        choropleth_data = reports.data[["codes", var_col]].set_index("codes")[var_col]  # contains shapefile paths, and labels for region codes and names
+        choropleth_data = data[["codes", var_col]].set_index("codes")[var_col]  # contains shapefile paths, and labels for region codes and names
 
         # Set value col properties to use for a particular boundary
         logger.info(f"Setting choropleth column to {var_col} (displayed: {tooltip})")
@@ -103,15 +104,16 @@ class Map:
 
         logger.info(f"Merging geo_json on shape_codes from shapefile with codes from boundary report")
 
+        metadata = reports.geography.metadata
         self.map[f"layer_{layer_name}"] = _output_shape_layer(
             legend_key=layer_name,  # the name of the Layer, as it will appear in the layer controls
             colour_data=choropleth_data.to_dict(),
-            api_base=reports.geography.metadata.api.url,
-            query_params=reports.geography.metadata.api.query_params,
+            api_base=metadata.api.url,
+            query_params=metadata.api.query_params,
             colour_scale_id=colour_map_id,
             threshold=significance_threshold,
-            code_col=reports.geography.metadata.api.codes_col,
-            name_col=reports.geography.metadata.api.names_col,
+            code_col=metadata.api.codes_col,
+            name_col=metadata.api.names_col,
             measure_name=tooltip,
             show=show,
         )
@@ -369,25 +371,28 @@ def _load_boundary(reports: Reports) -> gpd.GeoDataFrame:
         GeoDataFrame with filtered and CRS transformed shapes
 
     """
+    metadata = reports.geography.metadata
+    data = reports.boundary_report
+
     # Read a shape file. shapefile_path is the path to ESRI shapefile with region information
     logger.info("Loading Shapefile data")
-    logger.debug(f"Shapefile path: {reports.geography.metadata.shapefile.path}")
+    logger.debug(f"Shapefile path: {metadata.shapefile.path}")
     start_time = time.time()
-    all_shapes = gpd.read_file(reports.geography.metadata.shapefile.path)
+    all_shapes = gpd.read_file(metadata.shapefile.path)
     logger.info(f"Loading Shapefile data finished, {time.time() - start_time:.2f} seconds elapsed")
-    if reports.geography.metadata.shapefile.key not in all_shapes.columns:
-        raise KeyError(f"{reports.geography.metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
+    if metadata.shapefile.key not in all_shapes.columns:
+        raise KeyError(f"{metadata.shapefile.key} not present in shapefile. Valid columns are: {all_shapes.columns}")
 
     # Rename columns
-    shapes_col_map = {reports.geography.metadata.shapefile.key: "shape_codes", reports.geography.metadata.shapefile.name: "shape_names"}
+    shapes_col_map = {metadata.shapefile.key: "shape_codes", metadata.shapefile.name: "shape_names"}
     all_shapes.columns = [shapes_col_map.get(col, col) for col in all_shapes.columns]
 
     # Filter and convert GeoDataFrame to world co-ordinates
     logger.info(f"Filtering {len(all_shapes.index)} shapes by shape_codes being in the codes column of the map_data")
-    all_codes = set(reports.data["codes"])
+    all_codes = set(data["codes"])
     logger.debug(f"All codes list: {all_codes}")
     geo_data = all_shapes.loc[all_shapes["shape_codes"].isin(all_codes), ["geometry", "shape_codes", "shape_names"]].to_crs(epsg=constants.WGS_84)
-    logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*reports.data.columns]}.")
+    logger.info(f"Loaded {len(geo_data.index):,} boundary shapes. Columns now in data: {[*data.columns]}.")
     return geo_data
 
 
