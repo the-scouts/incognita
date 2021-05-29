@@ -67,47 +67,6 @@ class Reports:
             return self.geography.filter_boundaries_by_scout_area(field, values, self.scout_data.census_data, boundary)
         raise ValueError(f"Field {field} not valid. Valid fields are {self.ons_pd.fields | self.scout_data.filterable_columns}")
 
-    def _ons_to_district_mapping(self, region_type: str) -> dict:
-        """Create json file, containing which scout districts are within an
-        each ONS area, and how many ONS areas those districts are in.
-
-        Args:
-            region_type:
-                A field in the modified census report corresponding to an
-                administrative region (lsoa11, msoa11, oslaua, osward, pcon,
-                oscty, ctry, rgn). region_type is also a census column heading
-                for the region geography type
-
-        """
-
-        logger.debug("Creating mapping from ons boundary to scout district")
-
-        district_id_column = scout_census.column_labels.id.DISTRICT
-        census_data = self.scout_data.census_data
-
-        region_ids = set(self.geography.boundary_codes["codes"].dropna())
-
-        district_ids_by_region = census_data.loc[census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
-        district_ids = set(district_ids_by_region[district_id_column].dropna())
-
-        # count of how many regions the district occupies:
-        count_regions_in_district = (
-            census_data.loc[(census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)), [district_id_column, region_type]]
-            .dropna()
-            .drop_duplicates()
-            .groupby(district_id_column)
-            .count()
-            .rename(columns={region_type: "count"})
-        )
-        count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column).set_index([region_type, district_id_column])
-
-        nested_dict = {}
-        for (region_id, district_id), value in count_by_district_by_region["count"].items():
-            nested_dict.setdefault(region_id, {})[district_id] = value
-
-        logger.debug("Finished mapping from ons boundary to district")
-        return dict(nested_dict)  # Return the mapping
-
     @time_function
     def create_boundary_report(self, options: set[str] = None, historical: bool = False, report_name: str = None) -> pd.DataFrame:
         """Produces .csv file summarising by boundary provided.
@@ -191,7 +150,7 @@ class Reports:
             award_eligible = sections_model.Beavers.top_award_eligible[0]
 
             logger.debug(f"Creating awards mapping")
-            awards_mapping = self._ons_to_district_mapping(geog_name)
+            awards_mapping = _ons_to_district_mapping(self.scout_data.census_data, self.geography.boundary_codes, geog_name)
             district_numbers = {district_id: num for district_dict in awards_mapping.values() for district_id, num in district_dict.items()}
             grouped_dist = self.scout_data.census_data[["Queens_Scout_Awards", "Eligible4QSA", district_id_column]].groupby(district_id_column, dropna=False)
             ons_regions_in_district = grouped_dist[district_id_column].first().map(district_numbers)
@@ -344,3 +303,44 @@ class Reports:
 
         self.boundary_report = uptake_report
         return uptake_report
+
+
+def _ons_to_district_mapping(census_data: pd.DataFrame, boundary_codes: pd.DataFrame, region_type: str) -> dict:
+    """Create json file, containing which scout districts are within an
+    each ONS area, and how many ONS areas those districts are in.
+
+    Args:
+        region_type:
+            A field in the modified census report corresponding to an
+            administrative region (lsoa11, msoa11, oslaua, osward, pcon,
+            oscty, ctry, rgn). region_type is also a census column heading
+            for the region geography type
+
+    """
+
+    logger.debug("Creating mapping from ons boundary to scout district")
+
+    district_id_column = scout_census.column_labels.id.DISTRICT
+
+    region_ids = set(boundary_codes["codes"].dropna())
+
+    district_ids_by_region = census_data.loc[census_data[region_type].isin(region_ids), [region_type, district_id_column]].dropna().drop_duplicates()
+    district_ids = set(district_ids_by_region[district_id_column].dropna())
+
+    # count of how many regions the district occupies:
+    count_regions_in_district = (
+        census_data.loc[(census_data[district_id_column].isin(district_ids) & (census_data[region_type] != scout_census.DEFAULT_VALUE)), [district_id_column, region_type]]
+            .dropna()
+            .drop_duplicates()
+            .groupby(district_id_column)
+            .count()
+            .rename(columns={region_type: "count"})
+    )
+    count_by_district_by_region = pd.merge(left=district_ids_by_region, right=count_regions_in_district, on=district_id_column).set_index([region_type, district_id_column])
+
+    nested_dict = {}
+    for (region_id, district_id), value in count_by_district_by_region["count"].items():
+        nested_dict.setdefault(region_id, {})[district_id] = value
+
+    logger.debug("Finished mapping from ons boundary to district")
+    return dict(nested_dict)  # Return the mapping
