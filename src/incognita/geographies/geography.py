@@ -12,7 +12,6 @@ from incognita.utility import config
 from incognita.utility import root
 
 if TYPE_CHECKING:
-    from incognita.data.scout_data import ScoutData
     from incognita.utility.config import Boundary
 
 # Combine the ONS and Scout boundaries directories
@@ -91,7 +90,7 @@ class Geography:
 
         return self.boundary_codes
 
-    def filter_boundaries_by_scout_area(self, census_data: pd.DataFrame, ons_boundary: str, column: str, value_list: set) -> pd.DataFrame:
+    def filter_boundaries_by_scout_area(self, column: str, values: set, census_data: pd.DataFrame, ons_boundary: str) -> pd.DataFrame:
         """Filters the boundaries, to include only those boundaries which have
         Sections that satisfy the requirement that the column is in the value_list.
 
@@ -101,20 +100,20 @@ class Geography:
         Then filters boundaries to those intersecting within said ONS codes.
 
         Args:
+            column: Scout boundary (e.g. C_ID)
+            values: Values in the Scout boundary
             census_data: Census data to operate on
             ons_boundary: ONS boundary to filter on
-            column: Scout boundary (e.g. C_ID)
-            value_list: Values in the Scout boundary
 
         """
-        logger.info(f"Finding the ons areas that exist with {column} in {value_list}")
+        logger.info(f"Finding the ons areas that exist with {column} in {values}")
 
         # Filters scout data to values passed through (values in column `column' in `values_list')
         # Gets associated ons code column from filtered records
         # Removes original ons-census merge errors
         ons_boundary_records = census_data[ons_boundary].dropna()
-        ons_codes = set(ons_boundary_records[census_data[column].isin(value_list)].array)
+        ons_codes = set(ons_boundary_records[census_data[column].isin(values)].array)
         ons_codes.discard(scout_census.DEFAULT_VALUE)
-        logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {value_list}")
+        logger.debug(f"Found {len(ons_codes)} clean {ons_boundary}s that match {column} in {values}")
 
         return self.filter_ons_boundaries(ons_boundary, ons_codes)

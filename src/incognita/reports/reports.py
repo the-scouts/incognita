@@ -50,21 +50,21 @@ class Reports:
         self.scout_data.census_data = self.scout_data.census_data.rename(columns={shapefile_key: self.geography.metadata.key})
 
     @time_function
-    def filter_boundaries(self, field: str, value_list: set[str], boundary: str = "") -> pd.DataFrame:
+    def filter_boundaries(self, field: str, values: set[str], boundary: str = "") -> pd.DataFrame:
         """Keep all geographic boundaries where the value of `field` is in the given value list.
 
         The geographic boundary is specified by `boundary`, or if not given,
         `field` is assumed to be a geographic boundary.
 
-        Effectively, this remaps the values in value_list to a given
+        Effectively, this remaps the values in values to a given
         geography and keeps them, with field as the origin and boundary as the
         destination keys.
 
         """
         if field in self.ons_pd.fields:
-            return self.geography.filter_ons_boundaries(field, value_list)
+            return self.geography.filter_ons_boundaries(field, values)
         if field in self.scout_data.filterable_columns:
-            return self.geography.filter_boundaries_by_scout_area(self.scout_data.census_data, boundary, field, value_list)
+            return self.geography.filter_boundaries_by_scout_area(field, values, self.scout_data.census_data, boundary)
         raise ValueError(f"Field {field} not valid. Valid fields are {self.ons_pd.fields | self.scout_data.filterable_columns}")
 
     def _ons_to_district_mapping(self, region_type: str) -> dict:
