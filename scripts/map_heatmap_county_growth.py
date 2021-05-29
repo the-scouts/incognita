@@ -1,11 +1,3 @@
-"""Uptake of Scouting by local authority.
-
-This script produces a boundary report by local authority district, and plots
-the percentage of young people.
-
-This script has no command line options.
-"""
-
 import time
 
 from incognita.data.ons_pd import ONS_POSTCODE_DIRECTORY_MAY_20 as ONS_PD
