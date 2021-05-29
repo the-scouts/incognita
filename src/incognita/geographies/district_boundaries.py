@@ -24,13 +24,11 @@ def spatial_join(points: Sequence[pygeos.Geometry], voronoi_polygons: Sequence[p
 def merge_to_districts(district_ids, points: Sequence[pygeos.Geometry]) -> pd.Series:
     voronoi_polygons = create_voronoi(points)
     index_map = spatial_join(points, voronoi_polygons)
-    df = pd.DataFrame({"D_ID": district_ids, "polys": voronoi_polygons[index_map]})
-    merged_polys = df.groupby("D_ID")["polys"].apply(pygeos.coverage_union_all)
-    merged_polys.index.name = None
-    return merged_polys
+    df = pd.DataFrame({"D_ID": district_ids, "geometry": voronoi_polygons[index_map]})
+    return df.groupby("D_ID")["geometry"].apply(pygeos.coverage_union_all)
 
 
-def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geometry = None) -> gpd.GeoSeries:
+def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geometry = None) -> gpd.GeoDataFrame:
     """Estimates district boundaries from group locations.
 
     Aims to estimate district boundaries from Group points, using the Voronoi
@@ -40,7 +38,7 @@ def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geo
         census_data: Dataframe with census data
         clip_to: Optional area to clip results to. Must be in WGS84 projection.
 
-    Returns: GeoDataFrame of district IDs -> district polygons
+    Returns: GeoDataFrame with district IDs and polygons
 
     Todo:
         Spatial transforms add 20x overhead, but buffering relies on them to work. Fix.
@@ -48,7 +46,7 @@ def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geo
     """
     # Finds and de-duplicates all the records with valid postcodes in the Scout Census
     all_locations = census_data.loc[census_data[scout_census.column_labels.VALID_POSTCODE], ["D_ID", "lat", "long"]]
-    all_locations = all_locations.drop_duplicates(subset=["lat", "long"]).dropna(subset=["lat", "long"]).reset_index(drop=True)
+    all_locations = all_locations.drop_duplicates(subset=["lat", "long"]).reset_index(drop=True)
 
     # Create points from lat / long co-ordinates above
     points = gpd.points_from_xy(all_locations["long"], all_locations["lat"], crs=constants.WGS_84)

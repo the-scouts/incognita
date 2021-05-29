@@ -5,6 +5,7 @@ import geopandas as gpd
 from incognita.data.scout_census import load_census_data
 from incognita.geographies import district_boundaries
 from incognita.logger import logger
+from incognita.utility import config
 from incognita.utility import filter
 from incognita.utility import timing
 
@@ -14,6 +15,8 @@ if __name__ == "__main__":
 
     census_data = load_census_data()
     census_data = filter.filter_records(census_data, "Census_ID", {20})
+    # Remove Jersey, Guernsey, and Isle of Man as they have invalid lat/long coordinates for their postcodes
+    census_data = filter.filter_records(census_data, "C_name", {"Bailiwick of Guernsey", "Isle of Man", "Jersey"}, exclude_matching=True)
 
     # low resolution shape data
     world_low_res = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
@@ -25,7 +28,7 @@ if __name__ == "__main__":
     district_polygons = district_boundaries.create_district_boundaries(census_data, clip_to=uk_shape)
     logger.info("District boundaries estimated!")
 
-    district_polygons.to_file(f"districts-borders-uk.geojson", driver="GeoJSON")
+    district_polygons.to_file(config.SETTINGS.folders.boundaries / "districts-borders-uk.geojson", driver="GeoJSON")
     logger.info("District boundaries saved.")
 
     timing.close(start_time)

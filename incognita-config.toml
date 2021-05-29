@@ -167,7 +167,7 @@ codes.key = "D_ID"
 codes.key_type = "Int32"
 codes.name = "D_name"
 
-shapefile.path = "../../scripts/districts_buffered.geojson"
+shapefile.path = "districts-borders-uk.geojson"
 shapefile.key = "id"
 shapefile.name = "name"
 
