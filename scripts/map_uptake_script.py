@@ -5,12 +5,16 @@ the percentage of young people.
 
 This script has no command line options.
 """
+import time
+
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     county_name = "North Yorkshire"
     census_id = 20
 
@@ -103,4 +107,4 @@ if __name__ == "__main__":
     #     section_map.save_map()
 
     # get script execution time etc.
-    timing.close(scout_data)
+    timing.close(start_time)

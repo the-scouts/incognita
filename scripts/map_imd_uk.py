@@ -5,12 +5,16 @@ Index of Multiple Deprivation Deciles.
 
 This script has no command line options.
 """
+import time
+
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
 from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     countries = {"England", "Wales"}
     country_codes = {"E92000001", "W92000004"}
 
@@ -51,4 +55,4 @@ if __name__ == "__main__":
     mapper.save_map()
     mapper.show_map()
 
-    timing.close(scout_data)
+    timing.close(start_time)

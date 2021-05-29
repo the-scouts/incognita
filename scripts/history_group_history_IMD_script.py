@@ -1,8 +1,12 @@
+import time
+
 from incognita.data.scout_data import ScoutData
 from incognita.reports.history_summary import HistorySummary
 from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     scout_data = ScoutData()
     scout_data.filter_records("imd_decile", {1, 2})
     scout_data.filter_records("C_name", {"Shropshire"})
@@ -15,4 +19,4 @@ if __name__ == "__main__":
     years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
     history_summary = HistorySummary(scout_data)
     history_summary.group_history_summary(years, report_name="group_history_report")
-    timing.close(scout_data)
+    timing.close(start_time)

@@ -1,8 +1,12 @@
+import time
+
 from incognita.data.scout_data import ScoutData
 from incognita.reports.reports import Reports
 from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     county_name = "Gt. London South"
     census_id = 20
 
@@ -14,4 +18,4 @@ if __name__ == "__main__":
     reports = Reports("IMD Decile", scout_data)
     boundary_report = reports.create_boundary_report({"Groups", "Number of Sections", "Section numbers", "waiting list total"}, report_name=f"{county_name} - {census_id} IMD report")
 
-    timing.close(scout_data)
+    timing.close(start_time)

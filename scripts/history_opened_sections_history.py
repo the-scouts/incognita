@@ -1,8 +1,12 @@
+import time
+
 from incognita.data.scout_data import ScoutData
 from incognita.reports.history_summary import HistorySummary
 from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     census_ids = {15, 16, 17, 18, 19, 20}
 
     scout_data = ScoutData()
@@ -15,4 +19,4 @@ if __name__ == "__main__":
 
     section_history = HistorySummary(scout_data)
     section_history.new_section_history_summary(sorted(census_ids), report_name="opened_section_data")
-    timing.close(scout_data)
+    timing.close(start_time)

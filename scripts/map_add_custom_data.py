@@ -1,3 +1,5 @@
+import time
+
 from incognita.data.scout_data import ScoutData
 from incognita.maps.map import Map
 from incognita.reports.reports import Reports
@@ -5,6 +7,8 @@ from incognita.utility import config
 from incognita.utility import timing
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     county_name = "Central Yorkshire"
     la_code = "E08000035"  # Leeds LA code
     census_id = 20
@@ -35,4 +39,4 @@ if __name__ == "__main__":
     # Save the map and display
     mapper.save_map()
     mapper.show_map()
-    timing.close(scout_data)
+    timing.close(start_time)
