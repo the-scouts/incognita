@@ -48,7 +48,7 @@ def create_district_boundaries(census_data: pd.DataFrame, *, clip_to: pygeos.Geo
     """
     # Finds and de-duplicates all the records with valid postcodes in the Scout Census
     all_locations = census_data.loc[census_data[scout_census.column_labels.VALID_POSTCODE], ["D_ID", "lat", "long"]]
-    all_locations = all_locations.drop_duplicates(subset=["lat", "long"]).reset_index(drop=True)
+    all_locations = all_locations.drop_duplicates(subset=["lat", "long"]).dropna(subset=["lat", "long"]).reset_index(drop=True)
 
     # Create points from lat / long co-ordinates above
     points = gpd.points_from_xy(all_locations["long"], all_locations["lat"], crs=constants.WGS_84)
